@@ -1,0 +1,15 @@
+{
+  "name": "tool-auth-bridge",
+  "version": "1.0.0",
+  "description": "Mints Tool Room SSO custom tokens for the Firebase project it actually runs in — split out of metadata-sync-service because that service lives in a different GCP project (subverselab-project) and org policy blocks both cross-project service account attachment and service account key creation, so a custom token it signs is never trusted by this project's Identity Toolkit (CREDENTIAL_MISMATCH). This service runs natively in project-62238635-aae4-41f4-880 instead, so it signs as an identity that project actually trusts.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^11.11.0"
+  }
+}

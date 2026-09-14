@@ -1,0 +1,42 @@
+# ─── macOS ───
+.DS_Store
+._*
+
+# ─── secrets: never commit ───
+.env
+.env.local
+.env.*.local
+*-service-account*.json
+*.pem
+*.key
+*.log
+
+# ─── dependencies / build output ───
+node_modules/
+dist/
+build/
+.vite/
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.pytest_cache/
+
+# ─── tools: each lives in its own repository ───
+01_AI_Tools/
+
+# ─── large local working material, not source ───
+07_Projects/
+08_Plugins/
+09_Production_Workshop/
+Archive/
+3D_Logo_Animation/
+Assets/Media/
+Assets/Brand/
+
+# ─── agent/session scratch ───
+.claude/
+
+# ─── local OAuth config (the .example.json next to it is the template) ───
+*oauth-config.json
+.social-publish-oauth-config.json

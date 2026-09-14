@@ -1,0 +1,17 @@
+{
+  "name": "social-publish",
+  "version": "1.0.0",
+  "description": "Publishes AI-generated images and videos to SubverseLab's YouTube and Instagram channels. Images go to Instagram only; videos go to YouTube and Instagram (Reels) together. Content sits as a draft in Firestore (Instagram's Graph API has no real draft concept) until manually approved or a scheduled time is reached.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "firebase-admin": "^11.11.0",
+    "googleapis": "^140.0.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

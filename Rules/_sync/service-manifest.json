@@ -1,0 +1,33 @@
+{
+  "$comment": "Canonical mapping authority for Phase 2 generated .agents/rules mirrors. Read by both Scripts/sync-agent-rules.js and Scripts/verify-agent-rules-sync.js. Edit this file (and Rules/00-08) to change what gets generated — never edit the generated files under Infrastructure/*/.agents/rules/ directly.",
+  "services": {
+    "CloudRun": {
+      "path": "Infrastructure/CloudRun/subverselab-v2/.agents/rules"
+    },
+    "MetadataSync": {
+      "path": "Infrastructure/MetadataSync/metadata-sync-service/.agents/rules"
+    },
+    "SocialPublish": {
+      "path": "Infrastructure/SocialPublish/.agents/rules"
+    }
+  },
+  "mappings": [
+    { "service": "CloudRun", "target": "architecture.md", "sources": ["Rules/00_PLATFORM_INVARIANTS.md"] },
+    { "service": "CloudRun", "target": "operational_instructions.md", "sources": ["Rules/01_AGENT_STARTUP.md"] },
+    { "service": "CloudRun", "target": "metadata_sync_architecture.md", "sources": ["Rules/05_SYNC.md"] },
+    { "service": "CloudRun", "target": "deployment.md", "sources": ["Rules/06_DEPLOYMENT.md", "Rules/07_POST_DEPLOY_VERIFICATION.md"] },
+    { "service": "CloudRun", "target": "deployment_registry.md", "sources": ["Rules/08_DEPLOYMENT_REGISTRY.md"] },
+
+    { "service": "MetadataSync", "target": "architecture.md", "sources": ["Rules/00_PLATFORM_INVARIANTS.md"] },
+    { "service": "MetadataSync", "target": "operational_instructions.md", "sources": ["Rules/01_AGENT_STARTUP.md"] },
+    { "service": "MetadataSync", "target": "metadata_sync_architecture.md", "sources": ["Rules/05_SYNC.md"] },
+    { "service": "MetadataSync", "target": "deployment.md", "sources": ["Rules/06_DEPLOYMENT.md", "Rules/07_POST_DEPLOY_VERIFICATION.md"] },
+    { "service": "MetadataSync", "target": "deployment_registry.md", "sources": ["Rules/08_DEPLOYMENT_REGISTRY.md"] },
+    { "service": "MetadataSync", "target": "03_VALIDATION.md", "sources": ["Rules/03_VALIDATION.md"] },
+
+    { "service": "SocialPublish", "target": "architecture.md", "sources": ["Rules/00_PLATFORM_INVARIANTS.md"] },
+    { "service": "SocialPublish", "target": "operational_instructions.md", "sources": ["Rules/01_AGENT_STARTUP.md"] },
+    { "service": "SocialPublish", "target": "deployment.md", "sources": ["Rules/06_DEPLOYMENT.md", "Rules/07_POST_DEPLOY_VERIFICATION.md"] },
+    { "service": "SocialPublish", "target": "deployment_registry.md", "sources": ["Rules/08_DEPLOYMENT_REGISTRY.md"] }
+  ]
+}

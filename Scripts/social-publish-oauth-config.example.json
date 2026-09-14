@@ -1,0 +1,8 @@
+{
+  "youtube": {
+    "clientId": "REPLACE_WITH_YOUTUBE_OAUTH_CLIENT_ID",
+    "clientSecret": "REPLACE_WITH_YOUTUBE_OAUTH_CLIENT_SECRET",
+    "redirectPort": 8765
+  },
+  "writeToFirestore": false
+}

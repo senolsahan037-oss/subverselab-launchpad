@@ -1,0 +1,23 @@
+{
+  "slug": "arrangement-gps",
+  "name": "Arrangement GPS",
+  "description": "Generate a genre-aware arrangement starting point, preview its structure and learn how to rebuild the idea in a DAW.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.2.0",
+  "guide_version": "1.2.0",
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://arrangement-gps-90909956035.europe-west1.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Plan an Arrangement"
+    }
+  ]
+}

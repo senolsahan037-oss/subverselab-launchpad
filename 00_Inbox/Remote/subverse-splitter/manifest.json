@@ -1,0 +1,32 @@
+{
+  "slug": "subverse-splitter",
+  "name": "Subverse Splitter",
+  "description": "Separate a track into drums, bass, vocals and other instruments, pull the vocal off a mix, or read a track's tempo and musical key — all in the browser, nothing to install. Separation uses the HT-Demucs model with overlapping windows, so the stems have no seams at the segment joins. Key and BPM analysis is unlimited for members; separations are one a day.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "2.0.0",
+  "guide_version": "2.0.0",
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://subverse-splitter-630319862116.europe-west1.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member",
+    "public_shell": false,
+    "member_required_for": [
+      "analysis",
+      "vocal_removal",
+      "stem_separation"
+    ],
+    "enforcement": "tool_server",
+    "self_authenticated": true,
+    "session_source": "subverselab_handoff"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Open the Splitter"
+    }
+  ]
+}

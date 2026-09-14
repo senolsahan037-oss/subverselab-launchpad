@@ -1,0 +1,21 @@
+{"at": "2026-09-01T23:18:54+00:00", "question": "what is in percussion repeat?", "answered": true, "intent": "chain"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "do I need max for live?", "answered": true, "intent": "plugins"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "how many macros does drum buss have?", "answered": true, "intent": "macros"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "which ableton version do I need for percussion repeat", "answered": true, "intent": "version"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "how much does it cost?", "answered": false, "intent": "human-only:price"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "what is a macro variation", "answered": true, "intent": "variations"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "how do I install it", "answered": true, "intent": "install"}
+{"at": "2026-09-01T23:18:54+00:00", "question": "will it make my snare sound like Metro Boomin", "answered": false, "intent": null}
+{"at": "2026-09-01T23:18:54+00:00", "question": "who are you", "answered": true, "intent": "what_is_vers"}
+{"at": "2026-09-01T23:19:51+00:00", "question": "what is in percussion repeat", "answered": true, "intent": "chain"}
+{"at": "2026-09-01T23:19:51+00:00", "question": "do i need any plugins", "answered": true, "intent": "plugins"}
+{"at": "2026-09-01T23:19:51+00:00", "question": "how much is it", "answered": false, "intent": "human-only:price"}
+{"at": "2026-09-01T23:21:24+00:00", "question": "what is in percussion repeat", "answered": true, "intent": "chain"}
+{"at": "2026-09-01T23:21:26+00:00", "question": "how much does it cost", "answered": false, "intent": "human-only:price"}
+{"at": "2026-09-01T23:21:29+00:00", "question": "how many macros does drum buss have", "answered": true, "intent": "macros"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "what is in Drum Buss", "answered": true, "intent": "chain"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "what is in Percussion Repeat", "answered": true, "intent": "chain"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "do i need any plugins", "answered": true, "intent": "plugins"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "which ableton version do i need", "answered": true, "intent": "version"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "what is a macro variation", "answered": true, "intent": "variations"}
+{"at": "2026-09-02T00:13:02+00:00", "question": "how do i install it", "answered": true, "intent": "install"}

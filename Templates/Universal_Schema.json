@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$comment": "Canonical prose version: Rules/03_VALIDATION.md. Remote and folder manifests are validated by two separate functions in Infrastructure/MetadataSync/metadata-sync-service/server.js: validateRemoteToolManifest() and validateManifestSchema(). If this file and server.js ever disagree, server.js is authoritative — see Rules/INDEX.md.",
+  "title": "SubverseLab Product Manifest",
+  "oneOf": [
+    { "$ref": "#/definitions/remoteManifest" },
+    { "$ref": "#/definitions/folderManifest" }
+  ],
+  "definitions": {
+    "remoteManifest": {
+      "$comment": "source_type: \"remote\". Remote AI tools must never use the folder schema below.",
+      "type": "object",
+      "required": ["slug", "name", "description", "content_type", "source_type", "version", "guide_version", "deployment", "access", "actions"],
+      "properties": {
+        "slug": { "type": "string", "description": "Unique product identifier; used as the Firestore document ID" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "content_type": {
+          "type": "string",
+          "enum": ["ai_tool", "workflow", "preset", "pack", "project", "instrument_rack", "midi_pack", "sample_pack"]
+        },
+        "source_type": { "const": "remote" },
+        "version": { "type": "string" },
+        "guide_version": { "type": "string" },
+        "deployment": {
+          "type": "object",
+          "required": ["provider", "tool_url", "iframe_compatible"],
+          "properties": {
+            "provider": { "type": "string", "description": "e.g. \"cloud_run\"" },
+            "tool_url": {
+              "type": "string",
+              "description": "The tool's real, independently-deployed URL. Internal registration metadata only — never the public launch URL, never fetched from for manifest/guide/cover content. Checked for SSRF safety because it is rendered in an iframe on the live site."
+            },
+            "iframe_compatible": {
+              "type": "boolean",
+              "description": "Certification metadata, not a live check: what whoever registered the product observed by inspecting the tool's actual X-Frame-Options/CSP headers. MetadataSync never probes this automatically. Drives whether the Tool Room renders the tool in an iframe or falls back to an external-open state."
+            }
+          }
+        },
+        "access": {
+          "type": "object",
+          "required": ["level"],
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["public", "member"],
+              "description": "SubverseLab route/UI access gating on /tools/:slug only. Not a hard security boundary on deployment.tool_url — no auth/token is forwarded across the origin boundary into the tool. Real access control, if needed, is the tool's own responsibility."
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["launch", "download", "purchase", "external"] },
+              "label": { "type": "string", "description": "Optional human-readable button text. Frontend falls back to a default label when absent." },
+              "url": {
+                "type": ["string", "null"],
+                "description": "Must NOT be present on a 'launch' action — the public launch URL is always /tools/:slug, derived from slug, never stored here or anywhere else."
+              }
+            }
+          }
+        }
+      }
+    },
+    "folderManifest": {
+      "$comment": "source_type: \"folder\". Unchanged by the remote-tool architecture.",
+      "type": "object",
+      "required": ["name", "slug", "content_type", "version", "guide_version", "updated_at", "source_type", "actions"],
+      "anyOf": [
+        { "required": ["preview_audio_url"] },
+        { "required": ["preview_audio_path"] }
+      ],
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "content_type": {
+          "type": "string",
+          "enum": ["ai_tool", "workflow", "preset", "pack", "project", "instrument_rack", "midi_pack", "sample_pack"]
+        },
+        "version": { "type": "string" },
+        "guide_version": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "source_type": { "const": "folder" },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "type": { "type": "string", "enum": ["launch", "download", "purchase", "external"] },
+              "label": { "type": "string" },
+              "url": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "preview_audio_url": { "type": ["string", "null"] },
+        "preview_audio_path": { "type": ["string", "null"] },
+        "cover_path": { "type": "string", "description": "Relative path inside the uploaded ZIP — no '..' segments, no absolute paths." },
+        "guide_path": { "type": "string", "description": "Relative path inside the uploaded ZIP — no '..' segments, no absolute paths." },
+        "content_path": { "type": "string", "description": "Relative path inside the uploaded ZIP — no '..' segments, no absolute paths." }
+      }
+    }
+  }
+}

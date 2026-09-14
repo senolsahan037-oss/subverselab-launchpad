@@ -1,0 +1,23 @@
+{
+  "slug": "product-slug",
+  "name": "Product Name",
+  "description": "One or two genuine, verifiable sentences describing what the tool does.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.0.0",
+  "guide_version": "1.0.0",
+
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://your-tool.a.run.app",
+    "iframe_compatible": true
+  },
+
+  "access": {
+    "level": "member"
+  },
+
+  "actions": [
+    { "type": "launch" }
+  ]
+}

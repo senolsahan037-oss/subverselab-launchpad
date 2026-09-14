@@ -1,0 +1,33 @@
+{
+  "slug": "sensei",
+  "name": "Sensei Drum Generator",
+  "description": "Generate 8-bar MIDI drum patterns in any of 22 genre styles, thin them live with per-channel density knobs, preview them on a 16th-note step sequencer across six drum channels, and export the result as standard MIDI files or a ZIP for any DAW. Pattern generation and every official export require SubverseLab membership.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.4.0",
+  "guide_version": "1.3.0",
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://sensei-il7bu2xxqa-ew.a.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member",
+    "policy": "member_no_product_quota",
+    "public_shell": false,
+    "member_required_for": [
+      "generate",
+      "variation",
+      "export"
+    ],
+    "enforcement": "tool_server",
+    "self_authenticated": true,
+    "session_source": "subverselab_handoff"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Generate a Drum Pattern"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "subverselab-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dependencies for standalone one-off scripts in this folder (currently just social-publish-oauth-setup.js).",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "googleapis": "^140.0.1"
+  }
+}

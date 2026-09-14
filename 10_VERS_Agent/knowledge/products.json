@@ -1,0 +1,61 @@
+{
+  "products": [
+    {
+      "name": "Drum Buss",
+      "file": "Drum Buss.adg",
+      "kind": "Audio Effect Rack",
+      "made_with": "Ableton Live 12.4.3",
+      "chain": [
+        "EQ Eight",
+        "Glue Compressor",
+        "Saturator",
+        "Utility"
+      ],
+      "macro_count": 8,
+      "custom_named_macros": [
+        "Make Up",
+        "Saturation",
+        "Low Cut Type",
+        "Low Cut Hz",
+        "Air Freq",
+        "Body Freq",
+        "    Body",
+        "Air",
+        "Presence",
+        "Low Tone",
+        "Boom",
+        "High Cut Hz",
+        "High Cut Type"
+      ],
+      "macro_variations": 3,
+      "third_party_plugins": false,
+      "source": "/Users/senolsahan/Music/Ableton/User Library/SubPresetLab/Drum Buss.adg"
+    },
+    {
+      "name": "Percussion Repeat",
+      "file": "Percussion Repeat.adg",
+      "kind": "Audio Effect Rack",
+      "made_with": "Ableton Live 12.4.5",
+      "chain": [
+        "EQ Eight",
+        "Compressor",
+        "Saturator",
+        "Beat Repeat",
+        "Redux",
+        "Reverb",
+        "Utility"
+      ],
+      "macro_count": 8,
+      "custom_named_macros": [
+        "REPEAT",
+        "GRAIN",
+        "REDUX",
+        "REVERB"
+      ],
+      "macro_variations": 4,
+      "third_party_plugins": false,
+      "source": "/Users/senolsahan/Music/Ableton/User Library/SubPresetLab/Percussion Repeat.adg"
+    }
+  ],
+  "derived_from": "/Users/senolsahan/Music/Ableton/User Library/SubPresetLab"
+}

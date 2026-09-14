@@ -1,0 +1,407 @@
+# SubverseLab — complete tool guides
+
+> Full text of every published SubverseLab guide. Index: https://subverselab.com/llms.txt
+
+# Arrangement GPS Guide
+Source: https://subverselab.com/learn/arrangement-gps
+
+## Overview
+
+Arrangement GPS is an idea-to-project learning tool: it builds a full, playable arrangement blueprint from a genre and a few style choices, lets you audition it as a schematic preview, and then explains section-by-section why the arrangement is shaped the way it is and how to actually rebuild it in your DAW.
+
+It is not a sample or project generator. Nothing produced here is a finished sound — it is a structural starting point and a teaching layer on top of it. Nothing you build is saved on SubverseLab's side; a finished idea can be exported once as a text-based Project Recipe.
+
+## Signing in
+
+Arrangement GPS requires a free SubverseLab account, and subverselab.com is the only place you sign in. Opened from the tools page, your session comes with you and the tool is already signed in. Opened directly by its own URL without that session, it shows a link back to the site rather than a sign-in form — the tool has no account system of its own and never asks for a password.
+
+## Shaping the starting idea
+
+Choose a Genre (House, Techno, Hip-Hop, Pop, R and B, or Cinematic), a Subgenre specific to that genre, a Mood (Dark, Energetic, Chill, Melancholic, or Aggressive), and a Type (Beat, Radio Edit, Extended Mix, or Short Loop). An example arrangement is already visible before you generate anything, so you can explore the interface freely without spending your daily quota.
+
+Four variation controls shape how a generated idea plays out, independent of genre and mood: Energy Curve (Balanced, Slow Burn, Peak Early, or Double Peak) controls where the arrangement's intensity builds and peaks. Density (Minimal, Balanced, or Layered) controls how many layers are active at once. Structure (Original, Hook First, Short Form, or Extended Arc) reshapes the section order and length. Transition Intensity (Subtle, Standard, or Dramatic) controls how much ear-catching effect work happens at section boundaries.
+
+Selecting **Build starting point** generates a new variation and consumes one daily generation. Playback, section selection, mute, solo, and the guide panel never consume quota — only pressing Build starting point does.
+
+## Reading the arrangement
+
+The timeline shows each section as a proportional block, with a transition cue badge between sections summarizing the effect move into the next one. Below it, each instrument role (drums, bass, harmony, lead, transitions/FX, and others depending on genre) gets its own row, showing exactly which sections it's active in as colored blocks. Each active block contains a small MIDI-style pattern visualizer showing the actual rhythmic pattern for that role in that section — this is a real generated pattern, not decoration. Where a drum layer is active going into a transition, a small BS badge marks a suggested beat-switch point.
+
+Playback is a synthesized structural preview, not finished production audio — it demonstrates pulse, density, and section contrast so you can hear the shape of the arrangement, not a mix you'd ship.
+
+## The build guide
+
+Opened with the Open Guide toggle next to the transport controls. It has three parts.
+
+Subgenre DNA summarizes the selected subgenre itself: its typical tempo range, how its groove moves, what its sonic signature actually sounds like, its arrangement rule of thumb, a concrete first move to make in your DAW, and — distinctly useful — a stated common mistake to avoid for that subgenre specifically.
+
+Project principles lists the general structural reasoning behind the whole generated arrangement, not just one section — why it's built the way it is at a project level.
+
+The variation recipe shows which Energy Curve, Density, and Structure were used to generate the current version, plus a short list of notes explaining what that specific combination actually changes about the result. Each Build starting point press gets its own numbered variation.
+
+Selecting a section tab below these opens a lesson for that specific section: why the section exists, its main arrangement move, what layers enter and leave at that point, and — where the section begins with a transition — the transition's purpose, its FX cues, its suggested beat-switch instruction, a numbered list of steps to build that exact transition in a DAW, and a **Preview this boundary** button that plays just the join between the previous section and this one. Every section lesson ends with a specific listening question to check your own mix against before moving on.
+
+## Downloading the idea
+
+**Recipe** downloads the current arrangement as a text file: BPM, the variation seed, section lengths, which layers are active where, the transition choices, beat-switch points, and DAW build steps. It's generated on the spot from what's currently on screen — nothing is stored server-side to produce it later.
+
+## Controls
+
+Play, Pause, Stop, and Restart control the schematic preview. The timeline is click- and keyboard-seekable. S and M solo or mute an individual layer row. Open Guide and Hide Guide show or hide the learning panel. Sign out ends your session in the tool.
+
+## Access and daily limit
+
+Five new arrangement generations per day. The limit is tracked per network address (not per account) and resets daily on the server — so if you're on a shared or public network, its daily quota is shared with everyone else using that same connection, not exclusive to your account. Only Build starting point counts against it; everything else in the tool is unlimited.
+
+## Privacy
+
+Only the minimum record needed to enforce the daily limit is stored — a hashed, non-reversible version of your network address, not the address itself. Generated arrangements are never saved.
+
+---
+
+# Sensei Drum Generator Guide
+Source: https://subverselab.com/learn/sensei
+
+## Overview
+
+Sensei creates an 8-bar, 4/4 drum pattern from a style and its generation controls. The sequencer shows all 8 bars at 16th-note resolution across six channels: Kick, Snare, Hi-hat, Open Hat, Crash and Perc. The mixer controls playback without changing snapshot or export data.
+
+## Generate
+
+1. Choose a style. Tempo comes from that style and the seed is drawn fresh for each generation, so both are shown as readouts rather than fields.
+2. Select Generate.
+3. Select Cancel to abort an active request. An aborted or failed request does not replace the current pattern or enter history.
+
+## Density
+
+Kick, Snare, Hi-hat and Perc each have a density knob. The knobs thin the pattern that is already loaded: they remove the least structural hits first, take effect while playback continues, and never trigger a new generation. Every generation returns the knobs to their defaults, so a fresh pattern is always heard in full before it is thinned. The thinned pattern is what plays, what the sequencer draws, and what an export writes.
+
+## Variation and locks
+
+Variation derives another take from the current pattern instead of generating a new one: same style, same tempo, same seed. The Amount knob beside the Variation button sets how much of the pattern may move, and the button stays inactive at zero because nothing would change. Locked channels are supplied to the engine and are left untouched by both Variation and Generate.
+
+## Transport and mixer
+
+Play starts the active A/B snapshot and repeats it until Stop. Stop and Restart return the playhead to the first position. Loop switches repeating on and off. Opening this Guide pauses playback.
+
+Mute and Solo affect playback only. Multiple channels may be soloed. Mixer state does not modify history snapshots or exported MIDI data.
+
+## History and A/B
+
+Every successful generation creates an immutable history snapshot containing its pattern and generation settings. A selects the previous snapshot and B selects the current snapshot. Changing A/B stops playback before the selected snapshot becomes active. Restoring history does not start a generation request.
+
+## Export
+
+Full Pattern writes one MIDI file containing every channel. Every Channel writes a ZIP holding one MIDI file per non-empty channel. Channel MIDI on a mixer strip writes that single channel. Export follows the active A/B snapshot and the current density settings; mute does not remove MIDI events.
+
+## MIDI mapping
+
+Sensei uses the note mapping supplied by its drum engine. Exported files include the active snapshot BPM and use the snapshot seed and channel name in their filenames.
+
+## Access
+
+Sensei has no sign-in of its own. Membership is held by subverselab.com, and entering Sensei from the site carries that session in. Opening Sensei directly without a site session shows a link back to the site; pattern generation, variation and every official MIDI or ZIP export need that session.
+
+## Requirements
+
+Playback requires a browser with Web Audio support and begins only after a user interaction. Official exports are created through the protected Sensei export endpoint.
+
+---
+
+# Subverse Mix Check Guide
+Source: https://subverselab.com/learn/subverse-mix-check
+
+## Overview
+
+Mix Check is an evidence-first audio measurement console. You upload a mix or master, and it shows you what the signal actually measures — loudness, peak, spectrum, and mono compatibility — instead of guessing what your track "should" sound like or handing you a made-up quality score.
+
+Its own tagline says it plainly: see the signal, then make the call. The tool never tells you your mix is good or bad. It shows direct measurements, compares them against a reference track or a genre profile when you provide one, and leaves the creative judgment to you.
+
+Because every reading here comes from a real calculation on your actual audio, results can vary from track to track in ways that are hard to predict from this guide alone. Treat the numbers below as example values, not promises.
+
+## Signing in
+
+Mix Check requires a free SubverseLab account. There is no signup form, password, or email confirmation — one click on Continue with Google creates your membership and starts your session.
+
+Once signed in, you get one analysis per day, tied to both your account and your network connection. That limit resets daily. If you need to test a second file the same day, wait for the next daily reset.
+
+## Running an analysis
+
+1. Choose Mix or Master. This tells the tool what stage your file represents. It never guesses this for you — the measurement math is the same either way, but the comparison policy and the advice you get afterward depend on being honest here.
+2. Drop your WAV or MP3 file. Maximum length is 6 minutes and maximum size is 100 MB. Longer or larger files are rejected before upload.
+3. Optionally choose a Genre Profile. The bundled catalog currently covers Electronic, Hip-Hop, Pop, and Rock, built from measured reference tracks rather than opinion.
+4. Leave Use closest measured profile turned on if you have not chosen a Genre or Reference. This makes the tool quietly compare your track against the technically nearest stored profile as optional guidance. It is not a genre classifier and not a quality verdict — it is a starting point for comparison when you have not supplied one yourself.
+5. Optionally add a Reference Track, plus its own Mix or Master stage. A Reference Track always takes priority over a Genre Profile as the comparison basis; the Genre Profile stays in the response as context only. Use a reference with a similar arrangement or a matching section where you can — Mix Check compares full-track summaries and does not align song sections automatically, so an intro-only reference against a full mix can show differences that are really just arrangement, not tone.
+6. Press Start analysis. Your file uploads directly to temporary cloud storage, which is why a 6-minute WAV still works reliably instead of hitting a request-size wall. The upload is held only long enough to analyze it and is deleted immediately afterward — nothing is kept.
+
+You will see the process move through Upload, Decode, Measure, and Report, with an elapsed timer. Analysis time depends on the length of your file.
+
+## Reading the results
+
+Results are organized as a measurement console, not a score dashboard. Six sections, in the order they appear:
+
+### 01 — Decoded signal
+
+The raw waveform envelope of your file. This is the true decoded signal, shown as per-bin minimum and maximum amplitude with no normalization or smoothing applied — so what you see is what was actually measured, not a prettied-up version. Move your pointer across it to inspect time and amplitude at any point.
+
+### 02 — Direct measurements
+
+Sample peak, RMS level, crest factor, and integrated loudness (LUFS, via the ITU-R BS.1770 standard), plus per-channel peak, RMS, and DC offset. These are direct calculations on your file, not estimates. Loudness is computed by pyloudnorm rather than a second in-house implementation, so it lines up with what other standard loudness tools would report.
+
+If your file is completely silent, or shorter than the minimum analysis window, loudness and level fields come back empty rather than a fabricated number — Mix Check will not invent a value where none exists.
+
+### 03 — One-third-octave spectrum
+
+Your track's spectral balance across standard one-third-octave bands, from roughly 31.5 Hz to 16 kHz. Where a reference or genre profile is available, the comparison is loudness-relative — both tracks are leveled first, so a difference you see is a genuine tonal difference and not just one track being louder.
+
+### 04 — Mono fold-down
+
+This checks what happens to your stereo image when it is folded down to mono, which is exactly how club systems, phone speakers, and some streaming contexts play audio. Mix Check creates a mono sum of your left and right channels and compares its energy against the average channel energy, band by band.
+
+A loss region is only reported when at least two adjacent frequency bands lose 4 dB or more in the fold-down, and very quiet bands (more than 40 dB below your strongest band) are ignored so background noise cannot trigger a false result. A clean result means no material fold-down loss was detected — it is a specific, direct measurement, not a general mix-quality score, and it cannot by itself tell you which instrument is responsible.
+
+### 05 — Listening checks
+
+Evidence-backed interpretation notes tied directly to what was actually measured, plus a small, reversible experiment to try by ear. Mix findings point you toward source and bus-level phase or stereo processing; master findings point you toward a loudness-matched premaster comparison, since a mono issue already present before mastering is a mix problem, not something a mastering chain should be forced to repair.
+
+### 06 — Explore this analysis
+
+The guided interpretation section. This is where you can see how your track compares to the nearest profile if closest-profile guidance was used, the exact comparison policy that was applied (which measurements were compared and which were deliberately excluded, and why), and the stated limitations of everything above. Every answer here is scoped to this one measurement — it is exploratory, not a separate opinion layered on top.
+
+At the bottom, Download JSON gives you the complete machine-readable result, including the same measurements, comparisons, and exclusions shown in the interface, if you want to keep a record or feed it into your own tooling.
+
+## What Mix Check will not tell you
+
+This matters as much as what it does tell you. Mix Check deliberately leaves out several things you will see in other tools, because it cannot back them with a clear, verifiable definition:
+
+No estimated true peak or clipping guess — only measured sample peak.
+
+No custom Loudness Range or momentary/short-term loudness timeline.
+
+No universal tonal-balance score or resonance opinion.
+
+No stereo correlation, Mid/Side ratio, or general mono-compatibility score — only the specific fold-down loss measurement described above.
+
+No silence ratio, quality grade, genre target, or delivery-platform profile.
+
+No BPM or key detection, and no AI-generated recommendations.
+
+If a measurement is not listed above as something Mix Check reports, it was left out on purpose, not overlooked.
+
+## Mix versus Master, briefly
+
+Mix Check does not detect whether your file is a mix or a master — you tell it, and that choice changes what gets compared and what advice you receive, not the underlying measurement math, which stays identical either way.
+
+| Your stage | Comparison source | What gets compared |
+| --- | --- | --- |
+| Mix | Mix reference | Loudness-relative spectrum, crest factor, channel balance |
+| Mix | Master reference | Loudness-relative spectrum |
+| Mix | Genre profile | Loudness-relative spectrum |
+| Master | Mix reference | Loudness-relative spectrum |
+| Master | Master reference | Spectrum, integrated LUFS, sample peak, crest factor, channel balance |
+| Master | Genre profile | The full master comparison set above |
+
+A direct mono fold-down finding can still appear with no reference or genre profile at all, since it only needs your own file.
+
+## Limits and requirements
+
+WAV or MP3 files only, up to 6 minutes long and up to 100 MB. One analysis per account per day, and one per network connection per day — both limits are enforced together, so a second attempt from the same network will also be blocked even on a different account.
+
+## Why this exists
+
+Most production advice you find is generic, because nobody else can hear your actual file. Mix Check is built to close that specific gap: not another opinion, but a direct, evidence-first reading of the one track you are actually working on, so you have something concrete to check your ears against before you commit to a decision.
+
+---
+
+# Subverse Splitter Guide
+Source: https://subverselab.com/learn/subverse-splitter
+
+## Overview
+
+Subverse Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
+
+- **Key and BPM** estimates tempo, musical key, Camelot code, and key confidence. It does not use the daily separation allowance.
+- **Vocal removal** returns the vocal and an instrumental version.
+- **Stem separation** returns drums, bass, vocals, and other instruments.
+
+Vocal removal and stem separation use the same HT-Demucs model and therefore cost the same daily separation run.
+
+## Requirements
+
+- A free SubverseLab account.
+- A current desktop or mobile browser with JavaScript enabled.
+- A supported audio file up to **300 MB**.
+- A stable connection while the file uploads and while results are downloaded.
+
+Common WAV, MP3, FLAC, M4A, AAC and OGG files are accepted. Other formats that FFmpeg can decode may also work, but the listed formats are the supported choices.
+
+## Limits and daily allowance
+
+- Key and BPM analysis: tracks up to **10 minutes**; no separation allowance is used.
+- Vocal removal: tracks up to **6 minutes**; uses one daily separation run.
+- Stem separation: tracks up to **6 minutes**; uses one daily separation run.
+- The separation allowance is enforced once per member and once per network address each day.
+
+People sharing the same public network address, such as an office or campus, share that network's daily separation run. Administrators are exempt from this product quota.
+
+A run is reserved when separation starts and marked used only after the job completes. If processing fails, the reservation is released automatically.
+
+## How to use it
+
+1. Sign in on SubverseLab and open Subverse Splitter from its product page.
+2. Choose one of the three operations: Key and BPM, Vocal removal, or Stem separation.
+3. Drop an audio file onto the file area or choose one from your device.
+4. Select the Run button.
+5. Keep the page open while the progress bar and elapsed time update.
+6. When separation completes, audition the result in the synchronized mixer.
+7. Each stem row carries an M button to mute it and an S button to solo it, alongside that stem's volume control. Soloing one or more stems silences the rest; with nothing soloed, the muted stems are the silent ones.
+8. Download an individual 24-bit WAV, or choose Download all for a ZIP archive.
+
+The operation cards and file chooser stay locked while a job is active, preventing an accidental second upload from replacing the running job.
+
+## Results
+
+### Key and BPM
+
+The result displays:
+
+- BPM
+- musical key and major/minor scale
+- Camelot code
+- key-confidence percentage
+- uploaded audio duration
+
+Tempo can be rhythmically ambiguous at half-time or double-time. Key confidence indicates how strongly the material matches the reported tonal profile. Silence and material without a reliable tonal centre are reported with low confidence rather than treated as certain.
+
+### Vocal removal
+
+The mixer contains:
+
+- **Vocals**
+- **Instrumental**
+
+The instrumental is calculated from the mix minus the vocal estimate.
+
+### Stem separation
+
+The mixer contains:
+
+- **Drums**
+- **Bass**
+- **Vocals**
+- **Other**
+
+The browser uses compact protected previews for synchronized playback. Downloads remain lossless 24-bit WAV files.
+
+## Processing and privacy
+
+Uploaded audio is processed by the dedicated Subverse Splitter Cloud Run service. Audio, previews, and downloads stay in the accepting instance's temporary workspace and are not written to the product database. Completed workspaces expire automatically, normally within 30 minutes, and may be removed earlier when the bounded job store needs space.
+
+The main SubverseLab website supplies the existing member session to the tool through a short-lived, exact-origin Firebase handoff. The tool has no separate login form. Job status and every preview, WAV, and ZIP request are checked by the tool server against the signed-in member.
+
+## Error behaviour
+
+- Files larger than 300 MB are rejected before processing.
+- Tracks over the selected operation's duration limit are rejected without silent truncation.
+- Unsupported or damaged audio returns a decode error.
+- A full queue returns a retry message instead of accepting work that cannot be held safely.
+- An expired or unknown job returns a not-found message.
+- A failed separation restores the daily run.
+
+If a separation fails, retry after checking the source file. If the same file fails repeatedly, convert it to WAV or FLAC and try again.
+
+## Quality notes
+
+Stem separation is an estimate. Bleed, reverb, doubled vocals, dense mastering, and instruments with overlapping frequency ranges can remain across stems. The tool preserves model window continuity with overlapping crossfades, but it cannot recreate sources that are not recoverable from the mixed recording.
+
+## Version
+
+- Tool version: **2.0.0**
+- Guide version: **2.0.0**
+- Updated: **26 August 2026**
+
+---
+
+# Subverse SynthPulse Guide
+Source: https://subverselab.com/learn/synthpulse
+
+## Overview
+
+SynthPulse writes a 16-step synth pattern across six lanes: four lead voices and two bass voices. You choose a direction, the tool proposes a pattern, and you export it as a standard MIDI file. It writes notes, not audio. The sound you hear in the browser is a preview so you can judge the idea; what leaves the tool is MIDI, and you load your own instruments in your DAW.
+
+## Generate
+
+1. Choose a style, a key and a scale. Four styles are available: Dark Techno, Cyberpunk Industrial, Ambient Drift and EBM Industrial Synth. Any of the twelve root notes can be paired with Minor, Phrygian, Dorian, Pentatonic Minor or Harmonic Minor.
+2. Set Tempo, Note Density and Evolution Amount.
+3. Select Generate Pattern.
+
+Generate does not return the first pattern it thinks of. It writes several candidates, rates each one, and hands over the best — with a small chance of handing over a near-miss instead, because a generator that only ever returns its highest-rated idea stops surprising you.
+
+## Evolve
+
+Evolve keeps the pattern you have and moves it, rather than replacing it. Evolution Amount sets how far it may travel. Use Generate when you want a different idea and Evolve when you want the same idea, further along.
+
+## The pattern score
+
+The number beside the transport is the model's rating of the pattern it gave you, from 0 to 100. It is a prediction of whether this is a pattern somebody would keep, not a measure of musical quality, and it is trained on exactly one signal: which patterns members download. Editing a pattern by hand clears the score rather than recalculating it, because the score belongs to what the tool proposed and you have since changed it.
+
+## Sequencer
+
+Tap any step to switch it on or off. Switching a step on previews that note. Each lane carries its own controls: mute, a scatter that flips steps at random, a clear, and note velocity and gate length. Lane edits are yours alone — nothing re-rates or regenerates behind you.
+
+Undo and redo cover every edit, up to forty steps back. Space plays and stops, G generates, E evolves.
+
+## Sound preview
+
+Sound Character offers four voices: Analog Pulse, Solid Square, Glass FM and Soft Keys. Tone, Filter Character, Echo and Space shape the preview, and Drums adds a backing pulse to play against. None of this reaches the exported file. A MIDI file carries notes, and your DAW decides how they sound, so the preview exists to help you judge the pattern rather than to be part of it.
+
+## Export
+
+Export MIDI writes one standard MIDI file: a tempo track plus one track per lane that is neither muted nor empty. Lead lanes are written to a synth lead program and bass lanes to a synth bass program, so a fresh DAW project makes a recognisable sound before you choose anything. Muted lanes are left out. Velocity and gate come from each lane's own settings.
+
+Downloading is the one signal the ranking model learns from: keeping a pattern teaches it that patterns like this one are worth proposing.
+
+## Access
+
+SynthPulse has no sign-in of its own. Membership is held by subverselab.com, and entering SynthPulse from the site carries that session in. The workstation, its demo pattern and the sound preview are open to anyone; generating, evolving and exporting need that session. Opening SynthPulse directly without one shows a link back to the site.
+
+## Requirements
+
+Playback requires a browser with Web Audio support and begins only after a user interaction. Generation, evolution and export are performed by the SynthPulse server and require a working connection.
+
+---
+
+# Time & Frequency Sync Guide
+Source: https://subverselab.com/learn/time-frequency-sync
+
+## Overview
+
+Time and Frequency Sync is a high-precision calculator for music producers, beatmakers, and mixing engineers: BPM-synced delay times, acoustic reverb decay, harmonic frequency values, and sample repitch math, all with real-time audio audition so you can hear a value before you dial it into your DAW.
+
+It runs entirely client-side in your browser. There is no server processing and no file upload — every calculation and every audio preview happens locally and instantly, and no account is required to use it.
+
+## Full Time Matrix
+
+Calculates straight, dotted, and triplet time divisions from 4 bars down to 1/128th notes, based on your project tempo. Click any millisecond or Hz value to copy it. Click the speaker icon on any row to hear an actual echo at that exact musical division.
+
+## Delay Studio
+
+Auto (BPM-synced) mode: choose a note length (1/1 down to 1/32), choose Straight, Dotted (×1.5), or Triplet (×0.667), and optionally add an Analog Swing/Drift offset of up to ±25 ms for a looser, more humanized delay feel. Audition Delay Echo plays a percussive test signal through a real-time feedback delay line with tape-style high-cut filtering, at the exact time you've dialed in.
+
+Manual Timer mode works the other way around: enter an arbitrary millisecond value (for example 375 ms) and it reverse-calculates the equivalent tempo for quarter-, eighth-, and sixteenth-note delays at that timing.
+
+## Reverb Decay and Pre-Delay
+
+Locks reverb decay time (RT60) and pre-delay to musical bars and beats, so a reverb tail doesn't bleed past a bar line or muddy the low end. Decay time is calculated from your tempo and a chosen bar length; pre-delay is calculated the same way down to a 1/64 note. Built-in space presets: 1/4 bar for tight percussion, 1/2 bar for snare and synth clarity, 1 bar for a standard vocal or snare tail, 2 bars for lead instruments, and 4 bars for large cinematic spaces. Audition Reverb Space Decay generates a synthetic impulse response matching the exact decay you've set, so you can hear it before committing.
+
+## Key and Harmonic Frequency Radar
+
+Converts any note to its exact frequency in Hz using standard concert pitch (A4 = 440 Hz), then shows the first through eighth harmonics of your chosen root note, each with its own tone-preview button. A full eight-octave frequency grid is also shown, filtered to your selected scale.
+
+## Sample Repitch Engine
+
+Two directions: give it an original BPM and a target BPM and it returns the semitone shift, the cent offset, and the resulting playback-rate percentage needed to retime a sample. Or give it a manual semitone offset and it returns the new BPM that offset produces. Useful for figuring out exactly how far a sample needs to be pitched to match a different project tempo, or vice versa.
+
+## Access
+
+Free, and no account is required — the tool is fully usable the moment you open it.

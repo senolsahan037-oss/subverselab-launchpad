@@ -1,0 +1,23 @@
+{
+  "slug": "time-frequency-sync",
+  "name": "Time & Frequency Sync",
+  "description": "Calculate BPM-synced delay and reverb times, key-to-Hz harmonics and sample repitch math, and hear each value before you use it. Runs entirely in your browser — no upload, no server processing, no account.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.1.0",
+  "guide_version": "1.1.0",
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://time-frequency-sync-90909956035.europe-west1.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "public"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Calculate Sync Times"
+    }
+  ]
+}

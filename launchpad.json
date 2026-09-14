@@ -1,0 +1,12 @@
+{
+  "name": "SubverseLab Launchpad",
+  "version": "1.0.0",
+  "status": "production",
+  "architecture": "Universal Content Metadata Architecture",
+  "rules_directory": "./Rules",
+  "rules_index": "./Rules/INDEX.md",
+  "templates_directory": "./Templates",
+  "qa_directory": "./QA",
+  "deploy_directory": "./Infrastructure",
+  "description": "Official production gateway for every SubverseLab product."
+}

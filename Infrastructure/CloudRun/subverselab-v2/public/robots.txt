@@ -1,0 +1,87 @@
+# SubverseLab — free AI tools for music producers
+# Full guide text for every tool is available at https://subverselab.com/llms-full.txt
+#
+# Every group repeats the Disallow lines on purpose. robots.txt groups do not
+# inherit from one another — a crawler obeys only its own most specific group.
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: GPTBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: anthropic-ai
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: Perplexity-User
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: CCBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: Amazonbot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: meta-externalagent
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: cohere-ai
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+User-agent: DuckAssistBot
+Allow: /
+Disallow: /admin
+Disallow: /account
+
+Sitemap: https://subverselab.com/sitemap.xml

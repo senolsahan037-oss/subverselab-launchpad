@@ -1,0 +1,23 @@
+{
+  "slug": "subverse-mix-check",
+  "name": "Subverse Mix Check",
+  "description": "Evidence-first audio measurement for your mix or master. Direct ITU-R BS.1770 LUFS, sample peak, crest factor, one-third-octave spectral comparison, and mono fold-down loss detection. Website membership is handed into the tool; members receive one completed analysis per IP per UTC day and verified admins have no product quota.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "3.4.0",
+  "guide_version": "1.2.0",
+  "deployment": {
+    "provider": "cloud-run",
+    "tool_url": "https://subverse-mix-analyzer-630319862116.europe-west1.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Analyze a Mix"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "slug": "synthpulse",
+  "name": "Subverse SynthPulse",
+  "description": "Generate a 16-step synth pattern across four lead and two bass lanes, evolve it, shape the in-browser sound preview, and export the result as a standard MIDI file for any DAW. Patterns are ranked by a model that learns from what members choose to keep. Generation, evolution and every export require SubverseLab membership.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.0.0",
+  "guide_version": "1.0.0",
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://synthpulse-il7bu2xxqa-ew.a.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member",
+    "policy": "member_no_product_quota",
+    "public_shell": false,
+    "member_required_for": [
+      "generate",
+      "evolve",
+      "export"
+    ],
+    "enforcement": "tool_server",
+    "self_authenticated": true,
+    "session_source": "subverselab_handoff"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Generate a Pattern"
+    }
+  ]
+}

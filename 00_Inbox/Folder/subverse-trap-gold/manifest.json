@@ -1,0 +1,21 @@
+{
+  "name": "Trap Gold Vol. 1",
+  "slug": "subverse-trap-gold",
+  "content_type": "midi_pack",
+  "displayCategory": "Sample Pack",
+  "version": "1.0.0",
+  "guide_version": "1.0.0",
+  "updated_at": "2026-08-11T00:00:00Z",
+  "source_type": "folder",
+  "cover_path": "assets/cover.jpg",
+  "guide_path": "docs/guide.md",
+  "content_path": "content/",
+  "preview_audio_path": null,
+  "actions": [
+    {
+      "type": "download",
+      "label": "Download",
+      "url": null
+    }
+  ]
+}

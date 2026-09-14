@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VERS</title>
+<style>
+  :root { --bg:#0a0c0f; --panel:#12151a; --line:#1e232b; --teal:#05c7d1;
+          --gold:#d9a72e; --text:#c9d3da; --dim:#6d7a85; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55
+         ui-sans-serif,-apple-system,"Segoe UI",Roboto,sans-serif;
+         display:flex; justify-content:center; }
+  main { width:min(680px,100%); min-height:100vh; display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; gap:14px; padding:22px 20px 16px;
+           border-bottom:1px solid var(--line); }
+  /* VERS is its own logo: five bars, and they move while it answers. */
+  .bars { display:flex; align-items:center; gap:3px; height:34px; }
+  .bars i { width:5px; background:var(--teal); border-radius:1px; display:block;
+            transition:height .16s ease; }
+  h1 { font-size:15px; letter-spacing:.14em; margin:0; font-weight:600; }
+  .sub { color:var(--dim); font-size:12.5px; margin-top:2px; }
+  #log { flex:1; padding:20px; display:flex; flex-direction:column; gap:14px; }
+  .msg { max-width:88%; padding:11px 14px; border-radius:10px; white-space:pre-wrap; }
+  .you { align-self:flex-end; background:#1b2027; }
+  .vers { align-self:flex-start; background:var(--panel);
+          border-left:2px solid var(--teal); }
+  .vers.handover { border-left-color:var(--gold); }
+  form { display:flex; gap:10px; padding:16px 20px 24px; border-top:1px solid var(--line); }
+  input { flex:1; background:var(--panel); border:1px solid var(--line);
+          color:var(--text); border-radius:8px; padding:11px 13px; font:inherit; }
+  input:focus { outline:none; border-color:var(--teal); }
+  button { background:var(--teal); color:#04191b; border:0; border-radius:8px;
+           padding:0 18px; font:inherit; font-weight:600; cursor:pointer; }
+  .hint { color:var(--dim); font-size:12.5px; padding:0 20px 4px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="bars" id="bars"><i></i><i></i><i></i><i></i><i></i></div>
+    <div><h1>VERS</h1><div class="sub">SubverseLab — running locally</div></div>
+  </header>
+  <div id="log"></div>
+  <div class="hint">Answers come from the preset files. Anything else is handed to a human.</div>
+  <form id="f"><input id="q" placeholder="Ask about a rack…" autocomplete="off" autofocus><button>Ask</button></form>
+</main>
+<script>
+  const REST = [15, 22, 30, 22, 15];
+  const bars = [...document.querySelectorAll('#bars i')];
+  const setBars = h => bars.forEach((b, i) => b.style.height = h[i] + 'px');
+  setBars(REST);
+
+  // The bars move while VERS answers, then settle — the same rule as the videos:
+  // never idle-still, and movement means it is speaking.
+  let timer = null;
+  const speak = on => {
+    clearInterval(timer);
+    if (!on) return setBars(REST);
+    timer = setInterval(() => setBars(REST.map(v => Math.max(6, v * (0.5 + Math.random())))), 110);
+  };
+
+  const log = document.getElementById('log');
+  const add = (text, who, handover) => {
+    const el = document.createElement('div');
+    el.className = 'msg ' + who + (handover ? ' handover' : '');
+    el.textContent = text;
+    log.appendChild(el);
+    el.scrollIntoView({behavior: 'smooth', block: 'end'});
+  };
+
+  const send = async e => {
+    if (e) e.preventDefault();
+    const input = document.getElementById('q');
+    const question = input.value.trim();
+    if (!question) return;
+    add(question, 'you');
+    input.value = '';
+    speak(true);
+    try {
+      const r = await fetch('/ask', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question})});
+      const data = await r.json();
+      setTimeout(() => { speak(false); add(data.answer, 'vers', !data.answered); }, 420);
+    } catch (err) {
+      speak(false);
+      add('The local agent is not running.', 'vers', true);
+    }
+  };
+
+  document.getElementById('f').addEventListener('submit', send);
+  // Some embedded browsers do not fire submit on Enter, so bind the key too.
+  document.getElementById('q').addEventListener('keydown', e => {
+    if (e.key === 'Enter') send(e);
+  });
+
+  add('I am VERS. Ask about a rack — what is in it, how many macros, which Live version.', 'vers');
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Generated from Assets/Brand/_kit — the reduced waveform glyph, since
+         the full emblem cannot survive 16 px. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Subverse Lab</title>
+    <script>
+      // Runs before first paint, on purpose. If the stored theme were applied
+      // from React instead, the page would paint the default palette first and
+      // visibly flash to the other one on every load.
+      // No stored choice means no attribute at all — that is the "follow the
+      // system" state, which prefers-color-scheme handles in CSS.
+      (function () {
+        try {
+          var t = localStorage.getItem('subverselab-theme');
+          if (t === 'dark' || t === 'light') {
+            document.documentElement.setAttribute('data-theme', t);
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
