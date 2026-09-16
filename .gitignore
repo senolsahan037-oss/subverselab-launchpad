@@ -40,3 +40,14 @@ Assets/Brand/
 # ─── local OAuth config (the .example.json next to it is the template) ───
 *oauth-config.json
 .social-publish-oauth-config.json
+
+# ─── rendered media: output, not source ───
+# Renders are large and often unreleased. A 423 MB teaser folder turned up in
+# this tree once and was one `git add -A` away from a public repository; it now
+# lives with the rest of that production. The script that makes a render is
+# source and belongs here, the render itself does not.
+*.mp4
+*.mov
+*.wav
+*.aif
+*.aiff
