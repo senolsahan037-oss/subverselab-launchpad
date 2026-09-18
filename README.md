@@ -22,34 +22,11 @@ being enforced against a tempting shortcut.
 
 ## The repositories
 
-**Live browser tools** — each deploys to Cloud Run and is framed by the
-subverselab.com Tool Room:
-
-| Repository | What it does |
-|---|---|
-| [subverse-splitter-web](https://github.com/senolsahan037-oss/subverse-splitter-web) | Stem separation, vocal removal and key/BPM analysis on HT-Demucs, with overlap-add reconstruction |
-| [subverse-mix-analyzer](https://github.com/senolsahan037-oss/subverse-mix-analyzer) | Mix Check — ITU-R BS.1770 LUFS, peak, crest, compared against 98 real released masters |
-| [sensei-drum-generator](https://github.com/senolsahan037-oss/sensei-drum-generator) | 8-bar MIDI drum patterns in 22 genre styles, exported for any DAW |
-| [subverse-synthpulse](https://github.com/senolsahan037-oss/subverse-synthpulse) | 16-step synth patterns across four lead and two bass lanes |
-| [subverselab-arrangement-gps](https://github.com/senolsahan037-oss/subverselab-arrangement-gps) | Genre-aware arrangement blueprints with a Web Audio preview |
-| [subverselab-time-frequency-sync](https://github.com/senolsahan037-oss/subverselab-time-frequency-sync) | BPM-synced delay and reverb times, key-to-Hz harmonics, repitch math |
-
-**Desktop / Ableton Live:**
-
-| Repository | What it does |
-|---|---|
-| [loom](https://github.com/senolsahan037-oss/loom) | The measurement-based production system for Ableton Live — an MCP server plus a Live extension. 45 tools |
-| [subverselab-splitter](https://github.com/senolsahan037-oss/subverselab-splitter) | The JUCE/C++ stem separator — standalone, VST3 and AU, ONNX HT-Demucs on-device |
-
-**Research and production line** — not products; the layer that decides what is
-worth making:
-
-| Repository | What it does |
-|---|---|
-| [crate-agent](https://github.com/senolsahan037-oss/crate-agent) | Finds and screens 1968–1998 Middle Eastern source records |
-| [sample-reader](https://github.com/senolsahan037-oss/sample-reader) | Measures the audio itself, not the filename |
-| [sample-chopper](https://github.com/senolsahan037-oss/sample-chopper) | Chops the way it would be done by hand in Ableton |
-| [subverselab-sampler](https://github.com/senolsahan037-oss/subverselab-sampler) | Sample packs from YouTube or local audio, plus a chop bench that writes into a Live project |
+The tools are not in this repository; each has its own. The full list —
+grouped into the spine, the browser tools, Loom and its engines — is in
+**[MAP.md](MAP.md)**, which is the canonical map. Every repository also carries
+the topic `subverselab` plus its group topic, so the same grouping is visible
+from GitHub search.
 
 ## What is in this repository
 
