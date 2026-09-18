@@ -253,3 +253,44 @@ Three questions catch most of the above, and none of them are about reading code
 1. **What does this look like when it fails?** If the answer is "the same as when there is no data", the fallback is hiding a fault. Make the failing case distinguishable, or check the output rather than the status.
 2. **Does my instrument send what a real client sends?** `curl` is not a browser. A desktop window is not a phone. A 200 is not a rendered page.
 3. **Is the other side of this contract actually implemented?** Look at it, in its shipped build, before believing the handshake exists.
+
+---
+
+## M. An audit consumed the full turn budget before delivery
+
+**M1 — SubverseLab audit expanded beyond the minimum useful pass.**
+On 2026-09-18, one request to inspect the website triggered repeated repository scans, live browser checks, cold-start measurements, multiple production builds, repeated responsive runs, and a long written report in the same turn. Several checks repeated evidence already established. The result was locally useful, but the execution exhausted the available credit in one turn and left deployment unfinished.
+
+*Check:* before an audit begins, cap the first pass to the user's named critical flows. Stop after one live reproduction, one root-cause confirmation, one implementation, and one proportional verification per issue. Do not rerun full builds or broad scans unless the preceding result failed or the change invalidated it. Report remaining scope as a short backlog instead of consuming the whole turn.
+
+---
+
+## N. A deployment target chosen by proximity rather than by the registry
+
+**N1 — Subverse Visualizer deployed into the hosting project.**
+On 2026-09-18 the new tool was deployed to `project-62238635-aae4-41f4-880`
+because the command was copied from Time and Frequency Sync. That tool lives
+there because it is a browser-side calculator; the Visualizer renders video on a
+server and belongs in `subverselab-project` with Splitter, Sensei, SynthPulse
+and Mix Check. Nothing failed. The service was healthy, the URL answered, the
+tests passed — it was simply the only multi-vCPU service in a regional quota
+pool shared with `babasultan-site`, whose `maxScale` is unset and therefore 100
+against a ceiling of 20. The registry already said where each tool lived; it was
+not consulted, because a working neighbour looked like an answer.
+
+*Check:* resolve the project from the table at the top of
+`08_DEPLOYMENT_REGISTRY.md` before writing a deploy command, and never from the
+last tool whose command was read. A deploy that succeeds is not a deploy that
+landed in the right place.
+
+**N2 — A project that looks empty is not necessarily empty.**
+`subverselab` has no Cloud Run service, no bucket and no secret. It owns the
+YouTube OAuth client every upload pipeline authenticates through. "Delete the
+empty projects" would have taken it.
+
+*Check:* before deleting a project, list its **enabled APIs** and search the
+repository for its project number, not only its Cloud Run services and buckets.
+An OAuth client, a billing link or an API quota leaves no resource behind to
+find.
+
+---

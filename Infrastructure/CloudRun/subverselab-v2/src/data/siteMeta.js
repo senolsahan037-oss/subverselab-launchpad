@@ -6,16 +6,16 @@
 export const SITE_URL = 'https://subverselab.com';
 
 export const HOME = {
-  title: 'SubverseLab — Free AI Tools for Music Producers',
+  title: 'SubverseLab — Free Music Production Tools',
   description:
-    'Free browser-based AI tools for music producers: drum and MIDI generation, arrangement planning, mix measurement, BPM and frequency math, and stem separation.',
+    'Free browser-based tools for music producers: drum and MIDI generation, arrangement planning, mix measurement, BPM and frequency math, and stem separation.',
   path: '/',
 };
 
 export const LEARN_INDEX = {
-  title: 'AI Music Production Guides | SubverseLab',
+  title: 'Music Production Tool Guides | SubverseLab',
   description:
-    'Written guides for every SubverseLab AI tool — what each one does, how to use it, and where its limits are.',
+    'Written guides for every SubverseLab tool — what each one does, how to use it, and where its limits are.',
   path: '/learn',
 };
 

@@ -246,7 +246,7 @@ const ORGANIZATION = {
   '@type': 'Organization',
   name: 'SubverseLab',
   url: `${SITE_URL}/`,
-  description: 'Free, browser-based AI tools for music producers.',
+  description: 'Free, browser-based tools for music producers.',
   sameAs: [
     'https://www.youtube.com/@SubverseLab',
     'https://www.instagram.com/subverse_lab/',
@@ -323,8 +323,8 @@ function buildHomeBody(products, articleBySlug) {
   }).join('');
 
   return page(`
-      <h1>SubverseLab: Free AI Tools for Music Producers</h1>
-      <p>SubverseLab builds free, browser-based AI tools for arranging, generating, analyzing, mixing and separating music. Everything runs in the browser with nothing to install, and everything below is free to use; some tools ask for a free account.</p>
+      <h1>SubverseLab: Free Music Production Tools</h1>
+      <p>SubverseLab builds free browser-based tools for arranging, generating, measuring, mixing and separating music. Everything runs in the browser with nothing to install, and everything below is free to use; some tools ask for a free account.</p>
       ${siteNav()}
       <h2>The tools</h2>${toolSections}
       <section>
@@ -341,7 +341,7 @@ function buildLearnIndexBody(articles) {
       </section>`).join('');
 
   return page(`
-      <h1>AI Music Production Guides</h1>
+      <h1>Music Production Tool Guides</h1>
       <p>Written guides for every SubverseLab tool — what each one measures or generates, how to use it, and where its limits are.</p>
       ${siteNav()}${items}`);
 }
@@ -439,12 +439,12 @@ async function main() {
       '@type': 'WebSite',
       name: 'SubverseLab',
       url: `${SITE_URL}/`,
-      description: 'Free, browser-based AI tools for music producers.',
+      description: 'Free, browser-based tools for music producers.',
     },
     {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: 'SubverseLab AI tools',
+      name: 'SubverseLab production tools',
       itemListElement: products.map((p, i) => ({
         '@type': 'ListItem',
         position: i + 1,

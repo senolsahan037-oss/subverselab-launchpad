@@ -76,7 +76,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </svg>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: '600', letterSpacing: '0.06em', color: 'var(--color-text)', textTransform: 'uppercase' }}>SubverseLab</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>Free AI tools for music producers</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>Free tools for music producers</div>
           </div>
         </div>
 

@@ -75,6 +75,32 @@ Two tools must not share a label. Where products overlap, the label is what sepa
 
 `subtitle`, `metrics`, and `size` are UI-only fields. They are not part of the manifest schema and sync never writes them, so a product registered purely through sync arrives with none of them and its card renders thinner than a hand-curated one. `subtitle` falls back to `description` and the row is hidden when `size` and price are both absent, so nothing breaks — but set them deliberately rather than discovering the gap on the live storefront.
 
+### The shop window does not discuss the daily limit
+
+A product's `description`, `subtitle` and `metrics` are advertising. They reach
+people who have not arrived yet, and a limit stated there reads as the first
+thing the tool wants from a visitor rather than the last thing it asks. Every
+tool is free; where a daily allowance exists, the visitor meets it inside the
+tool, which shows the remaining run and the reset time as a matter of course.
+
+So these three fields state what the tool does and never how often it may be
+run. "one a day", "one per member", "unlimited", "free previews" and "requires a
+free account" are all out, including the generous halves — "unlimited" only
+means something next to a limit, and naming one implies the other.
+
+This is not the `member_no_product_quota` rule in `00_PLATFORM_INVARIANTS.md`,
+which forbids a quota existing at all for the products on that list. This applies
+to every product, quota or not, and only to the copy. The limit stays documented
+where someone goes to understand it: the tool's own interface, its guide, and the
+Help/FAQ answer for the question it actually answers. Those surfaces explain;
+the card sells.
+
+Applied 2026-09-18 to `subverse-visualizer`, `subverse-splitter` and
+`subverse-mix-check`, whose descriptions each ended on their daily allowance. The
+manifest and the Firestore document were changed together — `description` is not
+in sync's no-op comparison, so editing only the manifest leaves the storefront
+showing the old sentence until some unrelated version bump happens to carry it.
+
 ## Folder products (Presets, Sample Packs, MIDI Packs, Instrument Racks, Projects)
 
 Package the product as a ZIP containing:

@@ -85,7 +85,7 @@ function group(userAgent) {
 function buildRobots() {
   const groups = ['*', ...AI_CRAWLERS].map(group).join('\n\n');
 
-  return `# SubverseLab — free AI tools for music producers
+  return `# SubverseLab — free tools for music producers
 # Full guide text for every tool is available at ${SITE_URL}/llms-full.txt
 #
 # Every group repeats the Disallow lines on purpose. robots.txt groups do not
@@ -114,7 +114,7 @@ function buildLlmsTxt(articles, products) {
 
   return `# SubverseLab
 
-> Free, browser-based AI tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free; some require a free account, and where a tool applies a daily limit its own guide states it.
+> Free, browser-based tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free; some require a free account, and where a tool applies a daily limit its own guide states it.
 
 SubverseLab publishes independent, single-purpose production tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
 

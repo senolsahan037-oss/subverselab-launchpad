@@ -79,7 +79,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               textWrap: 'balance',
             }}>
-              SubverseLab: Free AI Tools for Music Producers
+            SubverseLab: Free Music Production Tools
             </h1>
             <p style={{
               fontSize: '0.9rem', color: 'var(--color-text-muted)',
@@ -87,7 +87,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               display: '-webkit-box', WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>
-              Browser-based AI tools for arranging, generating, analyzing, mixing, and separating a track into stems. Nothing to install.
+              Browser-based tools for arranging, generating, measuring, mixing, and separating a track into stems. Nothing to install.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
           {[
             { key: 'all',         label: 'All' },
-            { key: 'ai tool',     label: 'AI Tools' },
+            { key: 'ai tool',     label: 'Production Tools' },
             { key: 'workflow',    label: 'Workflows' },
           ].map(({ key, label }) => (
             <button
@@ -164,7 +164,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
             const isCurrentTrack = activeTrack && activeTrack.id === pack.id;
             const isCurrentTrackPlaying = isCurrentTrack && isPlaying;
             const categoryClass = getCategoryClass(rawCategory(pack));
-            const displayCat = toTitleCase(rawCategory(pack));
+            const displayCat = pack.content_type === 'ai_tool' ? 'Browser Tool' : toTitleCase(rawCategory(pack));
             const packPrice = pack.price || 0;
             const isFree = packPrice === 0;
             // Every current product is free; canDownload just needs a

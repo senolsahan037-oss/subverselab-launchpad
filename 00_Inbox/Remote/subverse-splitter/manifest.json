@@ -1,7 +1,7 @@
 {
   "slug": "subverse-splitter",
   "name": "Subverse Splitter",
-  "description": "Separate a track into drums, bass, vocals and other instruments, pull the vocal off a mix, or read a track's tempo and musical key — all in the browser, nothing to install. Separation uses the HT-Demucs model with overlapping windows, so the stems have no seams at the segment joins. Key and BPM analysis is unlimited for members; separations are one a day.",
+  "description": "Separate a track into drums, bass, vocals and other instruments, pull the vocal off a mix, or read a track's tempo and musical key \u2014 all in the browser, nothing to install. Separation uses the HT-Demucs model with overlapping windows, so the stems have no seams at the segment joins.",
   "content_type": "ai_tool",
   "source_type": "remote",
   "version": "2.0.0",

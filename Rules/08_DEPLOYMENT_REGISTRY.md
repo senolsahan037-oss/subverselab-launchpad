@@ -6,6 +6,36 @@ Agents must never determine deployment targets from repository names, folder nam
 
 Source: `Infrastructure/CloudRun/subverselab-v2/.agents/rules/deployment_registry.md` (and its identical mirror in `Infrastructure/MetadataSync/metadata-sync-service/.agents/rules/`), which remain the build-bundled copies for those two services.
 
+## The four Google Cloud projects, and which one a thing belongs in
+
+Four projects exist on this account and their IDs do not say what they are for.
+Everything below was verified against the live account on 2026-09-18; the display
+names were corrected on the same day so that `gcloud projects list` now answers
+this question on its own.
+
+| Project ID | Display name | What belongs here |
+|---|---|---|
+| `subverselab-project` | SubverseLab Backend Compute | **Every tool that does work on a server.** Splitter, Sensei, SynthPulse, Mix Check, Visualizer, and the metadata sync service. If it renders, separates, analyses or holds a job, it goes here. |
+| `project-62238635-aae4-41f4-880` | Shared Multi-App Hosting | The **sites** and the tools that run entirely in the visitor's browser: `subverselab-site`, `babasultan-site`, `tool-auth-bridge`, Arrangement GPS, Time and Frequency Sync. **Firebase lives here too** — Auth, Firestore and Storage for every product, whichever project its container runs in. |
+| `subverselab` | SubverseLab YouTube OAuth | **Not empty, despite having no Cloud Run service, no bucket and no secret.** It owns the YouTube OAuth client `735850708968-…` that Social Publish and the upload pipelines authenticate through. Deleting it because it looks empty would break every YouTube upload. |
+| `sahan-security` | Sahan Security | Unrelated to SubverseLab. Runs `sahan-security-web`. |
+
+Two consequences worth stating, because both have already cost a mistake:
+
+1. **A tool's container and its Firebase project are usually different.** Splitter
+   runs in `subverselab-project` with `FIREBASE_PROJECT_ID` pointing at
+   `project-62238635-aae4-41f4-880`. That is deliberate and correct: tokens are
+   issued by the Firebase project and the container runs in the compute one. A
+   mismatch fails as `CREDENTIAL_MISMATCH` when a member signs in, not at deploy.
+
+2. **Copying a deploy command from the nearest tool picks the project by
+   accident.** Subverse Visualizer was first deployed into Shared Multi-App
+   Hosting because the command was copied from Time and Frequency Sync, which
+   lives there because it is a browser-side calculator. It became the only
+   multi-vCPU service in a regional quota pool shared with `babasultan-site`,
+   whose `maxScale` is unset and therefore 100 against a ceiling of 20. Resolve
+   the project from this table, not from whichever tool was read last.
+
 ## Frontend Production
 
 - **Google Cloud Project:** `project-62238635-aae4-41f4-880`
@@ -151,6 +181,50 @@ Source: `Infrastructure/CloudRun/subverselab-v2/.agents/rules/deployment_registr
   (`68d0bf16428ef66e692cdff8a9ccf28f1ef3f69440d57e58605a4cc55fcc5e74`), so a
   truncated or swapped model fails the build rather than the first separation.
 - **Collections:** `daily_separation_quotas`.
+
+## Remote Tool Target — Subverse Visualizer
+
+- **Product Slug:** `subverse-visualizer`. The Cloud Run service carries the same
+  name.
+- **Google Cloud Project:** `subverselab-project` ("SubverseLab Backend
+  Compute"), region `europe-west1` — with Splitter, Sensei, SynthPulse and Mix
+  Check. It was first deployed to `project-62238635-aae4-41f4-880` ("Shared
+  Multi-App Hosting") by copying a command from Time & Frequency Sync, and that
+  was wrong: hosting holds the sites and the browser-side tools, compute holds
+  the tools that do work on a server. It was the only multi-vCPU service there,
+  sharing a regional quota pool with `babasultan-site`, whose `maxScale` is
+  unset and therefore 100. Moved 2026-09-18 and the stray service deleted.
+- **Cloud Run Service:** `subverse-visualizer`
+- **URL:** `https://subverse-visualizer-il7bu2xxqa-ew.a.run.app`
+- **Access:** `member`, `public_shell: false`. No sign-in of its own; the website
+  hands the session across as a Firebase **custom** token over
+  `subverselab:auth-token`, which the tool exchanges for an ID token. Previews
+  are free and unlimited; only a full render is counted.
+- **Quota collection:** `daily_video_quotas`, one render per member and per
+  network per day. Its `expires_at` TTL policy was enabled 2026-09-18 — writing
+  the field is not the same as enabling the policy, and Splitter's collection had
+  been the only one with a policy until then.
+
+- **Runtime settings, and why each one is load-bearing:**
+
+  | Flag | Value | Reason |
+  |---|---|---|
+  | `--no-cpu-throttling` | on | A render runs on a background thread while the browser polls; throttled between polls it appears to hang. Exemption recorded with its measurement in `06_DEPLOYMENT.md`. |
+  | `--use-http2` | on | Cloud Run's HTTP/1 path caps a request at 32 MiB. The tool advertises 40 MB of audio — which is exactly the 3.5-minute WAV case the limit was sized for — so without h2c that limit is a lie the interface tells. The container runs hypercorn, which speaks cleartext HTTP/2. |
+  | `--max-instances` | **1** | The job store and the rendered file live in the instance that made them. Deployed at 3, the same job id returned 200 and 404 alternately depending on which instance a poll reached, while the render continued on a third and spent the visitor's daily allowance. A single poll returns 200 and looks correct; this is only visible by polling repeatedly. |
+  | `--concurrency` | 8 | Polls are cheap and must not queue behind each other. Renders serialise through one worker regardless. |
+  | `--cpu` / `--memory` | 2 / 2Gi | Peak measured 512 MB for a 3-minute track, almost all of it the analysis arrays. The second vCPU is currently **paid for and not used** — the frame loop is single-threaded. Either parallelise it (99.99% of the work is independent) or drop to 1 vCPU. |
+  | `--min-instances` | 0 | The default. It sleeps. |
+  | `--timeout` | 3600 | The request that starts a render returns immediately; this covers the download of a finished file. |
+
+- **Measured cost, 2026-09-18.** Same track, same style, same 3711 frames: 466 s
+  on this service against 197 s on an M2 — a Cloud Run vCPU is **2.4× slower**.
+  A 3-minute video is 4.1 cents in `marquee` and 5.1 in `radial`, plus up to 4
+  cents of idle tail from `--no-cpu-throttling`. The estimate made before the
+  service existed was 2.4 cents, and it was low because it assumed a ratio
+  instead of measuring one. A first intermediate reading suggested 3.6×; that
+  came from extrapolating a render that had not finished, and the finished one
+  is the number above.
 
 ## Loom — not deployed here, but published here
 

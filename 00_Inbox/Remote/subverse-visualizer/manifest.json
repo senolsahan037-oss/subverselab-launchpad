@@ -1,0 +1,32 @@
+{
+  "slug": "subverse-visualizer",
+  "name": "Subverse Visualizer",
+  "description": "Turn a song and its cover into a YouTube video. Look at every style running on your own track first, taken from the busiest part of the song rather than the intro, then render the one you chose at 1920x1080.",
+  "content_type": "ai_tool",
+  "source_type": "remote",
+  "version": "1.0.0",
+  "guide_version": "1.0.0",
+  "updated_at": "2026-09-18T00:45:49Z",
+  "preview_audio_path": null,
+  "deployment": {
+    "provider": "cloud_run",
+    "tool_url": "https://subverse-visualizer-il7bu2xxqa-ew.a.run.app",
+    "iframe_compatible": true
+  },
+  "access": {
+    "level": "member",
+    "public_shell": false,
+    "member_required_for": [
+      "render"
+    ],
+    "enforcement": "tool_server",
+    "self_authenticated": true,
+    "session_source": "subverselab_handoff"
+  },
+  "actions": [
+    {
+      "type": "launch",
+      "label": "Make a Video"
+    }
+  ]
+}

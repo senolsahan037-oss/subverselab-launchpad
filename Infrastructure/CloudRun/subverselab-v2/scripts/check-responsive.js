@@ -27,7 +27,7 @@ const ORIGIN = `http://127.0.0.1:${PORT}`;
 // row, and a grid track with a fixed minmax floor.
 const WIDTHS = [320, 375, 414, 768, 1024, 1366];
 
-const ROUTES = ['/', '/learn', '/help', '/tools/sensei', '/tools/synthpulse'];
+const ROUTES = ['/', '/learn', '/help', '/loom', '/forum', '/tools/sensei', '/tools/synthpulse', '/tools/time-frequency-sync'];
 
 const CHROME_CANDIDATES = [
   process.env.CHROME_PATH,

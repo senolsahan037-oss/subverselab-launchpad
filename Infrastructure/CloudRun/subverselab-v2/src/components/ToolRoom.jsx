@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Icon from './Icon';
 import PageMeta from './PageMeta';
@@ -13,6 +13,17 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
   const { slug } = useParams();
   const iframeRef = useRef(null);
   const product = (packs || []).find((p) => p.id === slug);
+  const requiresMember = product?.access?.level === 'member';
+  const [frameReady, setFrameReady] = useState(false);
+  const [wakeSeconds, setWakeSeconds] = useState(0);
+  const [frameAttempt, setFrameAttempt] = useState(0);
+
+  useEffect(() => {
+    setFrameReady(false);
+    setWakeSeconds(0);
+    const timer = window.setInterval(() => setWakeSeconds((seconds) => seconds + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [product?.deployment?.tool_url, frameAttempt]);
 
   // A remote tool lives on its own origin, so the browser correctly isolates
   // its Firebase Auth session from subverselab.com's — being signed in here
@@ -24,7 +35,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
   // Firebase Auth SDK turns that into a real, auto-refreshing session via
   // signInWithCustomToken(), so this only needs to run once per iframe load.
   const handoffSession = useCallback(async () => {
-    if (!user || !auth.currentUser || !iframeRef.current || !product?.deployment?.tool_url) return;
+    if (!user || !auth.currentUser || !iframeRef.current || !product?.deployment?.tool_url) return false;
     try {
       const idToken = await auth.currentUser.getIdToken();
       // Deliberately not metadata-sync-service: that runs in a different GCP
@@ -34,22 +45,40 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
       // fixes (cross-project service account attachment, service account
       // keys). tool-auth-bridge runs natively in the Firebase project itself.
       const apiUrl = import.meta.env.VITE_TOOL_AUTH_BRIDGE_URL;
-      if (!apiUrl) return;
+      if (!apiUrl) return false;
       const res = await fetch(`${apiUrl}/api/auth/tool-token`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}` }
       });
-      if (!res.ok) return;
+      if (!res.ok) return false;
       const { customToken } = await res.json();
       const toolOrigin = new URL(product.deployment.tool_url).origin;
       iframeRef.current.contentWindow.postMessage(
         { type: 'subverselab:auth-token', token: customToken },
         toolOrigin
       );
+      return true;
     } catch (err) {
       console.error('[ToolRoom] Could not hand off session to tool:', err);
+      return false;
     }
   }, [user, product?.deployment?.tool_url]);
+
+  // Reveal the tool once the session has been handed over — and reveal it even
+  // when the handover fails. The 900 ms grace exists so a member never sees the
+  // tool's own signed-out state flash past before the token lands; it is not a
+  // gate. Gating on success hid the iframe permanently whenever the auth bridge
+  // was unreachable, which turns a tool that works, and would have shown its own
+  // sign-in message, into a spinner that never resolves.
+  const revealWhenHandedOff = useCallback(() => {
+    if (!user || !requiresMember) {
+      setFrameReady(true);
+      return;
+    }
+    handoffSession().then((sent) => {
+      window.setTimeout(() => setFrameReady(true), sent ? 900 : 0);
+    });
+  }, [user, requiresMember, handoffSession]);
 
   // The iframe's load event can fire before the tool's own React tree has
   // mounted the listener that receives the token, and a token posted into a
@@ -69,7 +98,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
     const onMessage = (event) => {
       if (event.origin !== toolOrigin) return;
       if (event.data?.type === 'subverselab:tool-ready') {
-        handoffSession();
+        revealWhenHandedOff();
         return;
       }
       // A tool asking for sign-in. It has no login of its own and must not grow
@@ -82,7 +111,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [product?.deployment?.tool_url, handoffSession, onLoginClick]);
+  }, [product?.deployment?.tool_url, revealWhenHandedOff, onLoginClick]);
 
   // Hand the session over again the moment one appears.
   //
@@ -151,7 +180,6 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
   // one: a signed-out visitor reached a product room with no product in it,
   // which reads as broken rather than as locked. Tools without a public shell
   // still get the signpost, because there is nothing safe to render for them.
-  const requiresMember = product.access?.level === 'member';
   const hasPublicShell = product.access?.public_shell === true;
   if (requiresMember && !user && !hasPublicShell) {
     const hasGuide = publishedGuideSlugs?.has?.(product.id);
@@ -205,7 +233,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)' }}>
+    <div className="tool-room" style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 70px)' }}>
       <PageMeta
         title={`${product.title} | SubverseLab`}
         description={product.description}
@@ -219,13 +247,28 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
         <Link to="/" className="btn btn-outline">← Back to Tools</Link>
         <strong style={{ color: 'var(--color-text)' }}>{product.title}</strong>
       </div>
+      {!frameReady && (
+        <div className="tool-wake-screen" role="status" aria-live="polite">
+          <div className="tool-wake-spinner" aria-hidden="true" />
+          <h2>Opening {product.title}</h2>
+          <p>{wakeSeconds < 4 ? 'Connecting to the tool…' : 'This tool sleeps when nobody is using it. Waking it can take a few seconds.'}</p>
+          <strong>{wakeSeconds}s</strong>
+          {wakeSeconds >= 12 && (
+            <div className="tool-wake-actions">
+              <button className="btn btn-primary" onClick={() => { setFrameReady(false); setWakeSeconds(0); setFrameAttempt((value) => value + 1); }}>Retry</button>
+              <Link to="/" className="btn btn-outline">Back to Tools</Link>
+            </div>
+          )}
+        </div>
+      )}
       <iframe
+        key={frameAttempt}
         ref={iframeRef}
         src={product.deployment.tool_url}
         title={product.title}
         allow="autoplay; fullscreen"
-        style={{ flex: 1, width: '100%', border: 'none' }}
-        onLoad={handoffSession}
+        style={{ flex: 1, width: '100%', border: 'none', visibility: frameReady ? 'visible' : 'hidden' }}
+        onLoad={revealWhenHandedOff}
       />
     </div>
   );

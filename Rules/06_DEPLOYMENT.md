@@ -62,6 +62,39 @@ The check exists because this was missed by eye. The site shipped with one media
 
 Verified to fail, not just to pass: reintroducing `minmax(480px, 1fr)` makes it exit 1 and name the element.
 
+## Idle cost: every new service sleeps unless it earns the right not to
+
+**Default for every new tool: `--min-instances=0` and CPU throttling left on.** A Cloud Run service in this configuration costs nothing while no request is in flight. Nothing about deploying a tool obliges it to burn money between visits.
+
+Two settings break that, and both are easy to set without noticing:
+
+- **`--min-instances=N` where N > 0** keeps N containers resident 24/7. They bill whether or not anyone arrives.
+- **`--no-cpu-throttling`** allocates CPU for as long as the container is *alive*, not just while it is handling a request. On a service sized for heavy work this is the more expensive of the two — an 8-vCPU container billed continuously rather than per request.
+
+Audited 2026-09-18: of 22 services, three were awake. `subverse-splitter` (8 vCPU / 8 GiB) and `subverse-mix-analyzer` both ran `--no-cpu-throttling`. Both are synchronous — `subverse-splitter` runs `containerConcurrency=1` with a 900 s timeout, i.e. the separation happens inside the request — so throttling is safe for them and was turned on. The measured account-wide burn before the change was **₺755/month forecast**, against a **₺481/month** Google Developer Program credit: a real shortfall, not a rounding error.
+
+**If a service needs to stay awake, the exemption is written here with its measurement.** Not in a commit message, not in a conversation. One service currently holds it:
+
+| Service | Setting | Why |
+|---|---|---|
+| `subverselab-site` | `--min-instances=1` | Cold start measured 2.6–10 s TTFB at `0`, ~0.2 s with one warm instance. The public site; the trade is deliberate (see Frontend deployment above). |
+| `subverse-visualizer` | `--no-cpu-throttling` | A render runs on a background thread for minutes while the browser polls; between two polls a throttled instance does almost nothing and the job appears to hang. Measured 2026-09-18 on the same track, style and frame count (3711 frames): 466 s here against 197 s on an M2 — a Cloud Run vCPU is **2.4× slower**, and throttling on top of that would stretch it past any tab anyone keeps open. `--min-instances` stays `0`, so this buys CPU only while an instance is alive after a render, not around the clock. The cost of that idle tail is real: about 4 cents per isolated render at 2 vCPU, on top of 4-5 cents of render. Revisit when the frame loop is parallelised or the service drops to 1 vCPU. |
+
+Everything else sleeps. Before adding an exemption, measure the thing you are buying — a cold start figure, a background job that genuinely outlives its request — and write the number down. An exemption without a measurement next to it is a leak, and it will be reverted by the next audit.
+
+### Checking the current state
+
+```bash
+for S in $(gcloud run services list --project <project> --format="value(metadata.name)"); do
+  gcloud run services describe $S --project <project> --region <region> \
+    --format="value(spec.template.metadata.annotations['autoscaling.knative.dev/minScale'],
+                    spec.template.metadata.annotations['run.googleapis.com/cpu-throttling'])"
+done
+```
+
+An empty `minScale` means 0; an empty `cpu-throttling` means `true`. Both empty is the state a new tool should ship in.
+
+
 ## Frontend deployment (subverselab-v2)
 
 - The frontend is a Vite-based React application, built via Cloud Build and served on Cloud Run by its own `server.js` — a small Express static host. It is **not** the `serve` package. `serve -s` rewrites every request to the root `index.html`, and its `serve.json` rewrites are checked before real files even without `-s`; either behaviour defeats prerendering, which depends on a real file existing at `dist/{route}/index.html`. Do not "simplify" this back to `serve`.

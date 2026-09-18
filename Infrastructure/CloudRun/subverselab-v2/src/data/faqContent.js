@@ -101,7 +101,7 @@ export const LOOM_FAQ = [
 export const CONTACT_FAQ = [
   {
     q: 'How do I get in touch?',
-    a: 'Email info@subverselab.com, or join the Discord and Instagram/YouTube communities linked in the footer.',
+    a: 'Email info@subverselab.com, or use the verified Instagram and YouTube links in the footer.',
   },
 ];
 

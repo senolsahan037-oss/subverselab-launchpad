@@ -1,7 +1,7 @@
 {
   "slug": "subverse-mix-check",
   "name": "Subverse Mix Check",
-  "description": "Evidence-first audio measurement for your mix or master. Direct ITU-R BS.1770 LUFS, sample peak, crest factor, one-third-octave spectral comparison, and mono fold-down loss detection. Website membership is handed into the tool; members receive one completed analysis per IP per UTC day and verified admins have no product quota.",
+  "description": "Evidence-first audio measurement for your mix or master. Direct ITU-R BS.1770 LUFS, sample peak, crest factor, and one-third-octave spectral analysis, compared against a reference track or a genre profile, plus mono fold-down phase-loss detection. No fabricated scores, no invented metrics \u2014 just what the signal actually shows.",
   "content_type": "ai_tool",
   "source_type": "remote",
   "version": "3.4.0",

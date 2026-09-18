@@ -198,7 +198,7 @@ export default function SEOSection() {
                 Everything You Need to Know
               </h2>
               <p style={{ color: 'var(--color-text-muted)', marginTop: '12px', fontSize: '0.95rem' }}>
-                Common questions about SubverseLab's free AI tools for music producers.
+                Common questions about SubverseLab's free tools for music producers.
               </p>
             </div>
 
