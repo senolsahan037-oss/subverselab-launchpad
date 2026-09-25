@@ -159,6 +159,10 @@ async function main() {
     // the site far more than it is navigated to from inside it.
     urlEntry(`${SITE_URL}/loom`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/forum`, new Date().toISOString().slice(0, 10), '0.7'),
+    urlEntry(`${SITE_URL}/plugins`, new Date().toISOString().slice(0, 10), '0.7'),
+    urlEntry(`${SITE_URL}/plugins/kubbe`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/kaset`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/launch`, new Date().toISOString().slice(0, 10), '0.8'),
   ];
 
   // Published guides — the real, fully public, keyword-rich SEO content.

@@ -6,6 +6,8 @@ import SEOSection from './SEOSection';
 import Icon from './Icon';
 import PageMeta from './PageMeta';
 import { HOME } from '../data/siteMeta';
+import { LAUNCH, PRICES, RELEASE_LABEL } from '../data/plugins';
+import LaunchCountdown from './LaunchCountdown';
 import ProductActions from './ProductActions';
 
 export default function Storefront({ packs = [], publishedGuideSlugs = new Set(), activeTrack, isPlaying, onPlayPause, user, onLoginClick, searchQuery = '' }) {
@@ -102,6 +104,18 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
             </button>
           )}
         </header>
+
+        {/* Plugin launch strip. Links to /launch; it carries no counts of its
+            own — the only codes-left number lives on /launch and is read live. */}
+        <Link to={LAUNCH.path} className="plugin-strip">
+          <span className="plugin-strip-tag">New plugins</span>
+          <span className="plugin-strip-name">KUBBE · KASET</span>
+          <span className="plugin-strip-text">
+            Reverb and cassette colour, out {RELEASE_LABEL} — ${PRICES.kubbe} each. <b>{LAUNCH.offer}.</b>
+          </span>
+          <LaunchCountdown compact />
+          <span className="plugin-strip-go">See the launch →</span>
+        </Link>
 
         {/* ── Category Filters (flush below hero) ── */}
         {/* No Plugins filter. It existed for one product, the Splitter, which

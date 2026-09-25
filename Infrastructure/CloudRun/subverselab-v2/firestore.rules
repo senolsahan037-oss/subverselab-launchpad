@@ -18,6 +18,18 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+    // Plugin orders and licence keys, written only by server.js from signed
+    // Lemon Squeezy webhooks (Admin SDK, which bypasses these rules). One
+    // document per buyer, keyed by the lowercased checkout e-mail. A signed-in
+    // user may read only the document for their own address, and only once
+    // Firebase has verified that they own it — otherwise anyone could register
+    // with a buyer's e-mail and read the buyer's keys. No client writes.
+    match /plugin_licenses/{email} {
+      allow read: if request.auth != null
+                  && request.auth.token.email_verified == true
+                  && request.auth.token.email.lower() == email;
+      allow write: if false;
+    }
     match /analytics/{document=**} {
       allow read: if request.auth != null;
     }

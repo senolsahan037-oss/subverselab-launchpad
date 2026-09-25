@@ -16,11 +16,15 @@ import ArticlePage from './components/ArticlePage';
 import ToolRoom from './components/ToolRoom';
 import HelpPage from './components/HelpPage';
 import LoomPage from './components/LoomPage';
+import PluginsPage from './components/PluginsPage';
+import PluginPage from './components/PluginPage';
+import LaunchPage from './components/LaunchPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import { LEARN_INDEX } from './data/siteMeta';
+import { KUBBE, KASET } from './data/plugins';
 
 /* ============================================================
    GLOBAL AUDIO PLAYER
@@ -220,6 +224,14 @@ export default function App() {
                   to sit above the catch-all, which until now sent every one of those
                   citations to the storefront. */}
               <Route path="/loom" element={<LoomPage />} />
+
+              {/* Plugins are pages, not synced products: they run in the visitor's
+                  DAW and are sold through Lemon Squeezy (Rules/02). One shared
+                  PluginPage, driven by src/data/plugins.js. */}
+              <Route path="/plugins" element={<PluginsPage />} />
+              <Route path={KUBBE.path} element={<PluginPage key={KUBBE.slug} plugin={KUBBE} />} />
+              <Route path={KASET.path} element={<PluginPage key={KASET.slug} plugin={KASET} />} />
+              <Route path="/launch" element={<LaunchPage />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/forum/:topicId" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

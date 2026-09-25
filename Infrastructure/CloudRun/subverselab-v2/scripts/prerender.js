@@ -38,6 +38,9 @@ import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
+import {
+  PLUGINS_INDEX, PLUGINS, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM, LICENCE_FACTS,
+} from '../src/data/plugins.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
 
 function escapeHtml(str = '') {
@@ -556,6 +559,79 @@ async function main() {
       <p>Source: <a href="https://github.com/senolsahan037-oss/loom">github.com/senolsahan037-oss/loom</a>.
       &copy; &#350;enol &#350;ahan / SubverseLab.</p>
       <nav><a href="/">Tools</a> &middot; <a href="/learn">Guides</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Plugins. Pages, not synced products (Rules/02): the index, one page per
+  // plugin and the launch page, all written from src/data/plugins.js so the
+  // crawler reads what the visitor reads. No codes-left number is written
+  // here — that one is only ever read live, in the browser.
+  const pluginsCrumb = { name: 'Plugins', url: `${SITE_URL}${PLUGINS_INDEX.path}` };
+  const homeCrumb = { name: 'Home', url: `${SITE_URL}/` };
+
+  writePage('plugins', buildHead({
+    title: PLUGINS_INDEX.title,
+    description: PLUGINS_INDEX.description,
+    canonical: `${SITE_URL}${PLUGINS_INDEX.path}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb])],
+  }), `<h1>Plugins</h1>
+      <p>Audio plugins you install in your own DAW. ${escapeHtml(FORMATS)}.</p>
+      ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
+      <p>Both plugins together: $${PRICES.bundle}. <a href="${LAUNCH.path}">Launch and free codes</a>.</p>
+      <nav><a href="/">Tools</a> &middot; <a href="/loom">Loom</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  for (const pl of PLUGINS) {
+    writePage(pl.path.slice(1), buildHead({
+      title: pl.title,
+      description: pl.description,
+      canonical: `${SITE_URL}${pl.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: `SubverseLab ${pl.name}`,
+          applicationCategory: 'MultimediaApplication',
+          operatingSystem: 'macOS, Windows',
+          url: `${SITE_URL}${pl.path}`,
+          image: `${SITE_URL}${pl.og}`,
+          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD' },
+          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
+      ],
+    }), `<h1>${escapeHtml(pl.name)}</h1>
+      <p>${escapeHtml(pl.tagline)}. $${PRICES[pl.slug]}, out ${escapeHtml(RELEASE_LABEL)} &middot; ${escapeHtml(FORMATS)}.</p>
+      <p>${escapeHtml(pl.intro)}</p>
+      <h2>${escapeHtml(pl.modesLabel)}</h2>
+      ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      <h2>The controls</h2>
+      <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
+      <h2>Price and licence</h2>
+      <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. ${escapeHtml(LICENCE_FACTS.noDemo)}</p>
+      <p>${escapeHtml(LAUNCH.askHow)} (<a href="${INSTAGRAM_DM}">Instagram</a>): the first ${LAUNCH.codesTotal.toLocaleString('en-US')} people get a free code. <a href="${LAUNCH.path}">How the launch works</a>.</p>
+      <p><a href="${pl.manual}">${escapeHtml(pl.name)} manual (PDF)</a></p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  writePage('launch', buildHead({
+    title: LAUNCH.title,
+    description: LAUNCH.description,
+    canonical: `${SITE_URL}${LAUNCH.path}`,
+    image: `${SITE_URL}/plugins/kubbe/og.jpg`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch', url: `${SITE_URL}${LAUNCH.path}` }])],
+  }), `<h1>Kubbe and Kaset — out ${escapeHtml(RELEASE_LABEL)}</h1>
+      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}: <a href="${INSTAGRAM_DM}">message on Instagram</a>.</p>
+      ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
+      <p>Both together: $${PRICES.bundle}. ${escapeHtml(FORMATS)}.</p>
+      <h2>How to get a free code</h2>
+      <ol>${LAUNCH.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
+      <h2>Licence</h2>
+      <p>${escapeHtml(LICENCE_FACTS.noDemo)}</p>
+      <p>${escapeHtml(LICENCE_FACTS.oneComputer)}</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   // Published guides — the site's real long-form content.
   for (const a of articles) {

@@ -2,28 +2,48 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://subverselab.com/</loc>
-    <lastmod>2026-09-18</lastmod>
+    <lastmod>2026-09-25</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://subverselab.com/learn</loc>
-    <lastmod>2026-09-18</lastmod>
+    <lastmod>2026-09-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/help</loc>
-    <lastmod>2026-09-18</lastmod>
+    <lastmod>2026-09-25</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://subverselab.com/loom</loc>
-    <lastmod>2026-09-18</lastmod>
+    <lastmod>2026-09-25</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/forum</loc>
-    <lastmod>2026-09-18</lastmod>
+    <lastmod>2026-09-25</lastmod>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins</loc>
+    <lastmod>2026-09-25</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins/kubbe</loc>
+    <lastmod>2026-09-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins/kaset</loc>
+    <lastmod>2026-09-25</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/launch</loc>
+    <lastmod>2026-09-25</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/learn/arrangement-gps</loc>
@@ -72,12 +92,12 @@
   </url>
   <url>
     <loc>https://subverselab.com/tools/subverse-mix-check</loc>
-    <lastmod>2026-08-23</lastmod>
+    <lastmod>2026-09-18</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://subverselab.com/tools/subverse-splitter</loc>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-09-18</lastmod>
     <priority>0.6</priority>
   </url>
   <url>

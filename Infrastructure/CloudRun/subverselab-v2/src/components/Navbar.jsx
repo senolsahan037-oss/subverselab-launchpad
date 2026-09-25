@@ -81,6 +81,12 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
           fontWeight: '600' 
         }}>Tools</Link>
 
+        <Link to="/plugins" style={{
+          color: (activePage.startsWith('/plugins') || activePage === '/launch') ? 'var(--color-primary)' : 'var(--color-text-muted)',
+          textDecoration: 'none',
+          fontWeight: '600'
+        }}>Plugins</Link>
+
         <Link to="/loom" style={{
           color: activePage === '/loom' ? 'var(--color-primary)' : 'var(--color-text-muted)',
           textDecoration: 'none',
