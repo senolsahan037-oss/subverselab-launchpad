@@ -96,6 +96,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  useEffect(() => { const open = () => setAuthModalOpen(true); window.addEventListener('svl-open-auth', open); return () => window.removeEventListener('svl-open-auth', open); }, []);
   const [packs, setPacks] = useState([]);
   const [packsLoading, setPacksLoading] = useState(true);
   const [publishedGuideSlugs, setPublishedGuideSlugs] = useState(new Set());

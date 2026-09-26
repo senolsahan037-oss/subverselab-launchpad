@@ -31,7 +31,7 @@ export function useDownloads(slug) {
       const entry = m[slug] || {};
       const out = {};
       for (const [key, f] of Object.entries(entry.files || {})) {
-        if (f && typeof f.url === 'string' && /^https:\/\//.test(f.url)) {
+        if (f && typeof f.name === 'string') {
           out[key] = { ...f, version: f.version || entry.version || null };
         }
       }

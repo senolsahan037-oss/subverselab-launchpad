@@ -134,6 +134,109 @@ function adminFirestore() {
 app.set('trust proxy', 1);
 
 const launch = createLaunchService({ getAdmin: adminFirestore });
+const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
+
+let storagePromise = null;
+function downloadStorage() {
+  if (!storagePromise) storagePromise = import('@google-cloud/storage').then(({ Storage }) => new Storage());
+  return storagePromise;
+}
+let manifestCache = { at: 0, value: null };
+async function downloadManifest() {
+  if (manifestCache.value && Date.now() - manifestCache.at < 60_000) return manifestCache.value;
+  const storage = await downloadStorage();
+  const [buf] = await storage.bucket('subverselab-downloads').file('plugins/manifest.json').download();
+  const value = JSON.parse(buf.toString('utf8'));
+  manifestCache = { at: Date.now(), value };
+  return value;
+}
+function ticketSign(payload) {
+  return createHmac('sha256', process.env.DOWNLOAD_TICKET_SECRET).update(payload).digest('base64url');
+}
+function ticketMake(data) {
+  const payload = Buffer.from(JSON.stringify(data)).toString('base64url');
+  return `${payload}.${ticketSign(payload)}`;
+}
+function ticketRead(token) {
+  if (!process.env.DOWNLOAD_TICKET_SECRET || typeof token !== 'string') return null;
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature) return null;
+  const expected = ticketSign(payload);
+  if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  try { const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')); return data.exp > Math.floor(Date.now() / 1000) ? data : null; } catch { return null; }
+}
+// GET /api/download/manifest → what is published, without any file URL: the
+// bucket is private, so the buttons learn names, sizes and versions here and
+// the files themselves only come through a signed ticket.
+app.get('/api/download/manifest', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  try {
+    const manifest = await withTimeout(downloadManifest(), 8000);
+    const out = {};
+    for (const slug of ['kubbe', 'kaset']) {
+      const entry = manifest?.[slug] || {};
+      out[slug] = { version: entry.version || null, files: {} };
+      for (const [platform, f] of Object.entries(entry.files || {})) {
+        if (f?.name) out[slug].files[platform] = { name: f.name, size: f.size || null, version: f.version || entry.version || null };
+      }
+    }
+    res.json(out);
+  } catch (err) {
+    console.error('download manifest:', err.message);
+    res.json({});
+  }
+});
+const downloadLimit = tokenBucket({ perMinute: 30 });
+app.post('/api/download/ticket', smallBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!process.env.DOWNLOAD_TICKET_SECRET) return res.status(503).json({ error: 'Download room is not configured' });
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Download service unavailable' : 'Your sign-in has expired — sign in again' }); }
+  if (!decoded.email || decoded.email_verified !== true) return res.status(403).json({ error: 'Verify your e-mail address first' });
+  const { slug, platform } = req.body || {};
+  if (!['kubbe', 'kaset'].includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
+  try {
+    const manifest = await withTimeout(downloadManifest(), 8000);
+    const file = manifest?.[slug]?.files?.[platform];
+    if (!file?.name) return res.status(404).json({ error: 'This download is not available yet' });
+    const claim = await withTimeout(launch.claim({ uid: decoded.uid, email: decoded.email }), 15000);
+    if (claim.status === 410) return res.status(410).json(claim.body);
+    if (claim.status !== 200) return res.status(claim.status).json(claim.body);
+    const now = new Date().toISOString();
+    await admin.db.runTransaction(async (tx) => {
+      const counter = admin.db.collection('launch').doc('counter');
+      const downloads = admin.db.collection('downloads').doc(decoded.uid);
+      const [snap, downloadSnap] = await Promise.all([tx.get(counter), tx.get(downloads)]);
+      const total = snap.exists ? Number(snap.data().downloads) || 0 : 0;
+      const old = downloadSnap.exists ? downloadSnap.data()?.[slug]?.[platform] || {} : {};
+      tx.set(downloads, { [slug]: { [platform]: { count: (Number(old.count) || 0) + 1, first: old.first || now, last: now } } }, { merge: true });
+      tx.set(counter, { downloads: total + 1, updated: now }, { merge: true });
+    });
+    // The manifest is authoritative for the published filename; accept its
+    // public URL as the compatibility shape written by publish_download.sh.
+    const object = file.object || (() => {
+      try { return decodeURIComponent(new URL(file.url).pathname.replace(/^\//, '')); } catch { return `plugins/${slug}/${manifest[slug].version}/${file.name}`; }
+    })();
+    const ticket = ticketMake({ uid: decoded.uid, slug, platform, object, exp: Math.floor(Date.now() / 1000) + 300 });
+    return res.json({ url: `/api/download/file?t=${encodeURIComponent(ticket)}`, name: file.name, size: file.size, version: file.version || manifest[slug].version });
+  } catch (err) { console.error('download ticket:', err.message); return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Download service unavailable' }); }
+});
+app.get('/api/download/file', async (req, res) => {
+  const data = ticketRead(req.query.t);
+  if (!data) return res.status(403).type('text/plain').send('Invalid or expired download ticket');
+  try {
+    const storage = await downloadStorage();
+    const file = storage.bucket('subverselab-downloads').file(data.object);
+    const [meta] = await file.getMetadata();
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${String(meta.name || data.object.split('/').pop()).replace(/"/g, '')}"`);
+    if (meta.size) res.setHeader('Content-Length', meta.size);
+    file.createReadStream().on('error', () => { if (!res.headersSent) res.status(404).end(); }).pipe(res);
+  } catch { res.status(404).type('text/plain').send('Download not found'); }
+});
 
 // A Firestore call that fails because this process has no Google credentials
 // (local preview) or cannot reach Google answers 503, not a stack trace.
@@ -180,7 +283,6 @@ const claimLimit = tokenBucket({ perMinute: 10 });
 const licenceLimit = tokenBucket({ perMinute: 30 });
 // The plugins post form fields (JUCE's URL::withParameter); anything else may
 // send JSON. Either way a licence request is a few hundred bytes.
-const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
 
 // POST /api/launch/claim   Authorization: Bearer <Firebase ID token>
 // One free launch licence per verified e-mail and per Firebase account, while

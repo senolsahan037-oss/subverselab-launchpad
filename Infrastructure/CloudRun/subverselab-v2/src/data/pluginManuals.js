@@ -15,7 +15,7 @@
 // Block types: { p }, { list }, { steps }, { table: { head, rows } },
 // { note }, { recipes: [{ name, settings, text }] }, { h3 }.
 
-import { KUBBE, KASET, LICENCE_FACTS } from './plugins.js';
+import { KUBBE, KASET } from './plugins.js';
 
 const installation = (name, { standalone = false } = {}) => [
   {
@@ -44,40 +44,10 @@ const installation = (name, { standalone = false } = {}) => [
   },
 ];
 
-const licence = (name) => [
-  { p: LICENCE_FACTS.noDemo },
-  { h3: 'Activate' },
-  {
-    steps: [
-      'After checkout, Lemon Squeezy e-mails the licence key; a free launch licence is claimed on subverselab.com/launch. Signed in here with the same e-mail, the key is also under My plugins on your account page.',
-      `Open ${name} in your DAW. The activation card covers the panel.`,
-      'Paste the key and press **Activate**. This needs an internet connection once.',
-    ],
-  },
-  {
-    p: 'The activation is then stored on the computer and works offline. The plugin checks it again in the background about once a week; only a clear answer that the key is disabled, expired or released turns it off — a missing connection never does.',
-  },
-  {
-    table: {
-      head: ['System', 'Where the activation is stored'],
-      rows: [
-        ['macOS', '`~/Library/Application Support/SubverseLab/Licenses/`'],
-        ['Windows', '`%APPDATA%\\SubverseLab\\Licenses\\`'],
-      ],
-    },
-  },
-  { h3: 'Moving to another computer' },
-  { p: LICENCE_FACTS.oneComputer },
-  {
-    steps: [
-      `On the old computer, open ${name} and click the **LICENSE** label on the panel.`,
-      'Choose **Release this computer**.',
-      'On the new computer, paste the same key into the activation card.',
-    ],
-  },
-  {
-    p: 'If the old computer is no longer available, write through the Help page from the e-mail address used at checkout.',
-  },
+const downloadRoom = () => [
+  { p: 'Sign in on subverselab.com/launch and download. No key or activation is needed.' },
+  { h3: 'Getting the plugin' },
+  { steps: ['Enter the Download Room with your verified e-mail.', 'Download the macOS package or Windows zip.', 'Install the macOS package, or copy the Windows VST3 folder to `C:\\Program Files\\Common Files\\VST3\\`.', 'Open the plugin in your DAW.'] },
 ];
 
 export const KUBBE_MANUAL = {
@@ -240,7 +210,7 @@ export const KUBBE_MANUAL = {
         },
       ],
     },
-    { id: 'licence', heading: 'Licence', blocks: licence('Kubbe') },
+    { id: 'download', heading: 'Getting the plugin', blocks: downloadRoom() },
   ],
 };
 
@@ -417,7 +387,7 @@ export const KASET_MANUAL = {
         },
       ],
     },
-    { id: 'licence', heading: 'Licence', blocks: licence('Kaset') },
+    { id: 'download', heading: 'Getting the plugin', blocks: downloadRoom() },
   ],
 };
 

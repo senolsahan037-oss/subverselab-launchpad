@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { sendEmailVerification } from 'firebase/auth';
@@ -7,11 +7,10 @@ import ProductActions from './ProductActions';
 import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
 import {
-  PLUGINS, pluginBySlug, LS_MY_ORDERS, LICENCE_FACTS,
+  PLUGINS,
 } from '../data/plugins';
 
-// The account page: who you are, the plugins you own, and — if any product
-// still offers one — your downloads.
+// The account page: the signed-in producer's Download Room.
 //
 // "My plugins" reads plugin_licenses/{lowercased e-mail}, which only server.js
 // writes: from signed Lemon Squeezy webhooks (order_created,
@@ -27,116 +26,17 @@ import {
 // each product whether it has a download action is correct now and correct if
 // one ever ships again.
 
-const KEY_MASK = '••••-••••-••••';
-
-// One licence may be for a single plugin or for the bundle, which covers both.
-function slugsFor(product) {
-  if (product === 'bundle') return PLUGINS.map((p) => p.slug);
-  return pluginBySlug(product) ? [product] : [];
-}
-
-function statusLabel(lic) {
-  if (lic.disabled || lic.status === 'disabled') return 'Disabled';
-  if (lic.status === 'expired') return 'Expired';
-  if (lic.status === 'active') return 'Active';
-  if (lic.status === 'inactive') return 'Not activated yet';
-  return lic.status || 'Unknown';
-}
-
-function LicenceKey({ value, short }) {
-  const [shown, setShown] = useState(false);
-  const [copied, setCopied] = useState(false);
-  if (!value) return <code className="acct-key">{short || KEY_MASK}</code>;
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setShown(true);
-    }
-  };
-
-  return (
-    <div className="acct-key-row">
-      <code className="acct-key">{shown ? value : (short || `${KEY_MASK}-${value.slice(-4)}`)}</code>
-      <button type="button" className="btn btn-ghost acct-small-btn" onClick={() => setShown((s) => !s)}>
-        {shown ? 'Hide' : 'Reveal'}
-      </button>
-      <button type="button" className="btn btn-ghost acct-small-btn" onClick={copy}>
-        {copied ? 'Copied' : 'Copy'}
-      </button>
-    </div>
-  );
-}
-
 function MyPlugins({ user }) {
-  const email = (user.email || '').toLowerCase();
-  const [state, setState] = useState({ loading: true, data: null, error: null });
   const [verifySent, setVerifySent] = useState(false);
-
-  useEffect(() => {
-    if (!user.emailVerified || !email) return undefined;
-    let alive = true;
-    getDoc(doc(db, 'plugin_licenses', email))
-      .then((snap) => { if (alive) setState({ loading: false, data: snap.exists() ? snap.data() : null, error: null }); })
-      .catch((err) => { if (alive) setState({ loading: false, data: null, error: err.message }); });
-    return () => { alive = false; };
-  }, [user.emailVerified, email]);
-
-  const fallback = (
-    <p className="acct-note">
-      Bought with a different e-mail, or can’t see a purchase? Open{' '}
-      <a href={LS_MY_ORDERS} target="_blank" rel="noopener noreferrer">Lemon Squeezy’s My Orders</a>{' '}
-      and sign in with the address you used at checkout — every order, key and file is there too.
-    </p>
-  );
 
   if (!user.emailVerified) {
     return (
       <div className="glass-panel acct-panel">
-        <p>Verify your e-mail address to see the plugins bought with it. Licence keys are only shown to the
-          owner of the address they were sent to.</p>
+        <p>Verify your e-mail address to enter the Download Room.</p>
         <button type="button" className="btn btn-primary" disabled={verifySent}
                 onClick={() => sendEmailVerification(user).then(() => setVerifySent(true)).catch(() => setVerifySent(false))}>
           {verifySent ? 'Verification e-mail sent — reload after clicking the link' : 'Send verification e-mail'}
         </button>
-        {fallback}
-      </div>
-    );
-  }
-
-  if (state.loading) return <p className="acct-note">Loading your plugins…</p>;
-
-  const orders = state.data?.orders || {};
-  const licences = Object.values(state.data?.licenses || {});
-  // A licence key event carries a product id but no name; resolve its plugin
-  // from the order it belongs to when the server could not.
-  const withProduct = licences.map((lic) => ({
-    ...lic,
-    product: lic.product || orders[lic.order_id]?.product || null,
-  }));
-
-  const owned = PLUGINS.map((p) => ({
-    plugin: p,
-    licences: withProduct.filter((lic) => slugsFor(lic.product).includes(p.slug)),
-  })).filter((row) => row.licences.length > 0);
-
-  if (state.error) {
-    return <div className="glass-panel acct-panel"><p>Your plugins could not be loaded just now.</p>{fallback}</div>;
-  }
-
-  if (owned.length === 0) {
-    return (
-      <div className="glass-panel acct-panel">
-        <p>No plugins on <strong>{email}</strong> yet. Purchases appear here once Lemon Squeezy confirms them,
-          under the e-mail used at checkout; a free launch licence appears as soon as you claim it.</p>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <Link to="/launch" className="btn btn-primary">Claim a free launch licence</Link>
-          <Link to="/plugins" className="btn btn-outline">See the plugins</Link>
-        </div>
-        {fallback}
       </div>
     );
   }
@@ -144,32 +44,13 @@ function MyPlugins({ user }) {
   return (
     <div>
       <div className="acct-plugin-list">
-        {owned.map(({ plugin, licences: lics }) => (
+        {PLUGINS.map((plugin) => (
           <article key={plugin.slug} className="acct-plugin">
             <img src={plugin.cardImage} alt="" width={plugin.imageSize[0]} height={plugin.imageSize[1]}
                  className="acct-plugin-img" loading="lazy" />
             <div className="acct-plugin-body">
               <h4>{plugin.name} <span>{plugin.kind} · Model {plugin.model}</span></h4>
-              {lics.map((lic) => (
-                <div key={lic.license_id} className="acct-licence">
-                  <LicenceKey value={lic.key} short={lic.source === 'launch' ? null : lic.key_short} />
-                  <div className="acct-licence-meta">
-                    <span className={`acct-status acct-status-${(statusLabel(lic)).split(' ')[0].toLowerCase()}`}>
-                      {statusLabel(lic)}
-                    </span>
-                    <span>
-                      Activations {lic.instances_count ?? 0}
-                      {lic.activation_limit ? ` of ${lic.activation_limit}` : ''}
-                    </span>
-                    {lic.source === 'launch'
-                      ? <span>Free launch licence · Kubbe and Kaset</span>
-                      : lic.product === 'bundle' && <span>Bundle key</span>}
-                    {orders[lic.order_id]?.receipt_url && (
-                      <a href={orders[lic.order_id].receipt_url} target="_blank" rel="noopener noreferrer">Receipt</a>
-                    )}
-                  </div>
-                </div>
-              ))}
+              <p className="acct-note">Free download access is tied to this verified sign-in. No keys.</p>
               <DownloadButtons slug={plugin.slug} className="acct-downloads" btnExtra="acct-small-btn" />
               <p className="acct-manual">
                 <Link to={plugin.manualPage}>{plugin.name} manual</Link>
@@ -182,12 +63,8 @@ function MyPlugins({ user }) {
       </div>
       <div className="acct-help">
         <h4>Moving to another computer</h4>
-        <p>{LICENCE_FACTS.oneComputer} If the old computer is no longer available, get in touch through <Link to="/help">Help</Link> from this e-mail address.</p>
-        <p>Step by step, with where the activation is stored: {PLUGINS.map((p, i) => (
-          <React.Fragment key={p.slug}>{i > 0 && ' · '}<Link to={`${p.manualPage}#licence`}>{p.name} manual</Link></React.Fragment>
-        ))}.</p>
+        <p>Downloads are tied to this verified sign-in. See each manual for installation.</p>
       </div>
-      {fallback}
     </div>
   );
 }

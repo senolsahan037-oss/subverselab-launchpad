@@ -6,7 +6,7 @@ import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
 import DownloadButtons from './DownloadButtons';
 import {
-  INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, LICENCE_FACTS, PLUGINS,
+  INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, PLUGINS,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 
@@ -63,7 +63,7 @@ export default function PluginPage({ plugin }) {
           <div className="plugin-cta-row">
             <BuyButton slug={plugin.slug} className="btn plugin-btn" />
             <Link to={LAUNCH.path} className="plugin-cta-note">
-              {LAUNCH.offer} — how to claim it →
+              {LAUNCH.offer} — enter the Download Room →
             </Link>
           </div>
 
@@ -109,13 +109,11 @@ export default function PluginPage({ plugin }) {
         </section>
 
         <section className="plugin-section">
-          <h2>Price and licence</h2>
+          <h2>Price and download</h2>
           <p>
             ${PRICES[plugin.slug]} on its own, or ${PRICES.bundle} together with {other.name}.
-            Sold through Lemon Squeezy, which e-mails the licence key and the download after checkout.
+            Sold through Lemon Squeezy. Free launch downloads are gated by sign-in on the Download Room.
           </p>
-          <p>{LICENCE_FACTS.noDemo}</p>
-          <p>{LICENCE_FACTS.oneComputer} <Link to={`${plugin.manualPage}#licence`}>Activation step by step.</Link></p>
           <div className="plugin-buy-row">
             <BuyButton slug={plugin.slug} />
             <BuyButton slug="bundle" label={`Both plugins — $${PRICES.bundle}`} className="btn btn-outline" />
@@ -123,10 +121,9 @@ export default function PluginPage({ plugin }) {
         </section>
 
         <section className="plugin-section">
-          <h2>Free launch licence</h2>
+          <h2>Free Download Room</h2>
           <p>
-            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} people get one key for both
-            plugins, on up to {LAUNCH.activationLimit} computers. <Link to={LAUNCH.path}>The four steps are on the launch page.</Link>
+            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <Link to={LAUNCH.path}>The four steps are on the launch page.</Link>
           </p>
         </section>
 
@@ -142,8 +139,7 @@ export default function PluginPage({ plugin }) {
         <section className="plugin-section">
           <h2>Download</h2>
           <p>
-            The installers are free to download: without a licence the plugin shows its activation card and
-            passes audio through untouched. Installation steps are in the manual.
+            Sign in to enter the Download Room. No key or activation is needed. Installation steps are in the manual.
           </p>
           <DownloadButtons slug={plugin.slug} />
         </section>
@@ -152,7 +148,7 @@ export default function PluginPage({ plugin }) {
           <h2>Manual</h2>
           <p>
             Installation on macOS and Windows, every control with its range and default, recipes,
-            specifications and licence activation.
+            specifications and installation.
           </p>
           <p>
             <Link to={plugin.manualPage}>Read the {plugin.name} manual</Link>
@@ -163,7 +159,7 @@ export default function PluginPage({ plugin }) {
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
           <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-            <Icon name="external" /> Ask for a code on Instagram
+            <Icon name="external" /> DM “{plugin.name.toUpperCase()}” on Instagram
           </a>
           <Link to={other.path} className="btn btn-outline">See {other.name}</Link>
         </div>

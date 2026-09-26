@@ -1379,7 +1379,7 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .launch-download h3 { font-size: 1rem; font-weight: 800; margin: 0 0 10px; }
 .launch-download p { margin: 10px 0 0; }
 
-/* /launch — claim a free licence */
+/* /launch — gated Download Room */
 .launch-claim-wrap { display: flex; align-items: center; gap: 18px 28px; flex-wrap: wrap; margin: 22px 0 14px; }
 .launch-claim, .launch-key-card {
   flex: 1 1 420px; min-width: 0; padding: 18px 22px; border-radius: 12px;

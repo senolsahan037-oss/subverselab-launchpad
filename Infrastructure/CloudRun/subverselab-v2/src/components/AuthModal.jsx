@@ -35,9 +35,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     try {
       if (activeTab === 'signup') {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Licence keys (the /launch claim, My plugins) are only ever shown to
-        // a verified address, so the link goes out with the sign-up rather
-        // than waiting for the user to find a button for it.
+        // Download Room access requires a verified address.
         sendEmailVerification(cred.user).catch(() => {});
       } else {
         await signInWithEmailAndPassword(auth, email, password);

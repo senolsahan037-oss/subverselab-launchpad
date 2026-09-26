@@ -39,7 +39,7 @@ import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
 import {
-  PLUGINS_INDEX, PLUGINS, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM, LICENCE_FACTS,
+  PLUGINS_INDEX, PLUGINS, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM,
 } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
@@ -609,9 +609,9 @@ async function main() {
       ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
-      <h2>Price and licence</h2>
-      <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. ${escapeHtml(LICENCE_FACTS.noDemo)}</p>
-      <p>${escapeHtml(LAUNCH.askHow)}: the first ${LAUNCH.codesTotal.toLocaleString('en-US')} people get a free licence for both plugins. <a href="${LAUNCH.path}">How the launch works</a>.</p>
+      <h2>Price and download</h2>
+      <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. Sign in to enter the Download Room; no key or activation is needed.</p>
+      <p>${escapeHtml(LAUNCH.askHow)}: the first ${LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <a href="${LAUNCH.path}">How the launch works</a>.</p>
       <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
@@ -664,18 +664,17 @@ async function main() {
     image: `${SITE_URL}/plugins/kubbe/og.jpg`,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch', url: `${SITE_URL}${LAUNCH.path}` }])],
   }), `<h1>Kubbe and Kaset — out ${escapeHtml(RELEASE_LABEL)}</h1>
-      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}. ${escapeHtml(LICENCE_FACTS.launch)}</p>
+      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}.</p>
       <p>${escapeHtml(LAUNCH.instagram)} <a href="${INSTAGRAM_DM}">Instagram</a>.</p>
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <p>Both together: $${PRICES.bundle}. ${escapeHtml(FORMATS)}.</p>
-      <h2>How to get a free licence</h2>
+      <h2>Download Room</h2>
       <ol>${LAUNCH.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
       <h2>Manuals</h2>
       <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>
-      <h2>Licence</h2>
-      <p>${escapeHtml(LICENCE_FACTS.noDemo)}</p>
-      <p>${escapeHtml(LICENCE_FACTS.oneComputer)}</p>
+      <h2>Getting the plugins</h2>
+      <p>Sign in on subverselab.com/launch and download. No key or activation is needed.</p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   // Published guides — the site's real long-form content.

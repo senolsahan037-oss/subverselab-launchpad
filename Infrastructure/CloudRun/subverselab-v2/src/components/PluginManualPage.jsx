@@ -64,7 +64,7 @@ export default function PluginManualPage({ manual }) {
   const { hash } = useLocation();
   const [w, h] = manual.imageSize;
 
-  // A link such as /plugins/kaset/manual#licence arrives through the router,
+  // A link such as /plugins/kaset/manual#download arrives through the router,
   // which does not scroll to the fragment by itself.
   useEffect(() => {
     if (!hash) return;

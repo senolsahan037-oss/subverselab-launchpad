@@ -1,35 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Icon from './Icon';
-import { DOWNLOAD_PLATFORMS, RELEASE_LABEL } from '../data/plugins';
+import { auth } from '../firebase';
+import { onAuthStateChanged, sendEmailVerification } from 'firebase/auth';
+import { DOWNLOAD_PLATFORMS } from '../data/plugins';
 import { useDownloads, formatSize } from '../hooks/useDownloads';
 
-// One button per platform for a plugin's installer. Active once the build is
-// in the downloads manifest ("Download for macOS · v1.0.0 · 12 MB"); until
-// then disabled with the release date. Used on the plugin page, /launch and
-// the account page.
-export default function DownloadButtons({ slug, className = 'plugin-downloads', btnExtra = '' }) {
-  const extra = btnExtra ? ` ${btnExtra}` : '';
-  const files = useDownloads(slug);
-  return (
-    <div className={className}>
-      {DOWNLOAD_PLATFORMS.map(([key, label]) => {
-        const f = files[key];
-        if (!f) {
-          return (
-            <button key={key} type="button" className={`btn btn-outline plugin-buy-closed${extra}`} disabled
-                    title={`The ${label} download opens ${RELEASE_LABEL}`}>
-              {label} · Available {RELEASE_LABEL}
-            </button>
-          );
-        }
-        const size = formatSize(f.size);
-        return (
-          <a key={key} href={f.url} className={`btn btn-primary${extra}`} download={f.name || true} rel="noopener">
-            <Icon name="download" /> Download for {label}
-            {f.version ? ` · v${f.version}` : ''}{size ? ` · ${size}` : ''}
-          </a>
-        );
-      })}
-    </div>
-  );
+let pendingDownload = null;
+export default function DownloadButtons({ slug, className = 'plugin-downloads', btnExtra = '', onLoginClick }) {
+  const files = useDownloads(slug); const [message, setMessage] = useState('');
+  const request = async (platform) => {
+    const u = auth.currentUser;
+    if (!u) { pendingDownload = { slug, platform }; window.dispatchEvent(new Event('svl-open-auth')); return; }
+    if (!u.emailVerified) { setMessage('Verify your e-mail first.'); sendEmailVerification(u).catch(() => {}); return; }
+    setMessage('Preparing download…');
+    try { const token = await u.getIdToken(true); const r = await fetch('/api/download/ticket', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ slug, platform }) }); const body = await r.json().catch(() => ({})); if (r.status === 410) setMessage('All 1,000 free downloads are taken.'); else if (!r.ok) setMessage(body.error || 'Download unavailable.'); else window.location.assign(body.url); } catch { setMessage('Download unavailable. Check your connection and try again.'); }
+  };
+  useEffect(() => onAuthStateChanged(auth, (u) => { if (u && pendingDownload?.slug === slug) { const p = pendingDownload; pendingDownload = null; request(p.platform); } }), [slug]);
+  return <div className={className}>{DOWNLOAD_PLATFORMS.map(([key, label]) => { const f = files[key]; const size = f && formatSize(f.size); const text = f ? `Download free for ${label}${f.version ? ` · v${f.version}` : ''}${size ? ` · ${size}` : ''}` : `Download free for ${label} · Available October 1`; return <button key={key} type="button" className={`btn ${f ? 'btn-primary' : 'btn-outline'}${btnExtra ? ` ${btnExtra}` : ''}`} disabled={!f} onClick={() => request(key)}><Icon name="download" /> {text}</button>; })}{message && <p role="status">{message}</p>}</div>;
 }

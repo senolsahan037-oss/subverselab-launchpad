@@ -37,13 +37,12 @@ export const CHECKOUT = {
 
 // Installers are not in this repository and not in this constant. They live
 // in the public bucket gs://subverselab-downloads, and this manifest says
-// which files exist; src/hooks/useDownloads.js reads it in the browser, so a
-// download button turns on as soon as a build is published with
-// 01_AI_Tools/subverselab-plugin-common/tools/publish_download.sh — no site
-// redeploy. Shape: { kubbe: { version, files: { mac: {url,size,name}, win } } }.
+// which files exist; the server reads the private bucket and serves names,
+// sizes and versions (never URLs), so a download button turns on as soon as a
+// build is published with tools/publish_download.sh — no site redeploy.
+// Shape: { kubbe: { version, files: { mac: {name,size,version}, win } } }.
 // A plugin with no entry keeps its buttons disabled ("Available October 1").
-export const DOWNLOADS_MANIFEST =
-  'https://storage.googleapis.com/subverselab-downloads/plugins/manifest.json';
+export const DOWNLOADS_MANIFEST = '/api/download/manifest';
 
 export const DOWNLOAD_PLATFORMS = [
   ['mac', 'macOS'],
@@ -60,15 +59,6 @@ export const FORMATS = 'VST3 and AU on macOS (Apple Silicon and Intel) · VST3 o
 // https://docs.lemonsqueezy.com/help/online-store/my-orders
 export const LS_MY_ORDERS = 'https://app.lemonsqueezy.com/my-orders';
 
-export const LICENCE_FACTS = {
-  noDemo:
-    'There is no demo or trial version. A licence comes from a purchase or from a free launch licence. Without one, the plugin shows an activation card and passes audio through untouched.',
-  oneComputer:
-    'A purchased key activates on one computer; a free launch licence on up to three. To move a key, open the plugin on the old computer and choose “Release this computer”, then paste the key on the new one.',
-  launch:
-    'A free launch licence is one key for both Kubbe and Kaset. It activates on up to three computers.',
-};
-
 export const PLUGINS_INDEX = {
   title: 'Audio Plugins | SubverseLab',
   description:
@@ -80,19 +70,19 @@ export const LAUNCH = {
   path: '/launch',
   title: 'Kubbe and Kaset launch — October 1 | SubverseLab',
   description:
-    'Two SubverseLab plugins out October 1: Kubbe (reverb) and Kaset (cassette colour). $9 each or $15 for both. The first 1,000 people who sign in on subverselab.com/launch get a free licence for both plugins.',
+    'Two SubverseLab plugins out October 1: Kubbe (reverb) and Kaset (cassette colour). The first 1,000 verified producers can sign in on subverselab.com/launch and download both.',
   codesTotal: 1000,
   activationLimit: 3,
-  offer: 'Free licence for the first 1,000 people — both plugins',
-  askHow: 'Sign in on subverselab.com/launch and claim it',
+  offer: 'Free for the first 1,000 producers — both plugins',
+  askHow: 'Sign in on subverselab.com/launch and download',
   // Instagram DMs are answered with a link to /launch, so every licence goes
   // through the one counter on this page.
-  instagram: 'Found us on Instagram? Send “KUBBE” or “KASET” to @subverse_lab and the reply is a link to this page — every free licence is claimed here.',
+  instagram: 'Instagram: DM “KUBBE” or “KASET” to @subverse_lab and we reply with this page.',
   steps: [
     ['Sign in', 'Sign in on this page with Google or with an e-mail address. An e-mail sign-up has to be verified first — the link arrives by e-mail.'],
-    ['Claim', 'Press “Claim my licence”. You get one key that unlocks both Kubbe and Kaset, on up to three computers. One per person, while the 1,000 last.'],
+    ['Download', 'Download both plugins after signing in. One producer is counted once, while the 1,000 last.'],
     ['Download', 'Download Kubbe and Kaset for macOS or Windows from this page and install them.'],
-    ['Paste the key in the plugin', 'Open the plugin in your DAW, paste the key into its activation card and press Activate.'],
+    ['Open in your DAW', 'Install the plugin and open it in your DAW. No key or activation is needed.'],
   ],
 };
 
