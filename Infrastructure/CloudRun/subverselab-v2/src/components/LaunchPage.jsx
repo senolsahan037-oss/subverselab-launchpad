@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { sendEmailVerification } from 'firebase/auth';
+import { auth } from '../firebase';
 import PageMeta from './PageMeta';
 import Icon from './Icon';
 import LaunchCountdown from './LaunchCountdown';
@@ -12,16 +14,19 @@ import { SITE_URL } from '../data/siteMeta';
 
 /*  /launch — the October 1 campaign for Kubbe and Kaset.
  *
- *  The one number on this page, codes left, is read live from
- *  GET /api/launch/codes (server.js → Lemon Squeezy discount redemptions).
- *  When the server says {available:false} — no API key, no discount ids, or
- *  Lemon Squeezy did not answer — the number is simply not shown. It is never
- *  estimated and never hard-coded.
+ *  The free launch licences are SubverseLab's own (server.js →
+ *  launchLicence.js): sign in, verify the e-mail, press Claim, and
+ *  POST /api/launch/claim returns one key for both plugins — the same key again
+ *  on every later press. Instagram DMs are answered with a link here, so the
+ *  one counter below is the whole campaign.
+ *
+ *  The number, "N / 1,000 claimed", is read live from GET /api/launch/codes.
+ *  When the server says {available:false} the number is simply not shown. It
+ *  is never estimated and never hard-coded.
  */
 
-function CodesLeft() {
+function useLaunchCounter() {
   const [codes, setCodes] = useState(null);
-
   useEffect(() => {
     let alive = true;
     fetch('/api/launch/codes')
@@ -30,21 +35,149 @@ function CodesLeft() {
       .catch(() => { if (alive) setCodes({ available: false }); });
     return () => { alive = false; };
   }, []);
+  const known = codes && codes.available !== false && Number.isInteger(codes.claimed) && Number.isInteger(codes.total);
+  return [known ? codes : null, setCodes];
+}
 
-  if (!codes || codes.available === false || !Number.isInteger(codes.redeemed)) return null;
-  const left = Math.max(0, codes.total - codes.redeemed);
+function Counter({ codes }) {
+  if (!codes) return null;
   return (
     <div className="launch-codes" role="status">
-      <span className="launch-codes-num">{left.toLocaleString('en-US')}</span>
+      <span className="launch-codes-num">
+        {codes.claimed.toLocaleString('en-US')} / {codes.total.toLocaleString('en-US')}
+      </span>
       <span className="launch-codes-label">
-        of {codes.total.toLocaleString('en-US')} free codes left
-        <small>Counted from redemptions at checkout · updates every minute</small>
+        free licences claimed
+        <small>Live count · updates every 30 seconds</small>
       </span>
     </div>
   );
 }
 
-export default function LaunchPage() {
+function KeyCard({ licenceKey }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(licenceKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <div className="launch-key-card">
+      <p className="launch-key-label">Your licence key · Kubbe and Kaset · up to {LAUNCH.activationLimit} computers</p>
+      <div className="launch-key-row">
+        <code className="launch-key">{licenceKey}</code>
+        <button type="button" className="btn plugin-btn" onClick={copy}>{copied ? 'Copied' : 'Copy'}</button>
+      </div>
+      <ol className="launch-key-steps">
+        <li><a href="#download">Download</a> Kubbe and Kaset and install them.</li>
+        <li>Open either plugin in your DAW — the activation card covers the panel.</li>
+        <li>Paste this key and press <strong>Activate</strong>. Do the same in the other plugin.</li>
+      </ol>
+      <p className="launch-key-links">
+        Step by step: {PLUGINS.map((p, i) => (
+          <React.Fragment key={p.slug}>{i > 0 && ' · '}<Link to={`${p.manualPage}#licence`}>{p.name} manual</Link></React.Fragment>
+        ))}
+        {' · '}The key is also saved on <Link to="/account">your account</Link>.
+      </p>
+    </div>
+  );
+}
+
+// Everything between "signed out" and "here is your key".
+function ClaimLicence({ user, onLoginClick, codes, setCodes }) {
+  const [state, setState] = useState({ busy: false, key: null, error: null, soldOut: false });
+  const [verifySent, setVerifySent] = useState(false);
+  // user.reload() updates the same object in place, so a counter forces the
+  // re-render that shows the verified state.
+  const [, setReloaded] = useState(0);
+
+  const soldOut = state.soldOut || (codes && codes.claimed >= codes.total);
+
+  if (state.key) return <KeyCard licenceKey={state.key} />;
+
+  if (!user) {
+    return (
+      <div className="launch-claim">
+        <p className="launch-claim-head">Get your free licence</p>
+        {soldOut ? (
+          <p>All {LAUNCH.codesTotal.toLocaleString('en-US')} launch licences are taken. Claimed one earlier? Sign in to see it again.</p>
+        ) : (
+          <p>One key for both plugins, on up to {LAUNCH.activationLimit} computers. Sign in with Google or an e-mail address to claim it.</p>
+        )}
+        <button type="button" className="btn plugin-btn" onClick={onLoginClick}>
+          {soldOut ? 'Sign in' : 'Sign in to claim'}
+        </button>
+      </div>
+    );
+  }
+
+  if (!user.emailVerified) {
+    return (
+      <div className="launch-claim">
+        <p className="launch-claim-head">Verify your e-mail first</p>
+        <p>One licence per person means one per verified address. Open the link we sent to <strong>{user.email}</strong>, then come back here.</p>
+        <div className="launch-claim-row">
+          <button type="button" className="btn plugin-btn"
+                  onClick={() => user.reload().then(() => setReloaded((n) => n + 1)).catch(() => {})}>
+            I’ve verified — continue
+          </button>
+          <button type="button" className="btn btn-ghost" disabled={verifySent}
+                  onClick={() => sendEmailVerification(user).then(() => setVerifySent(true)).catch(() => setVerifySent(false))}>
+            {verifySent ? 'Link sent — check your inbox' : 'Send the link again'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const claim = async () => {
+    setState((s) => ({ ...s, busy: true, error: null }));
+    try {
+      // Force a fresh token: one issued before the e-mail was verified still
+      // says email_verified:false.
+      const token = await (auth.currentUser || user).getIdToken(true);
+      const r = await fetch('/api/launch/claim', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await r.json().catch(() => ({}));
+      if (Number.isInteger(body.claimed) && Number.isInteger(body.total)) {
+        setCodes({ total: body.total, claimed: body.claimed });
+      }
+      if (r.ok && body.key) {
+        setState({ busy: false, key: body.key, error: null, soldOut: false });
+      } else if (r.status === 410) {
+        setState({ busy: false, key: null, error: null, soldOut: true });
+      } else {
+        setState({ busy: false, key: null, error: body.error || 'The licence could not be claimed just now. Try again in a minute.', soldOut: false });
+      }
+    } catch {
+      setState({ busy: false, key: null, error: 'The licence could not be claimed just now. Check your connection and try again.', soldOut: false });
+    }
+  };
+
+  return (
+    <div className="launch-claim">
+      <p className="launch-claim-head">{soldOut ? 'All launch licences are taken' : 'Get your free licence'}</p>
+      {soldOut ? (
+        <p>All {LAUNCH.codesTotal.toLocaleString('en-US')} launch licences have been claimed. The plugins are still on sale below. If you claimed one earlier, the button shows it again.</p>
+      ) : (
+        <p>Signed in as <strong>{user.email}</strong>. One key for both plugins, on up to {LAUNCH.activationLimit} computers. Already claimed? The same button shows your key again.</p>
+      )}
+      <button type="button" className="btn plugin-btn" onClick={claim} disabled={state.busy}>
+        {state.busy ? 'Claiming…' : (soldOut ? 'Show my key' : 'Claim my licence')}
+      </button>
+      {state.error && <p className="launch-claim-error" role="alert">{state.error}</p>}
+    </div>
+  );
+}
+
+export default function LaunchPage({ user, onLoginClick }) {
+  const [codes, setCodes] = useLaunchCounter();
   return (
     <div className="plugin-page">
       <PageMeta title={LAUNCH.title} description={LAUNCH.description} path={LAUNCH.path}
@@ -65,12 +198,14 @@ export default function LaunchPage() {
             <LaunchCountdown />
           </div>
 
-          <div className="plugin-cta-row">
-            <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer" className="btn plugin-btn">
-              <Icon name="external" /> Ask for a code on Instagram
-            </a>
-            <CodesLeft />
+          <div className="launch-claim-wrap">
+            <ClaimLicence user={user} onLoginClick={onLoginClick} codes={codes} setCodes={setCodes} />
+            <Counter codes={codes} />
           </div>
+          <p className="launch-insta">
+            {LAUNCH.instagram}{' '}
+            <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer">Instagram <Icon name="external" /></a>
+          </p>
 
           <div className="launch-duo">
             {PLUGINS.map((p) => (
@@ -87,7 +222,7 @@ export default function LaunchPage() {
 
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <section className="plugin-section">
-          <h2>How to get a free code</h2>
+          <h2>How to get a free licence</h2>
           <ol className="launch-steps">
             {LAUNCH.steps.map(([head, text], i) => (
               <li key={head}>
@@ -97,8 +232,8 @@ export default function LaunchPage() {
             ))}
           </ol>
           <p>
-            Codes go to the first {LAUNCH.codesTotal.toLocaleString('en-US')} people who ask. After that the
-            plugins are still on sale at the prices below.
+            {LICENCE_FACTS.launch} Licences go to the first {LAUNCH.codesTotal.toLocaleString('en-US')} people
+            who claim one, one per person. After that the plugins are still on sale at the prices below.
           </p>
         </section>
 
@@ -123,7 +258,7 @@ export default function LaunchPage() {
           <p>{FORMATS}. Checkout, licence key and download are handled by Lemon Squeezy.</p>
         </section>
 
-        <section className="plugin-section">
+        <section className="plugin-section" id="download">
           <h2>Download and manuals</h2>
           <p>
             The installers are free to download; without a licence the plugin shows its activation card and

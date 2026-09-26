@@ -49,7 +49,7 @@ const licence = (name) => [
   { h3: 'Activate' },
   {
     steps: [
-      'After checkout, Lemon Squeezy e-mails the licence key. Signed in here with the same e-mail, the key is also under My plugins on your account page.',
+      'After checkout, Lemon Squeezy e-mails the licence key; a free launch licence is claimed on subverselab.com/launch. Signed in here with the same e-mail, the key is also under My plugins on your account page.',
       `Open ${name} in your DAW. The activation card covers the panel.`,
       'Paste the key and press **Activate**. This needs an internet connection once.',
     ],

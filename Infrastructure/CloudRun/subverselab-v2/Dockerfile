@@ -9,7 +9,7 @@ FROM node:20-slim
 WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev
-COPY server.js ./
+COPY server.js launchLicence.js ./
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/.agents ./.agents
 ENV PORT=8080

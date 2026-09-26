@@ -30,6 +30,21 @@ service cloud.firestore {
                   && request.auth.token.email.lower() == email;
       allow write: if false;
     }
+    // Launch licences (server.js → launchLicence.js, Admin SDK only): the key
+    // records, the 1,000 counter and the one-per-account / one-per-e-mail
+    // index. No client reads or writes at all — a signed-in owner sees their
+    // key through plugin_licenses above, and the counter through
+    // GET /api/launch/codes. Spelled out rather than left to the catch-all so
+    // a future broad rule cannot open them by accident.
+    match /launch_keys/{document=**} {
+      allow read, write: if false;
+    }
+    match /launch/{document=**} {
+      allow read, write: if false;
+    }
+    match /launch_claims/{document=**} {
+      allow read, write: if false;
+    }
     match /analytics/{document=**} {
       allow read: if request.auth != null;
     }

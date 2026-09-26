@@ -14,8 +14,10 @@ import {
 // still offers one — your downloads.
 //
 // "My plugins" reads plugin_licenses/{lowercased e-mail}, which only server.js
-// writes, from signed Lemon Squeezy webhooks (order_created,
-// license_key_created, license_key_updated). firestore.rules lets a user read
+// writes: from signed Lemon Squeezy webhooks (order_created,
+// license_key_created, license_key_updated), and from a free launch-licence
+// claim on /launch (launchLicence.js; those entries carry source "launch" and
+// product "bundle", so they list under both plugins). firestore.rules lets a user read
 // that one document only when Firebase has verified they own the address, so
 // an unverified sign-in is asked to verify first rather than shown an empty
 // list that looks like "you own nothing".
@@ -128,9 +130,12 @@ function MyPlugins({ user }) {
   if (owned.length === 0) {
     return (
       <div className="glass-panel acct-panel">
-        <p>No plugins on <strong>{email}</strong> yet. Purchases and redeemed launch codes appear here once
-          Lemon Squeezy confirms them, under the e-mail used at checkout.</p>
-        <Link to="/plugins" className="btn btn-primary" style={{ display: 'inline-block' }}>See the plugins</Link>
+        <p>No plugins on <strong>{email}</strong> yet. Purchases appear here once Lemon Squeezy confirms them,
+          under the e-mail used at checkout; a free launch licence appears as soon as you claim it.</p>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <Link to="/launch" className="btn btn-primary">Claim a free launch licence</Link>
+          <Link to="/plugins" className="btn btn-outline">See the plugins</Link>
+        </div>
         {fallback}
       </div>
     );
@@ -147,7 +152,7 @@ function MyPlugins({ user }) {
               <h4>{plugin.name} <span>{plugin.kind} · Model {plugin.model}</span></h4>
               {lics.map((lic) => (
                 <div key={lic.license_id} className="acct-licence">
-                  <LicenceKey value={lic.key} short={lic.key_short} />
+                  <LicenceKey value={lic.key} short={lic.source === 'launch' ? null : lic.key_short} />
                   <div className="acct-licence-meta">
                     <span className={`acct-status acct-status-${(statusLabel(lic)).split(' ')[0].toLowerCase()}`}>
                       {statusLabel(lic)}
@@ -156,7 +161,9 @@ function MyPlugins({ user }) {
                       Activations {lic.instances_count ?? 0}
                       {lic.activation_limit ? ` of ${lic.activation_limit}` : ''}
                     </span>
-                    {lic.product === 'bundle' && <span>Bundle key</span>}
+                    {lic.source === 'launch'
+                      ? <span>Free launch licence · Kubbe and Kaset</span>
+                      : lic.product === 'bundle' && <span>Bundle key</span>}
                     {orders[lic.order_id]?.receipt_url && (
                       <a href={orders[lic.order_id].receipt_url} target="_blank" rel="noopener noreferrer">Receipt</a>
                     )}

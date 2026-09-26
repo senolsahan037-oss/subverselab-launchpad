@@ -63,7 +63,7 @@ export default function PluginPage({ plugin }) {
           <div className="plugin-cta-row">
             <BuyButton slug={plugin.slug} className="btn plugin-btn" />
             <Link to={LAUNCH.path} className="plugin-cta-note">
-              {LAUNCH.offer} — how the launch code works →
+              {LAUNCH.offer} — how to claim it →
             </Link>
           </div>
 
@@ -123,10 +123,10 @@ export default function PluginPage({ plugin }) {
         </section>
 
         <section className="plugin-section">
-          <h2>Free launch code</h2>
+          <h2>Free launch licence</h2>
           <p>
-            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} people get a code that
-            takes the price to zero at checkout. <Link to={LAUNCH.path}>The four steps are on the launch page.</Link>
+            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} people get one key for both
+            plugins, on up to {LAUNCH.activationLimit} computers. <Link to={LAUNCH.path}>The four steps are on the launch page.</Link>
           </p>
         </section>
 

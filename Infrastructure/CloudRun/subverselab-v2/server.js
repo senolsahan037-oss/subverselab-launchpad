@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
+import { createLaunchService, tokenBucket } from './launchLicence.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, 'dist');
@@ -94,86 +95,169 @@ app.use((req, res, next) => {
 });
 
 /* ============================================================
-   Plugin sales API — Lemon Squeezy
-   Two endpoints, both server-side because they need secrets the browser must
-   never see. Env names only; values live in Cloud Run:
-     LEMONSQUEEZY_API_KEY          read-only use: discount redemption counts
-     LS_DISCOUNT_IDS               comma list of the launch discount ids
+   Plugin sales API — Lemon Squeezy webhook, and SubverseLab's own launch
+   licences (launchLicence.js).
+   Env names only; values live in Cloud Run:
      LEMONSQUEEZY_WEBHOOK_SECRET   the webhook's signing secret
      LS_PRODUCT_SLUGS (optional)   "productId:slug,…" e.g. "111:kubbe,222:kaset,333:bundle"
    Field names checked against https://docs.lemonsqueezy.com/api on 2026-09-26.
    ============================================================ */
 
-const LS_API = 'https://api.lemonsqueezy.com/v1';
-const LAUNCH_CODES_TOTAL = 1000;
-const CODES_CACHE_MS = 60_000;
-let codesCache = { at: 0, body: null };
-
-// GET /api/launch/codes → {total, redeemed} or {available:false}.
-// Redeemed = the sum, over every launch discount, of the discount-redemptions
-// list's meta.page.total for filter[discount_id]. One page of size 1 per
-// discount is enough, because only the total is read. Any failure or missing
-// env answers {available:false} and the page shows no number — never a guess.
-async function readRedeemedCodes() {
-  const key = process.env.LEMONSQUEEZY_API_KEY;
-  const ids = (process.env.LS_DISCOUNT_IDS || '').split(',').map((s) => s.trim()).filter(Boolean);
-  if (!key || ids.length === 0) return { available: false };
-  let redeemed = 0;
-  for (const id of ids) {
-    const url = `${LS_API}/discount-redemptions?filter[discount_id]=${encodeURIComponent(id)}&page[size]=1`;
-    const r = await fetch(url, {
-      headers: { Accept: 'application/vnd.api+json', Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!r.ok) throw new Error(`Lemon Squeezy ${r.status}`);
-    const total = (await r.json())?.meta?.page?.total;
-    if (!Number.isInteger(total)) throw new Error('No meta.page.total');
-    redeemed += total;
-  }
-  return { total: LAUNCH_CODES_TOTAL, redeemed: Math.min(redeemed, LAUNCH_CODES_TOTAL) };
-}
-
-app.get('/api/launch/codes', async (req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=60');
-  if (codesCache.body && Date.now() - codesCache.at < CODES_CACHE_MS) {
-    return res.json(codesCache.body);
-  }
-  let body;
-  try {
-    body = await readRedeemedCodes();
-  } catch (err) {
-    console.error('launch codes:', err.message);
-    body = { available: false };
-  }
-  // Failures are cached too, so a Lemon Squeezy outage is asked about once a
-  // minute rather than once per visitor.
-  codesCache = { at: Date.now(), body };
-  res.json(body);
-});
-
 // Firebase Admin is loaded on first use, not at startup: the static site must
 // keep serving even where no Google credentials exist (local preview), and
-// only a correctly signed webhook ever needs Firestore. On Cloud Run the
-// service's own identity is picked up by application-default credentials —
-// the same pattern as metadata-sync-service and ToolAuthBridge.
+// only the webhook and the launch-licence routes ever need it. On Cloud Run
+// the service's own identity is picked up by application-default credentials
+// — the same pattern as metadata-sync-service and ToolAuthBridge.
 let firestorePromise = null;
 function adminFirestore() {
   if (!firestorePromise) {
     firestorePromise = (async () => {
       const { initializeApp, applicationDefault, getApps } = await import('firebase-admin/app');
       const { getFirestore, FieldValue } = await import('firebase-admin/firestore');
+      const { getAuth } = await import('firebase-admin/auth');
       if (!getApps().length) {
         initializeApp({
           credential: applicationDefault(),
           projectId: process.env.GOOGLE_CLOUD_PROJECT || 'project-62238635-aae4-41f4-880',
         });
       }
-      return { db: getFirestore(), FieldValue };
+      return { db: getFirestore(), FieldValue, auth: getAuth() };
     })();
     firestorePromise.catch(() => { firestorePromise = null; });
   }
   return firestorePromise;
 }
+
+// Behind Cloud Run's front end the client address is the last entry Google
+// appends to X-Forwarded-For; trusting exactly one hop makes req.ip that
+// address instead of anything a client wrote into the header itself.
+app.set('trust proxy', 1);
+
+const launch = createLaunchService({ getAdmin: adminFirestore });
+
+// A Firestore call that fails because this process has no Google credentials
+// (local preview) or cannot reach Google answers 503, not a stack trace.
+function serviceDown(err) {
+  const m = String(err?.message || '');
+  return /public keys|default credentials|metadata|ENOTFOUND|ECONNREFUSED|UNAVAILABLE|DEADLINE|ETIMEDOUT|PERMISSION_DENIED|ABORTED|contention/i.test(m)
+    || [4, 7, 10, 14, 16].includes(err?.code);
+}
+
+const CODES_CACHE_MS = 30_000;
+let codesCache = { at: 0, body: null };
+
+// GET /api/launch/codes → {total, claimed} or {available:false}.
+// Read from launch/counter, the one counter every claim increments — the
+// /launch button and the Instagram DMs both end up there. Any failure answers
+// {available:false} and the page shows no number, never a guess.
+app.get('/api/launch/codes', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=30');
+  if (codesCache.body && Date.now() - codesCache.at < CODES_CACHE_MS) {
+    return res.json(codesCache.body);
+  }
+  let body;
+  try {
+    body = await withTimeout(launch.readCounter(), 5000);
+  } catch (err) {
+    console.error('launch codes:', err.message);
+    body = { available: false };
+  }
+  // Failures are cached too, so an outage is asked about twice a minute rather
+  // than once per visitor.
+  codesCache = { at: Date.now(), body };
+  res.json(body);
+});
+
+function withTimeout(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DEADLINE: no answer')), ms); }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+const claimLimit = tokenBucket({ perMinute: 10 });
+const licenceLimit = tokenBucket({ perMinute: 30 });
+// The plugins post form fields (JUCE's URL::withParameter); anything else may
+// send JSON. Either way a licence request is a few hundred bytes.
+const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
+
+// POST /api/launch/claim   Authorization: Bearer <Firebase ID token>
+// One free launch licence per verified e-mail and per Firebase account, while
+// the 1,000 last; asking again returns the same key.
+app.post('/api/launch/claim', smallBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!claimLimit(req.ip)) return res.status(429).json({ error: 'Too many requests — try again in a minute' });
+
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+
+  let admin;
+  try {
+    admin = await adminFirestore();
+  } catch (err) {
+    console.error('launch claim (admin):', err.message);
+    return res.status(503).json({ error: 'The licence service is not available right now' });
+  }
+
+  let decoded;
+  try {
+    decoded = await admin.auth.verifyIdToken(token);
+  } catch (err) {
+    if (serviceDown(err)) {
+      console.error('launch claim (verify):', err.message);
+      return res.status(503).json({ error: 'The licence service is not available right now' });
+    }
+    return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
+  }
+  if (!decoded.email || decoded.email_verified !== true) {
+    return res.status(403).json({ error: 'Verify your e-mail address first' });
+  }
+
+  try {
+    const { status, body } = await withTimeout(launch.claim({ uid: decoded.uid, email: decoded.email }), 15000);
+    if (status === 200 || status === 410) codesCache = { at: Date.now(), body: { total: body.total, claimed: body.claimed } };
+    res.status(status).json(body);
+  } catch (err) {
+    console.error('launch claim:', err.message);
+    const busy = /ABORTED|contention/i.test(err.message) || err.code === 10;
+    res.status(503).json({ error: busy ? 'Many people are claiming right now — try again in a few seconds'
+      : 'The licence service is not available right now' });
+  }
+});
+
+// Licence API for the plugins, in Lemon Squeezy's License API shapes.
+// When the service itself is down the answer is deliberately NOT JSON: the
+// plugin treats a non-object body as "could not ask" and keeps its activation,
+// whereas {valid:false} would make it forget a perfectly good licence.
+function licenceRoute(fn, pick) {
+  return [smallBody, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!licenceLimit(req.ip)) return res.status(429).type('text/plain').send('Too many requests');
+    try {
+      const { status, body } = await withTimeout(fn(pick(req.body || {})), 10000);
+      res.status(status).json(body);
+    } catch (err) {
+      console.error(`licence ${req.path}:`, err.message);
+      res.status(503).type('text/plain').send('Licence service unavailable');
+    }
+  }];
+}
+
+app.post('/api/license/activate', licenceRoute(launch.activate,
+  (b) => ({ licenseKey: b.license_key, instanceName: b.instance_name })));
+app.post('/api/license/validate', licenceRoute(launch.validate,
+  (b) => ({ licenseKey: b.license_key, instanceId: b.instance_id })));
+app.post('/api/license/deactivate', licenceRoute(launch.deactivate,
+  (b) => ({ licenseKey: b.license_key, instanceId: b.instance_id })));
+
+// A body over the cap or unparseable JSON. Express's default handler would
+// answer with an HTML stack trace (NODE_ENV is not set on Cloud Run); this
+// says only the status. Plain text, for the same reason as above.
+app.use('/api', (err, req, res, next) => {
+  if (!err?.type || !err.status) return next(err);
+  res.status(err.status).type('text/plain').send(err.status === 413 ? 'Request too large' : 'Bad request');
+});
 
 function productSlugFor(productId, productName = '') {
   const map = Object.fromEntries(

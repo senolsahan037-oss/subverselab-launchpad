@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification,
+} from 'firebase/auth';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
@@ -32,7 +34,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     try {
       if (activeTab === 'signup') {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        // Licence keys (the /launch claim, My plugins) are only ever shown to
+        // a verified address, so the link goes out with the sign-up rather
+        // than waiting for the user to find a button for it.
+        sendEmailVerification(cred.user).catch(() => {});
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }

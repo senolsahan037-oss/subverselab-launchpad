@@ -235,7 +235,7 @@ export default function App() {
               <Route path={KASET.path} element={<PluginPage key={KASET.slug} plugin={KASET} />} />
               <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
               <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
-              <Route path="/launch" element={<LaunchPage />} />
+              <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/forum/:topicId" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
@@ -277,7 +277,7 @@ export default function App() {
           </main>
 
           <GlobalPlayer track={activeTrack} isPlaying={isPlaying} onPlayPause={handlePlayPause} />
-          <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} onLoginSuccess={(u) => setUser(u)} />
+          <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} onLoginSuccess={() => setUser(auth.currentUser)} />
 
         </div>
       </Router>

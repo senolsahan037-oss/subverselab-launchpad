@@ -11,7 +11,8 @@
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "prerender": "node scripts/prerender.js",
     "check:responsive": "node scripts/check-responsive.js",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test:licence": "node scripts/test-launch-licence.js"
   },
   "keywords": [],
   "author": "",

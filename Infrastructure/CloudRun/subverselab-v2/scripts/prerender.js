@@ -611,7 +611,7 @@ async function main() {
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Price and licence</h2>
       <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. ${escapeHtml(LICENCE_FACTS.noDemo)}</p>
-      <p>${escapeHtml(LAUNCH.askHow)} (<a href="${INSTAGRAM_DM}">Instagram</a>): the first ${LAUNCH.codesTotal.toLocaleString('en-US')} people get a free code. <a href="${LAUNCH.path}">How the launch works</a>.</p>
+      <p>${escapeHtml(LAUNCH.askHow)}: the first ${LAUNCH.codesTotal.toLocaleString('en-US')} people get a free licence for both plugins. <a href="${LAUNCH.path}">How the launch works</a>.</p>
       <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
@@ -664,11 +664,12 @@ async function main() {
     image: `${SITE_URL}/plugins/kubbe/og.jpg`,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch', url: `${SITE_URL}${LAUNCH.path}` }])],
   }), `<h1>Kubbe and Kaset — out ${escapeHtml(RELEASE_LABEL)}</h1>
-      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}: <a href="${INSTAGRAM_DM}">message on Instagram</a>.</p>
+      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}. ${escapeHtml(LICENCE_FACTS.launch)}</p>
+      <p>${escapeHtml(LAUNCH.instagram)} <a href="${INSTAGRAM_DM}">Instagram</a>.</p>
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <p>Both together: $${PRICES.bundle}. ${escapeHtml(FORMATS)}.</p>
-      <h2>How to get a free code</h2>
+      <h2>How to get a free licence</h2>
       <ol>${LAUNCH.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
       <h2>Manuals</h2>
       <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>

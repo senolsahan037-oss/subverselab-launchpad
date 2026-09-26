@@ -25,7 +25,7 @@ export default function PluginsPage() {
       <Link to={LAUNCH.path} className="plugin-strip" style={{ marginBottom: '24px' }}>
         <span className="plugin-strip-tag">Launch</span>
         <span className="plugin-strip-text">
-          Both out {RELEASE_LABEL}. <b>{LAUNCH.offer}</b> — send the plugin’s name to @subverse_lab on Instagram.
+          Both out {RELEASE_LABEL}. <b>{LAUNCH.offer}</b> — claim yours on the launch page.
         </span>
         <LaunchCountdown compact />
         <span className="plugin-strip-go">How it works →</span>

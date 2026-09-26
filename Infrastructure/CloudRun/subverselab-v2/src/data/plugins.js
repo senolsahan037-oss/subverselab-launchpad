@@ -13,9 +13,10 @@
 //
 // Every statement below is taken from the plugins' own repositories
 // (01_AI_Tools/subverselab-reverb, 01_AI_Tools/subverselab-kaset) or from the
-// launch announcement. Nothing is counted here: the only number of codes the
-// site ever shows comes live from GET /api/launch/codes, which reads Lemon
-// Squeezy — and when that is not configured, the page shows no number at all.
+// launch announcement. Nothing is counted here: the only number of launch
+// licences the site ever shows comes live from GET /api/launch/codes, which
+// reads the one Firestore counter every claim increments (server.js →
+// launchLicence.js) — and when that cannot be read, the page shows no number.
 
 // Instagram's own short link that opens a direct message to the account.
 export const INSTAGRAM_DM = 'https://ig.me/m/subverse_lab';
@@ -61,9 +62,11 @@ export const LS_MY_ORDERS = 'https://app.lemonsqueezy.com/my-orders';
 
 export const LICENCE_FACTS = {
   noDemo:
-    'There is no demo or trial version. A licence comes from a purchase or from a launch code. Without one, the plugin shows an activation card and passes audio through untouched.',
+    'There is no demo or trial version. A licence comes from a purchase or from a free launch licence. Without one, the plugin shows an activation card and passes audio through untouched.',
   oneComputer:
-    'One key activates on one computer. To move it, open the plugin on the old computer and choose “Release this computer”, then paste the key on the new one.',
+    'A purchased key activates on one computer; a free launch licence on up to three. To move a key, open the plugin on the old computer and choose “Release this computer”, then paste the key on the new one.',
+  launch:
+    'A free launch licence is one key for both Kubbe and Kaset. It activates on up to three computers.',
 };
 
 export const PLUGINS_INDEX = {
@@ -77,15 +80,19 @@ export const LAUNCH = {
   path: '/launch',
   title: 'Kubbe and Kaset launch — October 1 | SubverseLab',
   description:
-    'Two SubverseLab plugins out October 1: Kubbe (reverb) and Kaset (cassette colour). $9 each or $15 for both. The first 1,000 people who message KUBBE or KASET to @subverse_lab on Instagram get a free code.',
+    'Two SubverseLab plugins out October 1: Kubbe (reverb) and Kaset (cassette colour). $9 each or $15 for both. The first 1,000 people who sign in on subverselab.com/launch get a free licence for both plugins.',
   codesTotal: 1000,
-  offer: 'Free code for the first 1,000 people who ask',
-  askHow: 'Send “KUBBE” or “KASET” to @subverse_lab on Instagram',
+  activationLimit: 3,
+  offer: 'Free licence for the first 1,000 people — both plugins',
+  askHow: 'Sign in on subverselab.com/launch and claim it',
+  // Instagram DMs are answered with a link to /launch, so every licence goes
+  // through the one counter on this page.
+  instagram: 'Found us on Instagram? Send “KUBBE” or “KASET” to @subverse_lab and the reply is a link to this page — every free licence is claimed here.',
   steps: [
-    ['Send a message', 'Send “KUBBE” or “KASET” to @subverse_lab on Instagram — the name of the plugin you want.'],
-    ['Get your code', 'While codes last, the code comes back to you in the same conversation.'],
-    ['Redeem it at checkout', 'Enter the code at the Lemon Squeezy checkout. It takes the price to zero. Lemon Squeezy then e-mails you the licence key and the download.'],
-    ['Activate', 'Install the plugin, open it in your DAW and paste the key into its activation card.'],
+    ['Sign in', 'Sign in on this page with Google or with an e-mail address. An e-mail sign-up has to be verified first — the link arrives by e-mail.'],
+    ['Claim', 'Press “Claim my licence”. You get one key that unlocks both Kubbe and Kaset, on up to three computers. One per person, while the 1,000 last.'],
+    ['Download', 'Download Kubbe and Kaset for macOS or Windows from this page and install them.'],
+    ['Paste the key in the plugin', 'Open the plugin in your DAW, paste the key into its activation card and press Activate.'],
   ],
 };
 
