@@ -4,6 +4,7 @@ import PageMeta from './PageMeta';
 import Icon from './Icon';
 import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
+import DownloadButtons from './DownloadButtons';
 import {
   INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, LICENCE_FACTS, PLUGINS,
 } from '../data/plugins';
@@ -114,7 +115,7 @@ export default function PluginPage({ plugin }) {
             Sold through Lemon Squeezy, which e-mails the licence key and the download after checkout.
           </p>
           <p>{LICENCE_FACTS.noDemo}</p>
-          <p>{LICENCE_FACTS.oneComputer}</p>
+          <p>{LICENCE_FACTS.oneComputer} <Link to={`${plugin.manualPage}#licence`}>Activation step by step.</Link></p>
           <div className="plugin-buy-row">
             <BuyButton slug={plugin.slug} />
             <BuyButton slug="bundle" label={`Both plugins — $${PRICES.bundle}`} className="btn btn-outline" />
@@ -139,11 +140,24 @@ export default function PluginPage({ plugin }) {
         )}
 
         <section className="plugin-section">
+          <h2>Download</h2>
+          <p>
+            The installers are free to download: without a licence the plugin shows its activation card and
+            passes audio through untouched. Installation steps are in the manual.
+          </p>
+          <DownloadButtons slug={plugin.slug} />
+        </section>
+
+        <section className="plugin-section">
           <h2>Manual</h2>
           <p>
-            <a href={plugin.manual} target="_blank" rel="noopener noreferrer">
-              {plugin.name} manual (PDF)
-            </a>
+            Installation on macOS and Windows, every control with its range and default, recipes,
+            specifications and licence activation.
+          </p>
+          <p>
+            <Link to={plugin.manualPage}>Read the {plugin.name} manual</Link>
+            {' · '}
+            <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
           </p>
         </section>
 

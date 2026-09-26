@@ -4,6 +4,7 @@ import PageMeta from './PageMeta';
 import Icon from './Icon';
 import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
+import DownloadButtons from './DownloadButtons';
 import {
   LAUNCH, PLUGINS, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM, LICENCE_FACTS, LS_MY_ORDERS,
 } from '../data/plugins';
@@ -120,6 +121,25 @@ export default function LaunchPage() {
             </div>
           </div>
           <p>{FORMATS}. Checkout, licence key and download are handled by Lemon Squeezy.</p>
+        </section>
+
+        <section className="plugin-section">
+          <h2>Download and manuals</h2>
+          <p>
+            The installers are free to download; without a licence the plugin shows its activation card and
+            passes audio through untouched.
+          </p>
+          {PLUGINS.map((p) => (
+            <div key={p.slug} className="launch-download">
+              <h3>{p.name}</h3>
+              <DownloadButtons slug={p.slug} />
+              <p>
+                <Link to={p.manualPage}>{p.name} manual</Link>
+                {' · '}
+                <a href={p.manual} target="_blank" rel="noopener noreferrer">PDF</a>
+              </p>
+            </div>
+          ))}
         </section>
 
         <section className="plugin-section">

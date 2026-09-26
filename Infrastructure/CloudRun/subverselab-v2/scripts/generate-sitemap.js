@@ -162,6 +162,8 @@ async function main() {
     urlEntry(`${SITE_URL}/plugins`, new Date().toISOString().slice(0, 10), '0.7'),
     urlEntry(`${SITE_URL}/plugins/kubbe`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/kaset`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/kubbe/manual`, new Date().toISOString().slice(0, 10), '0.6'),
+    urlEntry(`${SITE_URL}/plugins/kaset/manual`, new Date().toISOString().slice(0, 10), '0.6'),
     urlEntry(`${SITE_URL}/launch`, new Date().toISOString().slice(0, 10), '0.8'),
   ];
 

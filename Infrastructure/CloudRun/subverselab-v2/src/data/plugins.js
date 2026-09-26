@@ -6,10 +6,10 @@
 //
 // These are pages, not synced products (Rules/02 §"Not everything published is
 // a product"): nothing here is written to `products/` and the files are not
-// served from this site. The sale, the licence key and the download all come
-// from Lemon Squeezy; the site only links to the checkout and, for a signed-in
-// buyer, mirrors what the Lemon Squeezy webhook recorded (server.js →
-// Firestore `plugin_licenses`).
+// served from this site. The sale and the licence key come from Lemon Squeezy,
+// the installers from a public bucket (see DOWNLOADS_MANIFEST); the site links
+// to the checkout and the files and, for a signed-in buyer, mirrors what the
+// Lemon Squeezy webhook recorded (server.js → Firestore `plugin_licenses`).
 //
 // Every statement below is taken from the plugins' own repositories
 // (01_AI_Tools/subverselab-reverb, 01_AI_Tools/subverselab-kaset) or from the
@@ -34,12 +34,20 @@ export const CHECKOUT = {
   bundle: '',
 };
 
-// Installer links shown on /account to a signed-in owner. Empty until the
-// builds are uploaded; an empty link renders as "Available October 1".
-export const DOWNLOADS = {
-  kubbe: { mac: '', windows: '' },
-  kaset: { mac: '', windows: '' },
-};
+// Installers are not in this repository and not in this constant. They live
+// in the public bucket gs://subverselab-downloads, and this manifest says
+// which files exist; src/hooks/useDownloads.js reads it in the browser, so a
+// download button turns on as soon as a build is published with
+// 01_AI_Tools/subverselab-plugin-common/tools/publish_download.sh — no site
+// redeploy. Shape: { kubbe: { version, files: { mac: {url,size,name}, win } } }.
+// A plugin with no entry keeps its buttons disabled ("Available October 1").
+export const DOWNLOADS_MANIFEST =
+  'https://storage.googleapis.com/subverselab-downloads/plugins/manifest.json';
+
+export const DOWNLOAD_PLATFORMS = [
+  ['mac', 'macOS'],
+  ['win', 'Windows'],
+];
 
 // US dollars.
 export const PRICES = { kubbe: 9, kaset: 9, bundle: 15 };
@@ -96,6 +104,7 @@ export const KUBBE = {
   cardImage: '/plugins/kubbe/panel-hammam.jpg',
   imageSize: [1600, 629],
   manual: '/plugins/kubbe/Kubbe_Manual.pdf',
+  manualPage: '/plugins/kubbe/manual',
   intro:
     '“Kubbe” is Turkish for dome. Instead of the usual list of algorithms, Kubbe has three modes, each an algorithmic reverb inspired by a kind of space, on the face of a 1979 rack unit as it looked the day it left the factory. Nothing in it is recorded or measured from a real place: there are no impulse responses.',
   modesLabel: 'Modes',
@@ -158,6 +167,7 @@ export const KASET = {
   cardImage: '/plugins/kaset/panel.jpg',
   imageSize: [964, 568],
   manual: '/plugins/kaset/Kaset_Manual.pdf',
+  manualPage: '/plugins/kaset/manual',
   intro:
     '“Kaset” is Turkish for cassette. The panel is a high-speed dubbing deck: a record deck, a playback deck and a dial that says how many copies away from the master you are.',
   modesLabel: 'Generation',

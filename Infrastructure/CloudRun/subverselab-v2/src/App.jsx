@@ -19,12 +19,14 @@ import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginPage from './components/PluginPage';
 import LaunchPage from './components/LaunchPage';
+import PluginManualPage from './components/PluginManualPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import { LEARN_INDEX } from './data/siteMeta';
 import { KUBBE, KASET } from './data/plugins';
+import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
 
 /* ============================================================
    GLOBAL AUDIO PLAYER
@@ -231,6 +233,8 @@ export default function App() {
               <Route path="/plugins" element={<PluginsPage />} />
               <Route path={KUBBE.path} element={<PluginPage key={KUBBE.slug} plugin={KUBBE} />} />
               <Route path={KASET.path} element={<PluginPage key={KASET.slug} plugin={KASET} />} />
+              <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
+              <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
               <Route path="/launch" element={<LaunchPage />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

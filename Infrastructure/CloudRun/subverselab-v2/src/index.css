@@ -1315,10 +1315,66 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .acct-status-active { color: var(--color-success); }
 .acct-status-disabled, .acct-status-expired { color: var(--color-danger); }
 .acct-downloads { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 10px; }
-.acct-manual { font-size: 0.88rem; color: var(--color-accent); }
+.acct-manual { font-size: 0.88rem; color: var(--color-accent); margin: 0; }
 .acct-help { margin-top: 24px; }
 .acct-help h4 { margin: 0 0 6px; font-weight: 800; }
 .acct-help p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
 @media (max-width: 640px) {
   .acct-plugin { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   PLUGIN MANUALS — /plugins/<slug>/manual (PluginManualPage.jsx)
+   ============================================================ */
+.plugin-downloads { display: flex; gap: 10px; flex-wrap: wrap; }
+.manual-hero .plugin-title { font-size: clamp(2.2rem, 6vw, 3.6rem); }
+.manual-body { max-width: 860px; padding: 48px 20px 96px; }
+.manual-toc {
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface); padding: 16px 20px; margin-bottom: 40px;
+}
+.manual-toc strong { display: block; margin-bottom: 8px; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-text-muted); }
+.manual-toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+.manual-toc li { margin-bottom: 4px; }
+.manual-toc a { color: var(--color-accent); text-decoration: none; }
+.manual-toc a:hover { text-decoration: underline; }
+.manual-section { scroll-margin-top: 90px; }
+.manual-section h2 { display: flex; align-items: baseline; gap: 10px; }
+.manual-num { font-size: 0.85rem; font-weight: 800; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+.manual-section h3 { font-size: 1rem; font-weight: 800; margin: 22px 0 8px; }
+.manual-section code {
+  font-size: 0.86em; padding: 1px 5px; border-radius: 4px;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+.manual-steps { padding-left: 22px; margin: 0; }
+.manual-steps li { margin-bottom: 6px; }
+.manual-section li strong, .manual-section p strong { color: var(--color-text); }
+.manual-note {
+  border-left: 3px solid var(--color-accent); padding: 4px 0 4px 14px;
+  font-size: 0.94rem;
+}
+.manual-table-wrap { overflow-x: auto; margin: 8px 0 12px; -webkit-overflow-scrolling: touch; }
+.manual-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.manual-table th, .manual-table td {
+  text-align: left; vertical-align: top; padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border); line-height: 1.55;
+}
+.manual-table thead th { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
+.manual-table tbody th { font-weight: 800; color: var(--color-text); white-space: nowrap; }
+.manual-table td { color: var(--color-text-muted); }
+.manual-recipes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.manual-recipe {
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface); padding: 16px 18px;
+}
+.manual-recipe h3 { margin-top: 0; }
+.manual-recipe p { margin: 0 0 8px; }
+.manual-recipe-settings { font-size: 0.85rem; color: var(--color-accent) !important; }
+@media (max-width: 640px) {
+  .manual-toc ol { columns: 1; }
+  .manual-table tbody th { white-space: normal; }
+}
+.launch-download { margin: 18px 0 8px; }
+.launch-download h3 { font-size: 1rem; font-weight: 800; margin: 0 0 10px; }
+.launch-download p { margin: 10px 0 0; }

@@ -44,8 +44,8 @@ export default function Footer() {
         </div>
 
         {/* Right Column (Socials & Credits) */}
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ display: 'flex', gap: '24px', justifyContent: 'flex-end', marginBottom: '24px' }}>
+        <div style={{ textAlign: 'right', minWidth: 0 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', justifyContent: 'flex-end', marginBottom: '24px' }}>
             <a 
               href="https://www.youtube.com/@SubverseLab" 
               target="_blank" 

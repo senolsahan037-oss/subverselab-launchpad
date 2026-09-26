@@ -5,9 +5,9 @@ import { sendEmailVerification } from 'firebase/auth';
 import { db } from '../firebase';
 import ProductActions from './ProductActions';
 import PageMeta from './PageMeta';
-import Icon from './Icon';
+import DownloadButtons from './DownloadButtons';
 import {
-  PLUGINS, pluginBySlug, DOWNLOADS, LS_MY_ORDERS, LICENCE_FACTS, RELEASE_LABEL,
+  PLUGINS, pluginBySlug, LS_MY_ORDERS, LICENCE_FACTS,
 } from '../data/plugins';
 
 // The account page: who you are, the plugins you own, and — if any product
@@ -65,21 +65,6 @@ function LicenceKey({ value, short }) {
       <button type="button" className="btn btn-ghost acct-small-btn" onClick={copy}>
         {copied ? 'Copied' : 'Copy'}
       </button>
-    </div>
-  );
-}
-
-function DownloadButtons({ slug }) {
-  const links = DOWNLOADS[slug] || {};
-  return (
-    <div className="acct-downloads">
-      {[['mac', 'macOS'], ['windows', 'Windows']].map(([k, label]) => (
-        links[k]
-          ? <a key={k} href={links[k]} className="btn btn-primary acct-small-btn"><Icon name="download" /> {label}</a>
-          : <button key={k} type="button" className="btn btn-outline acct-small-btn" disabled>
-              {label} · Available {RELEASE_LABEL}
-            </button>
-      ))}
     </div>
   );
 }
@@ -178,10 +163,12 @@ function MyPlugins({ user }) {
                   </div>
                 </div>
               ))}
-              <DownloadButtons slug={plugin.slug} />
-              <a href={plugin.manual} target="_blank" rel="noopener noreferrer" className="acct-manual">
-                {plugin.name} manual (PDF)
-              </a>
+              <DownloadButtons slug={plugin.slug} className="acct-downloads" btnExtra="acct-small-btn" />
+              <p className="acct-manual">
+                <Link to={plugin.manualPage}>{plugin.name} manual</Link>
+                {' · '}
+                <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
+              </p>
             </div>
           </article>
         ))}
@@ -189,6 +176,9 @@ function MyPlugins({ user }) {
       <div className="acct-help">
         <h4>Moving to another computer</h4>
         <p>{LICENCE_FACTS.oneComputer} If the old computer is no longer available, get in touch through <Link to="/help">Help</Link> from this e-mail address.</p>
+        <p>Step by step, with where the activation is stored: {PLUGINS.map((p, i) => (
+          <React.Fragment key={p.slug}>{i > 0 && ' · '}<Link to={`${p.manualPage}#licence`}>{p.name} manual</Link></React.Fragment>
+        ))}.</p>
       </div>
       {fallback}
     </div>

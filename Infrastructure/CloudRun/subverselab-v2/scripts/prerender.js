@@ -41,6 +41,7 @@ import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/da
 import {
   PLUGINS_INDEX, PLUGINS, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM, LICENCE_FACTS,
 } from '../src/data/plugins.js';
+import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
 
 function escapeHtml(str = '') {
@@ -611,8 +612,49 @@ async function main() {
       <h2>Price and licence</h2>
       <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. ${escapeHtml(LICENCE_FACTS.noDemo)}</p>
       <p>${escapeHtml(LAUNCH.askHow)} (<a href="${INSTAGRAM_DM}">Instagram</a>): the first ${LAUNCH.codesTotal.toLocaleString('en-US')} people get a free code. <a href="${LAUNCH.path}">How the launch works</a>.</p>
-      <p><a href="${pl.manual}">${escapeHtml(pl.name)} manual (PDF)</a></p>
+      <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  // Owner's manuals, from src/data/pluginManuals.js — the same blocks the
+  // React page renders. Inline markup there is only `code` and **bold**.
+  const manualInline = (t) => escapeHtml(t)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const manualBlock = (b) => {
+    if (b.h3) return `<h3>${escapeHtml(b.h3)}</h3>`;
+    if (b.p) return `<p>${manualInline(b.p)}</p>`;
+    if (b.note) return `<p>${manualInline(b.note)}</p>`;
+    if (b.list) return `<ul>${b.list.map((t) => `<li>${manualInline(t)}</li>`).join('')}</ul>`;
+    if (b.steps) return `<ol>${b.steps.map((t) => `<li>${manualInline(t)}</li>`).join('')}</ol>`;
+    if (b.table) {
+      return `<table><thead><tr>${b.table.head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${
+        b.table.rows.map((r) => `<tr>${r.map((c) => `<td>${manualInline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    }
+    if (b.recipes) {
+      return b.recipes.map((r) => `<h3>${escapeHtml(r.name)}</h3><p>${escapeHtml(r.settings)}</p><p>${escapeHtml(r.text)}</p>`).join('');
+    }
+    return '';
+  };
+  for (const m of MANUALS) {
+    const pl = m.plugin;
+    writePage(m.path.slice(1), buildHead({
+      title: m.title,
+      description: m.description,
+      canonical: `${SITE_URL}${m.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        breadcrumbSchema([
+          homeCrumb, pluginsCrumb,
+          { name: pl.name, url: `${SITE_URL}${pl.path}` },
+          { name: 'Manual', url: `${SITE_URL}${m.path}` },
+        ]),
+      ],
+    }), `<h1>${escapeHtml(pl.name)} &mdash; owner&rsquo;s manual</h1>
+      <p>${escapeHtml(m.subtitle)}. <a href="${m.pdf}">Manual as PDF</a>.</p>
+      ${m.sections.map((sec, i) => `<h2 id="${sec.id}">${i + 1}. ${escapeHtml(sec.heading)}</h2>
+      ${sec.blocks.map(manualBlock).join('\n      ')}`).join('\n      ')}
+      <nav><a href="${pl.path}">${escapeHtml(pl.name)}</a> &middot; <a href="/plugins">Plugins</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
   writePage('launch', buildHead({
@@ -628,6 +670,8 @@ async function main() {
       <p>Both together: $${PRICES.bundle}. ${escapeHtml(FORMATS)}.</p>
       <h2>How to get a free code</h2>
       <ol>${LAUNCH.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
+      <h2>Manuals</h2>
+      <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>
       <h2>Licence</h2>
       <p>${escapeHtml(LICENCE_FACTS.noDemo)}</p>
       <p>${escapeHtml(LICENCE_FACTS.oneComputer)}</p>
