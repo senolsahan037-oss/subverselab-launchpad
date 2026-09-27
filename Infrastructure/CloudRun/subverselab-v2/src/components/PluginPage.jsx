@@ -6,7 +6,7 @@ import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
 import DownloadButtons from './DownloadButtons';
 import {
-  INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, PLUGINS,
+  INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, PLUGINS, PRESS_KIT,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 
@@ -24,6 +24,7 @@ export default function PluginPage({ plugin }) {
   const mode = plugin.modes.find((m) => m.key === modeKey) || plugin.modes[0];
   const other = PLUGINS.find((p) => p.slug !== plugin.slug);
   const [w, h] = plugin.imageSize;
+  const demos = (plugin.demos || []).filter((d) => d.youtube);
 
   const schema = {
     '@context': 'https://schema.org',
@@ -88,6 +89,23 @@ export default function PluginPage({ plugin }) {
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <p className="plugin-lead">{plugin.intro}</p>
 
+        {demos.length > 0 && (
+          <section className="plugin-section">
+            <h2>Hear it</h2>
+            <div className="plugin-demos">
+              {demos.map((d) => (
+                <figure key={d.youtube} className="plugin-demo">
+                  <iframe src={`https://www.youtube-nocookie.com/embed/${d.youtube}`}
+                          title={`${plugin.name} — ${d.caption}`} loading="lazy"
+                          allow="encrypted-media; picture-in-picture; fullscreen"
+                          referrerPolicy="strict-origin-when-cross-origin" />
+                  <figcaption>{d.caption}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </section>
+        )}
+
         {plugin.sections.map((s) => (
           <section key={s.heading} className="plugin-section">
             <h2>{s.heading}</h2>
@@ -123,7 +141,7 @@ export default function PluginPage({ plugin }) {
         <section className="plugin-section">
           <h2>Free Download Room</h2>
           <p>
-            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <Link to={LAUNCH.path}>The four steps are on the launch page.</Link>
+            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <Link to={LAUNCH.path}>The steps are on the launch page.</Link>
           </p>
         </section>
 
@@ -154,6 +172,10 @@ export default function PluginPage({ plugin }) {
             <Link to={plugin.manualPage}>Read the {plugin.name} manual</Link>
             {' · '}
             <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
+          </p>
+          <p>
+            Writing about {plugin.name}? <a href={PRESS_KIT}>Press kit</a> — screenshots, demo
+            video links, logos and a fact sheet (zip, 5 MB).
           </p>
         </section>
 

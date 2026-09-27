@@ -44,6 +44,10 @@ export const CHECKOUT = {
 // A plugin with no entry keeps its buttons disabled ("Available October 1").
 export const DOWNLOADS_MANIFEST = '/api/download/manifest';
 
+// One zip for editors: screenshots, YouTube demo links, logos, FACT_SHEET.txt.
+// Built from 01_AI_Tools/instagram_2026-10/launch_desk/press_kit/.
+export const PRESS_KIT = '/press/SubverseLab_KUBBE_KASET_press_kit.zip';
+
 export const DOWNLOAD_PLATFORMS = [
   ['mac', 'macOS'],
   ['win', 'Windows'],
@@ -80,8 +84,7 @@ export const LAUNCH = {
   instagram: 'Instagram: DM “KUBBE” or “KASET” to @subverse_lab and we reply with this page.',
   steps: [
     ['Sign in', 'Sign in on this page with Google or with an e-mail address. An e-mail sign-up has to be verified first — the link arrives by e-mail.'],
-    ['Download', 'Download both plugins after signing in. One producer is counted once, while the 1,000 last.'],
-    ['Download', 'Download Kubbe and Kaset for macOS or Windows from this page and install them.'],
+    ['Download', 'Download Kubbe and Kaset for macOS or Windows from this page. One producer is counted once, while the 1,000 last.'],
     ['Open in your DAW', 'Install the plugin and open it in your DAW. No key or activation is needed.'],
   ],
 };
@@ -102,6 +105,12 @@ export const KUBBE = {
   imageSize: [1600, 629],
   manual: '/plugins/kubbe/Kubbe_Manual.pdf',
   manualPage: '/plugins/kubbe/manual',
+  // Demo clips live on YouTube (unlisted Shorts, the launch reels without
+  // their closing Instagram-DM card); `youtube` is the video id. An empty id
+  // hides that clip.
+  demos: [
+    { youtube: 'MAYXHzhLTMk', caption: 'Dry, then Hammam, Cistern and Valley on the same phrase. Headphones on.' },
+  ],
   intro:
     '“Kubbe” is Turkish for dome. Instead of the usual list of algorithms, Kubbe has three modes, each an algorithmic reverb inspired by a kind of space, on the face of a 1979 rack unit as it looked the day it left the factory. Nothing in it is recorded or measured from a real place: there are no impulse responses.',
   modesLabel: 'Modes',
@@ -165,6 +174,10 @@ export const KASET = {
   imageSize: [964, 568],
   manual: '/plugins/kaset/Kaset_Manual.pdf',
   manualPage: '/plugins/kaset/manual',
+  demos: [
+    { youtube: 's_Cqb6sOp74', caption: 'One song, four generations: dry, 1st, 2nd and 4th dub.' },
+    { youtube: '3Q_u4MX1rL8', caption: 'One pass, three tapes: Normal, Chrome and Metal.' },
+  ],
   intro:
     '“Kaset” is Turkish for cassette. The panel is a high-speed dubbing deck: a record deck, a playback deck and a dial that says how many copies away from the master you are.',
   modesLabel: 'Generation',

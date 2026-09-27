@@ -1173,6 +1173,10 @@ h1, h2 {
 .plugin-place-num { font-size: 0.65rem; opacity: 0.7; }
 .plugin-place-text { margin: 14px 0 0; max-width: 640px; color: var(--pl-muted); line-height: 1.6; min-height: 3.2em; }
 
+.plugin-demos { display: flex; gap: 20px; flex-wrap: wrap; }
+.plugin-demo { margin: 0; flex: 1 1 240px; max-width: 320px; }
+.plugin-demo iframe { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; border: 0; border-radius: 10px; background: #0d1f1a; }
+.plugin-demo figcaption { margin-top: 8px; font-size: 0.9rem; color: var(--color-text-muted, inherit); opacity: 0.85; }
 .plugin-lead { font-size: 1.1rem; line-height: 1.75; color: var(--color-text); margin: 0 0 40px; }
 .plugin-section { margin-bottom: 40px; }
 .plugin-section h2 { font-size: 1.25rem; font-weight: 800; margin: 0 0 12px; }
