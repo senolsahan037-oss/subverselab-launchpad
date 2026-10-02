@@ -43,6 +43,7 @@ import {
 } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
+import { LEGAL_PAGES, LEGAL_UPDATED, LEGAL_EMAIL } from '../src/data/legalContent.js';
 
 function escapeHtml(str = '') {
   return String(str)
@@ -743,6 +744,22 @@ async function main() {
       <h2>What we ask in return</h2>
       <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li></ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Privacy Policy and Terms of Use: same text as LegalPage.jsx, from legalContent.js.
+  const legalMail = (t) => escapeHtml(t).split(LEGAL_EMAIL).join(`<a href="mailto:${LEGAL_EMAIL}">${LEGAL_EMAIL}</a>`);
+  for (const doc of LEGAL_PAGES) {
+    writePage(doc.path.slice(1), buildHead({
+      title: doc.title,
+      description: doc.description,
+      canonical: `${SITE_URL}${doc.path}`,
+      jsonLd: [breadcrumbSchema([homeCrumb, { name: doc.h1, url: `${SITE_URL}${doc.path}` }])],
+    }), `<h1>${escapeHtml(doc.h1)}</h1>
+      <p>Last updated: ${LEGAL_UPDATED}</p>
+      <p>${escapeHtml(doc.intro)}</p>
+      ${doc.sections.map((sec) => `<h2>${escapeHtml(sec.h)}</h2>
+      ${sec.blocks.map((b) => (Array.isArray(b) ? `<ul>${b.map((li) => `<li>${legalMail(li)}</li>`).join('')}</ul>` : `<p>${legalMail(b)}</p>`)).join('\n      ')}`).join('\n      ')}
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a> &middot; <a href="/privacy">Privacy Policy</a> &middot; <a href="/terms">Terms of Use</a></nav>`);
+  }
 
   // Published guides — the site's real long-form content.
   for (const a of articles) {

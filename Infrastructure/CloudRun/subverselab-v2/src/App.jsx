@@ -15,6 +15,8 @@ import AdminPanel from './components/AdminPanel';
 import ArticlePage from './components/ArticlePage';
 import ToolRoom from './components/ToolRoom';
 import HelpPage from './components/HelpPage';
+import LegalPage from './components/LegalPage';
+import { PRIVACY, TERMS } from './data/legalContent';
 import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginPage from './components/PluginPage';
@@ -246,6 +248,9 @@ export default function App() {
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/launch2" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} launchId="launch2" />} />
               <Route path="/testers" element={<TestersPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
+
+              <Route path={PRIVACY.path} element={<LegalPage doc={PRIVACY} />} />
+              <Route path={TERMS.path} element={<LegalPage doc={TERMS} />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/forum/:topicId" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

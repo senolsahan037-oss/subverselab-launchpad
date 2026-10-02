@@ -98,6 +98,22 @@ export default function Footer() {
             >
               Help
             </Link>
+            <Link
+              to="/privacy"
+              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+            >
+              Privacy
+            </Link>
+            <Link
+              to="/terms"
+              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+            >
+              Terms
+            </Link>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', opacity: 0.7 }}>
             Created for subverselab.com

@@ -70,8 +70,12 @@ service cloud.firestore {
       allow read: if request.auth != null;
     }
     match /reports/{document=**} {
+      // Anyone may file a report; only the site admins (verified admin e-mails, same list as
+      // server.js ADMIN_EMAILS) may read or change them: reports hold other people's e-mails.
       allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, update, delete: if request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in ['info@subverselab.com', 'senolsahan037@gmail.com'];
     }
     match /forum_topics/{topicId} {
       allow read: if true;

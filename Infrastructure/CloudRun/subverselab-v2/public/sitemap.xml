@@ -86,6 +86,16 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://subverselab.com/privacy</loc>
+    <lastmod>2026-10-02</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/terms</loc>
+    <lastmod>2026-10-02</lastmod>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://subverselab.com/learn/arrangement-gps</loc>
     <lastmod>2026-08-25</lastmod>
     <priority>0.7</priority>
