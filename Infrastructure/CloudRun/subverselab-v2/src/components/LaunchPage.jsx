@@ -109,6 +109,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
     && (new URLSearchParams(window.location.search).get('purchased') === '1' || checkoutStarted());
   const { owned, polling, gaveUp } = usePurchases(user, full, expectPurchase);
   const buyEmail = user?.email || auth.currentUser?.email || undefined;
+  const buyUid = user?.uid || auth.currentUser?.uid || undefined;
 
   const steps = second
     ? LAUNCH2.steps
@@ -197,14 +198,14 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
                 <strong>{p.name}</strong>
                 <span className="launch-price-num">${PRICES[p.slug]}</span>
                 <span>{p.kind}</span>
-                <BuyButton slug={p.slug} email={buyEmail} full={full} />
+                <BuyButton slug={p.slug} email={buyEmail} uid={buyUid} full={full} />
               </div>
             ))}
             <div className="launch-price launch-price-bundle">
               <strong>{second ? 'All four' : 'Both'}</strong>
               <span className="launch-price-num">${PRICES[bundleSlug]}</span>
               <span>{second ? 'KORO, YANKI, HAVA and MIHENK' : 'Kubbe and Kaset'}</span>
-              <BuyButton slug={bundleSlug} email={buyEmail} full={full} label={second ? `Buy all four — $${PRICES.bundle4}` : `Buy both — $${PRICES.bundle}`} />
+              <BuyButton slug={bundleSlug} email={buyEmail} uid={buyUid} full={full} label={second ? `Buy all four — $${PRICES.bundle4}` : `Buy both — $${PRICES.bundle}`} />
             </div>
           </div>
           <p>{second ? 'KORO, YANKI and HAVA: VST3 and AU on macOS, VST3 on Windows. MIHENK: standalone app plus VST3/AU on macOS, VST3 on Windows.' : `${FORMATS}. Downloads are handled by the Download Room.`}</p>

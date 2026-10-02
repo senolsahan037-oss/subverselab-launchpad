@@ -196,6 +196,9 @@ const downloadLimit = tokenBucket({ perMinute: 30 });
 /* ---- Launch 2 is PAID: $20 through Lemon Squeezy --------------------------
    launch2_purchases/{lowercased e-mail} {orderId, paidAt, refunded, overCap, seat}
    launch2_seats/{lowercased e-mail}     {orderId, at}   one seat per buyer
+   launch2_uids/{Firebase uid}           {email, orderId, at}  the account that clicked Buy
+     (checkout[custom][uid] -> meta.custom_data.uid). It points at the purchase above, so a
+     refund / over-cap on the purchase applies to the uid too. A bound uid needs no verified e-mail.
    launch2/counter                       {claimed, downloads}  claimed = paid seats
    The webhook is the only writer; the ticket route only reads. */
 const LAUNCH2_CAP = 1000;
@@ -204,6 +207,8 @@ function isBundle4Order(item) {
   const product = process.env.LS_BUNDLE4_PRODUCT_ID, variant = process.env.LS_BUNDLE4_VARIANT_ID;
   return Boolean((product && String(item?.product_id) === String(product)) || (variant && String(item?.variant_id) === String(variant)));
 }
+// Firebase uids are up to 128 chars of [A-Za-z0-9] (custom-token uids may add _ and -); anything else is not a usable doc id here.
+const launch2Uid = (value) => { const u = String(value || '').trim(); return /^[A-Za-z0-9_-]{1,128}$/.test(u) ? u : null; };
 async function launch2Purchase(admin, email) {
   const mail = launch2Email(email);
   if (!mail) return null;
@@ -212,29 +217,66 @@ async function launch2Purchase(admin, email) {
 }
 // 'paid' | 'refunded' | 'oversold' | 'none'
 const launch2Standing = (purchase) => !purchase ? 'none' : purchase.refunded ? 'refunded' : purchase.overCap ? 'oversold' : 'paid';
+// Standing of the purchase bound to this Firebase uid (the account that paid).
+async function launch2UidStanding(admin, uid) {
+  const id = launch2Uid(uid);
+  if (!id) return 'none';
+  const snap = await admin.db.collection('launch2_uids').doc(id).get();
+  if (!snap.exists) return 'none';
+  const bind = snap.data();
+  const purchase = await launch2Purchase(admin, bind.email);
+  if (!purchase || purchase.orderId !== bind.orderId) return 'none';
+  return launch2Standing(purchase);
+}
 // A hand-picked tester (launch2_testers/{e-mail}, see the testers block below)
 // opens the same gate as a paid purchase but is never a paid seat: nothing here
 // touches launch2/counter.claimed. A real purchase keeps its own standing.
-async function launch2Access(admin, email) {
-  const standing = launch2Standing(await launch2Purchase(admin, email));
+// `decoded` is the verified ID token. Rules:
+//  1. a paid order bound to this uid opens it, verified e-mail or not (the
+//     account that paid is the account that clicked Buy);
+//  2. otherwise the e-mail-matched purchase / tester entry counts only when the
+//     e-mail is verified (or a federated sign-in such as Google);
+//  3. an unverified account with no uid-bound paid order gets 'unverified'.
+// A refunded / oversold uid-bound order is reported as such, never as 'unverified'.
+async function launch2Access(admin, decoded) {
+  const uidStanding = await launch2UidStanding(admin, decoded.uid);
+  if (uidStanding === 'paid') return uidStanding;
+  const verified = !emailVerificationRequired(decoded) || decoded.email_verified === true;
+  if (!verified) return uidStanding === 'none' ? 'unverified' : uidStanding;
+  const standing = launch2Standing(await launch2Purchase(admin, decoded.email));
   if (standing === 'paid') return standing;
-  const mail = launch2Email(email);
+  const mail = launch2Email(decoded.email);
   if (mail && (await admin.db.collection('launch2_testers').doc(mail).get()).exists) return 'tester';
   return standing;
 }
 const launch2Open = (standing) => standing === 'paid' || standing === 'tester';
-const launch2Denied = (standing) => standing === 'oversold'
+const launch2Denied = (standing) => standing === 'unverified'
+  ? { error: 'Verify your e-mail address first' }
+  : standing === 'oversold'
   ? { error: 'The 1,000 seats were already taken when your payment arrived — your order will be refunded' }
   : { error: 'Purchase required' };
+const launch2DeniedStatus = (standing) => standing === 'unverified' ? 403 : 402;
 
-async function recordLaunch2Order(admin, { email, orderId, paidAt }) {
+async function recordLaunch2Order(admin, { email, uid, orderId, paidAt }) {
   const { db } = admin;
   return db.runTransaction(async (tx) => {
     const purchaseRef = db.collection('launch2_purchases').doc(email);
     const seatRef = db.collection('launch2_seats').doc(email);
     const counterRef = db.collection('launch2').doc('counter');
-    const [purchaseSnap, seatSnap, counterSnap] = await Promise.all([tx.get(purchaseRef), tx.get(seatRef), tx.get(counterRef)]);
+    const uidRef = launch2Uid(uid) ? db.collection('launch2_uids').doc(launch2Uid(uid)) : null;
+    const [purchaseSnap, seatSnap, counterSnap, uidSnap] = await Promise.all([tx.get(purchaseRef), tx.get(seatRef), tx.get(counterRef), uidRef ? tx.get(uidRef) : null]);
     const purchase = purchaseSnap.exists ? purchaseSnap.data() : null;
+    // A uid already bound to a live (paid, not refunded) order of another purchase keeps it; the new
+    // order stays e-mail matched only. Read here, before any write.
+    let bindUid = Boolean(uidRef);
+    if (uidRef && uidSnap.exists) {
+      const bound = uidSnap.data();
+      if (bound.orderId !== orderId && bound.email !== email) {
+        const otherSnap = await tx.get(db.collection('launch2_purchases').doc(bound.email));
+        const other = otherSnap.exists ? otherSnap.data() : null;
+        if (other && other.orderId === bound.orderId && !other.refunded) bindUid = false;
+      }
+    }
     if (purchase && purchase.orderId === orderId) return { result: 'duplicate' };
     if (purchase && !purchase.refunded) {
       // A second paid order from the same e-mail: keep the first, note the second so it can be refunded.
@@ -250,7 +292,8 @@ async function recordLaunch2Order(admin, { email, orderId, paidAt }) {
         tx.set(counterRef, { claimed: claimed + 1 }, { merge: true });
       }
     }
-    tx.set(purchaseRef, { email, orderId, paidAt, refunded: false, overCap, seat }, { merge: true });
+    tx.set(purchaseRef, { email, orderId, paidAt, refunded: false, overCap, seat, ...(bindUid ? { uid: launch2Uid(uid) } : {}) }, { merge: true });
+    if (bindUid) tx.set(uidRef, { email, orderId, at: paidAt });
     return { result: overCap ? 'over-cap' : 'recorded' };
   });
 }
@@ -277,17 +320,18 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Download service unavailable' : 'Your sign-in has expired — sign in again' }); }
   const { slug, platform } = req.body || {};
   const launchId = validLaunchId(req.body?.launchId) || 'launch';
-  if (!decoded.email || (launchId === 'launch2' && emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+  // launch2: the verification rule lives in launch2Access (a uid-bound paid order needs none).
+  if (!decoded.email) return res.status(403).json({ error: 'Verify your e-mail address first' });
   const launchService = launches[launchId];
   const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk'] : ['kubbe', 'kaset'];
   if (!launchSlugs.includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
   try {
     // Launch 2 is paid: the seat was claimed by the payment webhook, so here
-    // we only check that this e-mail holds a paid, non-refunded purchase — or
+    // we only check that this account holds a paid, non-refunded purchase — or
     // has been approved as a tester.
     if (launchId === 'launch2') {
-      const standing = await launch2Access(admin, decoded.email);
-      if (!launch2Open(standing)) return res.status(402).json(launch2Denied(standing));
+      const standing = await launch2Access(admin, decoded);
+      if (!launch2Open(standing)) return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
     }
     const manifest = await withTimeout(downloadManifest(), 8000);
     const file = manifest?.[slug]?.files?.[platform];
@@ -367,8 +411,9 @@ app.get('/api/launch2/status', async (req, res) => {
   try {
     const admin = await adminFirestore();
     const decoded = await admin.auth.verifyIdToken(token);
-    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
-    const standing = await launch2Access(admin, decoded.email);
+    if (!decoded.email) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    const standing = await launch2Access(admin, decoded);
+    if (standing === 'unverified') return res.status(403).json(launch2Denied(standing));
     return res.json({ paid: standing === 'paid', tester: standing === 'tester', standing });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
@@ -502,15 +547,15 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
     }
     return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
   }
-  if (!decoded.email || (launchId === 'launch2' && emailVerificationRequired(decoded) && decoded.email_verified !== true)) {
+  if (!decoded.email) {
     return res.status(403).json({ error: 'Verify your e-mail address first' });
   }
 
   // Launch 2 seats are sold, not given (testers are let in, not counted): nothing is minted here.
   if (launchId === 'launch2') {
     try {
-      const standing = await launch2Access(admin, decoded.email);
-      if (!launch2Open(standing)) return res.status(402).json(launch2Denied(standing));
+      const standing = await launch2Access(admin, decoded);
+      if (!launch2Open(standing)) return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
       return res.json({ paid: standing === 'paid', tester: standing === 'tester', ...(await withTimeout(launchService.readCounter(), 5000)) });
     } catch (err) {
       console.error('launch2 claim:', err.message);
@@ -904,7 +949,7 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
         return res.json({ ok: true, launch2: out.result });
       }
       if (a.status !== 'paid') return res.json({ ok: true, ignored: `status ${a.status || 'unknown'}` });
-      const out = await recordLaunch2Order(admin, { email: mail, orderId, paidAt: a.created_at || new Date().toISOString() });
+      const out = await recordLaunch2Order(admin, { email: mail, uid: payload?.meta?.custom_data?.uid, orderId, paidAt: a.created_at || new Date().toISOString() });
       if (out.result === 'over-cap') console.warn(`launch2 OVER CAP: order ${orderId} paid but all ${LAUNCH2_CAP} seats are taken — refund it`);
       if (out.result === 'extra-order') console.warn(`launch2 extra order ${orderId} from an e-mail that already paid — refund it`);
       return res.json({ ok: true, launch2: out.result });

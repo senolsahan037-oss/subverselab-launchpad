@@ -62,6 +62,10 @@ service cloud.firestore {
     match /launch2/{document=**} {
       allow read, write: if false;
     }
+    // uid -> paid launch-2 order, written by the Lemon Squeezy webhook (Admin SDK only).
+    match /launch2_uids/{document=**} {
+      allow read, write: if false;
+    }
     match /analytics/{document=**} {
       allow read: if request.auth != null;
     }

@@ -239,8 +239,8 @@ await test('first download counts exactly once across repeat/plugin/platform', a
 
 const ticketReq = (uid, ip, slug, launchId, platform = 'mac') => call('/api/download/ticket', { method: 'POST', headers: { ...headersFor(ip), authorization: `Bearer valid-${uid}` }, body: JSON.stringify({ slug, platform, launchId }) });
 let orderSeq = 0;
-function orderPayload(email, { event = 'order_created', id, status = 'paid', product = 5550 } = {}) {
-  return JSON.stringify({ meta: { event_name: event }, data: { id: String(id ?? ++orderSeq), attributes: { user_email: email, status, created_at: '2026-10-05T10:00:00Z', first_order_item: { product_id: product, variant_id: 1 } } } });
+function orderPayload(email, { event = 'order_created', id, status = 'paid', product = 5550, uid } = {}) {
+  return JSON.stringify({ meta: { event_name: event, ...(uid ? { custom_data: { uid } } : {}) }, data: { id: String(id ?? ++orderSeq), attributes: { user_email: email, status, created_at: '2026-10-05T10:00:00Z', first_order_item: { product_id: product, variant_id: 1 } } } });
 }
 const hook = (raw, sig) => call('/api/lemonsqueezy/webhook', { method: 'POST', raw: Buffer.from(raw), headers: { 'x-signature': sig ?? createHmac('sha256', WH_SECRET).update(raw).digest('hex') } });
 const payFor = async (uid, opts) => (await hook(orderPayload(`${uid}@example.com`, opts))).body;
@@ -353,6 +353,94 @@ await test('unverified e-mail is allowed on launch 1 but denied on paid launch 2
   assert.equal(two.response.status, 403);
   assert.equal(claim.response.status, 200);
   assert.equal(state.db.docs.get('launch/counter').claimed, 1);
+});
+
+const statusReq = (uid, ip) => call('/api/launch2/status', { headers: { ...headersFor(ip), authorization: `Bearer valid-${uid}` } });
+
+await test('uid-bound paid order unlocks launch 2 for an unverified password account (ticket, status, claim)', async () => {
+  resetDb();
+  // The buyer typed a different e-mail at checkout: only the uid ties the order to the account.
+  const w = await hook(orderPayload('someone-else@mail.test', { id: 'B1', uid: 'unv-ida' }));
+  assert.equal(w.body.launch2, 'recorded');
+  assert.equal(state.db.docs.get('launch2_uids/unv-ida').orderId, 'B1');
+  assert.equal(state.db.docs.get('launch2_purchases/someone-else@mail.test').uid, 'unv-ida');
+  assert.equal(state.db.docs.get('launch2/counter').claimed, 1);
+  const t = await ticketReq('unv-ida', '10.0.8.1', 'koro', 'launch2');
+  assert.equal(t.response.status, 200);
+  assert.ok(t.body.url);
+  const st = await statusReq('unv-ida', '10.0.8.2');
+  assert.equal(st.response.status, 200);
+  assert.equal(st.body.paid, true);
+  const claim = await call('/api/launch/claim', { method: 'POST', headers: { ...headersFor('10.0.8.3'), authorization: 'Bearer valid-unv-ida' }, body: JSON.stringify({ launchId: 'launch2' }) });
+  assert.equal(claim.response.status, 200);
+  assert.equal(claim.body.paid, true);
+});
+
+await test('e-mail-only order (no uid) still needs a verified e-mail or Google', async () => {
+  resetDb();
+  await hook(orderPayload('unv-ivy@example.com', { id: 'B2' }));
+  await hook(orderPayload('ivy@example.com', { id: 'B3' }));
+  await hook(orderPayload('google-ivy@example.com', { id: 'B4' }));
+  assert.equal(state.db.docs.size > 0 && [...state.db.docs.keys()].some((k) => k.startsWith('launch2_uids/')), false);
+  const unv = await ticketReq('unv-ivy', '10.0.8.10', 'koro', 'launch2');
+  assert.equal(unv.response.status, 403);
+  assert.equal(unv.body.url, undefined);
+  assert.equal((await statusReq('unv-ivy', '10.0.8.11')).response.status, 403);
+  assert.equal((await ticketReq('ivy', '10.0.8.12', 'koro', 'launch2')).response.status, 200);
+  assert.equal((await ticketReq('google-ivy', '10.0.8.13', 'koro', 'launch2')).response.status, 200);
+});
+
+await test('a different uid with the same e-mail but no verification gets nothing', async () => {
+  resetDb();
+  // Order paid by uid "jay" with e-mail unv-jay@example.com; an unverified account "unv-jay" shares that e-mail.
+  await hook(orderPayload('unv-jay@example.com', { id: 'B5', uid: 'jay' }));
+  const t = await ticketReq('unv-jay', '10.0.8.20', 'koro', 'launch2');
+  assert.equal(t.response.status, 403);
+  assert.equal(t.body.url, undefined);
+  assert.equal((await statusReq('unv-jay', '10.0.8.21')).response.status, 403);
+  const claim = await call('/api/launch/claim', { method: 'POST', headers: { ...headersFor('10.0.8.22'), authorization: 'Bearer valid-unv-jay' }, body: JSON.stringify({ launchId: 'launch2' }) });
+  assert.equal(claim.response.status, 403);
+  // A uid that never paid and is unverified, with an unrelated e-mail, also gets 403 (not a free pass via someone else's uid).
+  assert.equal((await ticketReq('unv-kim', '10.0.8.23', 'koro', 'launch2')).response.status, 403);
+});
+
+await test('refund by uid denies the uid-bound account and releases no seat', async () => {
+  resetDb();
+  await hook(orderPayload('lee-pay@mail.test', { id: 'B6', uid: 'unv-lee' }));
+  assert.equal((await ticketReq('unv-lee', '10.0.8.30', 'koro', 'launch2')).response.status, 200);
+  const r = await hook(orderPayload('lee-pay@mail.test', { event: 'order_refunded', id: 'B6', status: 'refunded' }));
+  assert.equal(r.body.launch2, 'refunded');
+  const t = await ticketReq('unv-lee', '10.0.8.31', 'koro', 'launch2');
+  assert.equal(t.response.status, 402);
+  assert.equal(t.body.url, undefined);
+  assert.equal((await statusReq('unv-lee', '10.0.8.32')).response.status, 200);
+  assert.equal((await statusReq('unv-lee', '10.0.8.33')).body.paid, false);
+  assert.equal(state.db.docs.get('launch2/counter').claimed, 1);
+  assert.equal(state.db.docs.has('launch2_seats/lee-pay@mail.test'), true);
+});
+
+await test('uid-bound orders keep cap and one-seat-per-order rules; a bad uid is ignored', async () => {
+  resetDb();
+  state.db.docs.set('launch2/counter', { claimed: 999, downloads: 0 });
+  await hook(orderPayload('m1@mail.test', { id: 'C1', uid: 'unv-m1' }));
+  const late = await hook(orderPayload('m2@mail.test', { id: 'C2', uid: 'unv-m2' }));
+  assert.equal(late.body.launch2, 'over-cap');
+  assert.equal(state.db.docs.get('launch2/counter').claimed, 1000);
+  assert.equal((await ticketReq('unv-m1', '10.0.8.40', 'koro', 'launch2')).response.status, 200);
+  const over = await ticketReq('unv-m2', '10.0.8.41', 'koro', 'launch2');
+  assert.equal(over.response.status, 402);
+  assert.match(over.body.error, /1,000 seats/);
+  // The same order again, and a second order bound to the same uid from another e-mail: no extra seat, uid keeps its first order.
+  assert.equal((await hook(orderPayload('m1@mail.test', { id: 'C1', uid: 'unv-m1' }))).body.launch2, 'duplicate');
+  resetDb();
+  await hook(orderPayload('n1@mail.test', { id: 'D1', uid: 'unv-n' }));
+  await hook(orderPayload('n2@mail.test', { id: 'D2', uid: 'unv-n' }));
+  assert.equal(state.db.docs.get('launch2_uids/unv-n').orderId, 'D1');
+  assert.equal(state.db.docs.get('launch2/counter').claimed, 2);
+  // A uid that is not a plain Firebase uid is not stored as a document id.
+  await hook(orderPayload('p1@mail.test', { id: 'E1', uid: 'a/b' }));
+  assert.equal([...state.db.docs.keys()].some((k) => k.startsWith('launch2_uids/a')), false);
+  assert.equal(state.db.docs.get('launch2_purchases/p1@mail.test').uid, undefined);
 });
 
 await test('Google sign-in bypasses e-mail verification but keeps the launch gate', async () => {

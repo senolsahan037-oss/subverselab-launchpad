@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Icon from './Icon';
+import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { CHECKOUT, PRICES } from '../data/plugins';
 
 // One Lemon Squeezy checkout button. The links live in CHECKOUT in
@@ -8,9 +10,17 @@ import { CHECKOUT, PRICES } from '../data/plugins';
 // that, so no page ever links to a checkout that does not exist.
 // `email` (optional) pre-fills Lemon Squeezy's checkout e-mail, so a paid launch-2
 // order matches the signed-in account (?checkout[email]=).
-function withEmail(url, email) {
-  if (!url || !email) return url;
-  try { const u = new URL(url); u.searchParams.set('checkout[email]', email); return u.toString(); } catch { return url; }
+// `uid` (optional) is the signed-in Firebase uid, passed as checkout[custom][uid]:
+// Lemon Squeezy returns it as meta.custom_data.uid in the webhook, so the paid
+// order is bound to the account that clicked Buy and needs no e-mail round trip.
+function withBuyer(url, email, uid) {
+  if (!url || (!email && !uid)) return url;
+  try {
+    const u = new URL(url);
+    if (email) u.searchParams.set('checkout[email]', email);
+    if (uid) u.searchParams.set('checkout[custom][uid]', uid);
+    return u.toString();
+  } catch { return url; }
 }
 // Remembered for this tab when a checkout opens, so /launch knows a purchase
 // may be on its way and polls for it. sessionStorage can be unavailable.
@@ -22,8 +32,11 @@ function markCheckoutStarted() { try { sessionStorage.setItem(CHECKOUT_KEY, '1')
 // going, true once they are gone, undefined for products that have no free
 // period. While the free period runs the button stays closed even though the
 // checkout exists: the launch sells nothing it is giving away.
-export default function BuyButton({ slug, label, email, full, className = 'btn btn-primary' }) {
-  const url = full === false ? '' : withEmail(CHECKOUT[slug], email);
+export default function BuyButton({ slug, label, email, uid, full, className = 'btn btn-primary' }) {
+  // Pages that pass no buyer still bind the order to whoever is signed in.
+  const [signedIn, setSignedIn] = useState(() => auth.currentUser);
+  useEffect(() => onAuthStateChanged(auth, setSignedIn), []);
+  const url = full === false ? '' : withBuyer(CHECKOUT[slug], email || signedIn?.email, uid || signedIn?.uid);
   const text = label || `Buy — $${PRICES[slug]}`;
   if (!url) {
     return (

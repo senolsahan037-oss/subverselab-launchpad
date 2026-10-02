@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
+import { sendVerificationMail } from './VerifyEmailNotice';
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
 } from 'firebase/auth';
@@ -35,7 +36,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     try {
       if (activeTab === 'signup') {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const sent = await sendVerificationMail(cred.user);
+        if (!sent.ok) {
+          // Keep the dialog open so the Firebase error code is seen, not swallowed.
+          setError(`Account created, but ${sent.message[0].toLowerCase()}${sent.message.slice(1)} You can resend it from the download page.`);
+          onLoginSuccess({ email });
+          return;
+        }
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
