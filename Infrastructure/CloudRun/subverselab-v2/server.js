@@ -10,6 +10,7 @@ import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
+import { ownedLaunch1Slugs } from './entitlements.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, 'dist');
@@ -99,6 +100,7 @@ app.use((req, res, next) => {
    licences (launchLicence.js).
    Env names only; values live in Cloud Run:
      LEMONSQUEEZY_WEBHOOK_SECRET   the webhook's signing secret
+     LS_BUNDLE4_PRODUCT_ID / LS_BUNDLE4_VARIANT_ID   the $20 launch-2 bundle (either one matches)
      LS_PRODUCT_SLUGS (optional)   "productId:slug,…" e.g. "111:kubbe,222:kaset,333:bundle"
    Field names checked against https://docs.lemonsqueezy.com/api on 2026-09-26.
    ============================================================ */
@@ -134,6 +136,9 @@ function adminFirestore() {
 app.set('trust proxy', 1);
 
 const launch = createLaunchService({ getAdmin: adminFirestore });
+const launch2 = createLaunchService({ getAdmin: adminFirestore, launchId: 'launch2', product: 'bundle4', productId: 9015 });
+const launches = { launch, launch2 };
+const validLaunchId = (value) => value === 'launch2' ? 'launch2' : value === 'launch' ? 'launch' : null;
 const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
 
 let storagePromise = null;
@@ -173,7 +178,7 @@ app.get('/api/download/manifest', async (req, res) => {
   try {
     const manifest = await withTimeout(downloadManifest(), 8000);
     const out = {};
-    for (const slug of ['kubbe', 'kaset']) {
+    for (const slug of ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk']) {
       const entry = manifest?.[slug] || {};
       out[slug] = { version: entry.version || null, files: {} };
       for (const [platform, f] of Object.entries(entry.files || {})) {
@@ -187,6 +192,81 @@ app.get('/api/download/manifest', async (req, res) => {
   }
 });
 const downloadLimit = tokenBucket({ perMinute: 30 });
+
+/* ---- Launch 2 is PAID: $20 through Lemon Squeezy --------------------------
+   launch2_purchases/{lowercased e-mail} {orderId, paidAt, refunded, overCap, seat}
+   launch2_seats/{lowercased e-mail}     {orderId, at}   one seat per buyer
+   launch2/counter                       {claimed, downloads}  claimed = paid seats
+   The webhook is the only writer; the ticket route only reads. */
+const LAUNCH2_CAP = 1000;
+const launch2Email = (value) => { const e = String(value || '').trim().toLowerCase(); return e && !e.includes('/') ? e : null; };
+function isBundle4Order(item) {
+  const product = process.env.LS_BUNDLE4_PRODUCT_ID, variant = process.env.LS_BUNDLE4_VARIANT_ID;
+  return Boolean((product && String(item?.product_id) === String(product)) || (variant && String(item?.variant_id) === String(variant)));
+}
+async function launch2Purchase(admin, email) {
+  const mail = launch2Email(email);
+  if (!mail) return null;
+  const snap = await admin.db.collection('launch2_purchases').doc(mail).get();
+  return snap.exists ? snap.data() : null;
+}
+// 'paid' | 'refunded' | 'oversold' | 'none'
+const launch2Standing = (purchase) => !purchase ? 'none' : purchase.refunded ? 'refunded' : purchase.overCap ? 'oversold' : 'paid';
+// A hand-picked tester (launch2_testers/{e-mail}, see the testers block below)
+// opens the same gate as a paid purchase but is never a paid seat: nothing here
+// touches launch2/counter.claimed. A real purchase keeps its own standing.
+async function launch2Access(admin, email) {
+  const standing = launch2Standing(await launch2Purchase(admin, email));
+  if (standing === 'paid') return standing;
+  const mail = launch2Email(email);
+  if (mail && (await admin.db.collection('launch2_testers').doc(mail).get()).exists) return 'tester';
+  return standing;
+}
+const launch2Open = (standing) => standing === 'paid' || standing === 'tester';
+const launch2Denied = (standing) => standing === 'oversold'
+  ? { error: 'The 1,000 seats were already taken when your payment arrived — your order will be refunded' }
+  : { error: 'Purchase required' };
+
+async function recordLaunch2Order(admin, { email, orderId, paidAt }) {
+  const { db } = admin;
+  return db.runTransaction(async (tx) => {
+    const purchaseRef = db.collection('launch2_purchases').doc(email);
+    const seatRef = db.collection('launch2_seats').doc(email);
+    const counterRef = db.collection('launch2').doc('counter');
+    const [purchaseSnap, seatSnap, counterSnap] = await Promise.all([tx.get(purchaseRef), tx.get(seatRef), tx.get(counterRef)]);
+    const purchase = purchaseSnap.exists ? purchaseSnap.data() : null;
+    if (purchase && purchase.orderId === orderId) return { result: 'duplicate' };
+    if (purchase && !purchase.refunded) {
+      // A second paid order from the same e-mail: keep the first, note the second so it can be refunded.
+      tx.set(purchaseRef, { extraOrders: { [orderId]: { paidAt } } }, { merge: true });
+      return { result: 'extra-order' };
+    }
+    const claimed = counterSnap.exists ? Number(counterSnap.data().claimed) || 0 : 0;
+    let overCap = false, seat = true;
+    if (!seatSnap.exists) {
+      if (claimed >= LAUNCH2_CAP) { overCap = true; seat = false; }
+      else {
+        tx.set(seatRef, { orderId, at: paidAt });
+        tx.set(counterRef, { claimed: claimed + 1 }, { merge: true });
+      }
+    }
+    tx.set(purchaseRef, { email, orderId, paidAt, refunded: false, overCap, seat }, { merge: true });
+    return { result: overCap ? 'over-cap' : 'recorded' };
+  });
+}
+async function refundLaunch2Order(admin, { email, orderId, at }) {
+  const { db } = admin;
+  return db.runTransaction(async (tx) => {
+    const ref = db.collection('launch2_purchases').doc(email);
+    const snap = await tx.get(ref);
+    if (!snap.exists) return { result: 'unknown-order' };
+    const purchase = snap.data();
+    if (purchase.orderId !== orderId) return { result: 'other-order' };
+    // The seat is deliberately NOT released: the owner decides what to do with it.
+    tx.set(ref, { refunded: true, refundedAt: at }, { merge: true });
+    return { result: 'refunded' };
+  });
+}
 app.post('/api/download/ticket', smallBody, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!process.env.DOWNLOAD_TICKET_SECRET) return res.status(503).json({ error: 'Download room is not configured' });
@@ -195,19 +275,40 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   if (!token) return res.status(401).json({ error: 'Sign in first' });
   let admin, decoded;
   try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Download service unavailable' : 'Your sign-in has expired — sign in again' }); }
-  if (!decoded.email || decoded.email_verified !== true) return res.status(403).json({ error: 'Verify your e-mail address first' });
   const { slug, platform } = req.body || {};
-  if (!['kubbe', 'kaset'].includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
+  const launchId = validLaunchId(req.body?.launchId) || 'launch';
+  if (!decoded.email || (launchId === 'launch2' && emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+  const launchService = launches[launchId];
+  const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk'] : ['kubbe', 'kaset'];
+  if (!launchSlugs.includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
   try {
+    // Launch 2 is paid: the seat was claimed by the payment webhook, so here
+    // we only check that this e-mail holds a paid, non-refunded purchase — or
+    // has been approved as a tester.
+    if (launchId === 'launch2') {
+      const standing = await launch2Access(admin, decoded.email);
+      if (!launch2Open(standing)) return res.status(402).json(launch2Denied(standing));
+    }
     const manifest = await withTimeout(downloadManifest(), 8000);
     const file = manifest?.[slug]?.files?.[platform];
     if (!file?.name) return res.status(404).json({ error: 'This download is not available yet' });
-    const claim = await withTimeout(launch.claim({ uid: decoded.uid, email: decoded.email }), 15000);
-    if (claim.status === 410) return res.status(410).json(claim.body);
-    if (claim.status !== 200) return res.status(claim.status).json(claim.body);
+    if (launchId !== 'launch2') {
+      // While the free 1,000 last, the first download claims a seat. Once they
+      // are gone the room is a shop: only a paid, non-refunded order for this
+      // plugin (or the bundle) opens it — an earlier free download does not.
+      const { claimed, total } = await withTimeout(launchService.readCounter(), 8000);
+      if (claimed >= total) {
+        const owned = await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000);
+        if (!owned.includes(slug)) return res.status(402).json({ error: 'The free 1,000 are gone. Buy this plugin to download it.' });
+      } else {
+        const claim = await withTimeout(launchService.claim({ uid: decoded.uid, email: decoded.email }), 15000);
+        if (claim.status === 410) return res.status(410).json(claim.body);
+        if (claim.status !== 200) return res.status(claim.status).json(claim.body);
+      }
+    }
     const now = new Date().toISOString();
     await admin.db.runTransaction(async (tx) => {
-      const counter = admin.db.collection('launch').doc('counter');
+      const counter = admin.db.collection(launchId).doc('counter');
       const downloads = admin.db.collection('downloads').doc(decoded.uid);
       const [snap, downloadSnap] = await Promise.all([tx.get(counter), tx.get(downloads)]);
       const total = snap.exists ? Number(snap.data().downloads) || 0 : 0;
@@ -246,28 +347,115 @@ function serviceDown(err) {
     || [4, 7, 10, 14, 16].includes(err?.code);
 }
 
-const CODES_CACHE_MS = 30_000;
-let codesCache = { at: 0, body: null };
+// Firebase already verifies the address for federated providers such as
+// Google. Requiring the password-provider flag for those accounts blocked the
+// launch download room after the payment-gate work. Password/email accounts
+// still need the normal verification link.
+function emailVerificationRequired(decoded) {
+  const provider = decoded?.firebase?.sign_in_provider;
+  return provider === 'password' || provider === 'email' || !provider;
+}
 
-// GET /api/launch/codes → {total, claimed} or {available:false}.
+// GET /api/launch2/status   Authorization: Bearer <Firebase ID token>
+// → {paid, tester, standing}. Lets the page show the download buttons or "Buy to unlock".
+// standing 'tester' = approved for the 100 tester seats, not a paid seat.
+app.get('/api/launch2/status', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  try {
+    const admin = await adminFirestore();
+    const decoded = await admin.auth.verifyIdToken(token);
+    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    const standing = await launch2Access(admin, decoded.email);
+    return res.json({ paid: standing === 'paid', tester: standing === 'tester', standing });
+  } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+});
+
+// GET /api/purchases/status   Authorization: Bearer <Firebase ID token>
+// → {full, owned:[slugs]}. After the free 1,000 the page shows the download
+// buttons only for the plugins this e-mail has paid for.
+app.get('/api/purchases/status', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  try {
+    const admin = await adminFirestore();
+    const decoded = await admin.auth.verifyIdToken(token);
+    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    const { claimed, total } = await withTimeout(launch.readCounter(), 8000);
+    return res.json({ full: claimed >= total, owned: await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000) });
+  } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+});
+
+// GET /api/purchases/licenses   Authorization: Bearer <Firebase ID token>
+// → {licenses:[{id, product, productName, key, keyShort, status, disabled, activationLimit, instancesCount, orderId, created}]}
+// The signed-in caller's own licence keys from plugin_licenses/{their e-mail}.licenses
+// (written by the Lemon Squeezy webhook). Keys are returned to that caller only and are never logged.
+app.get('/api/purchases/licenses', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  try {
+    const admin = await adminFirestore();
+    const decoded = await admin.auth.verifyIdToken(token);
+    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    const mail = String(decoded.email).trim().toLowerCase();
+    if (mail.includes('/')) return res.json({ licenses: [] });
+    const snap = await withTimeout(admin.db.collection('plugin_licenses').doc(mail).get(), 8000);
+    const data = snap.exists ? snap.data() : {};
+    const orders = data.orders || {};
+    const licenses = Object.values(data.licenses || {})
+      .filter((l) => l && l.key && !l.disabled)
+      .map((l) => ({
+        id: String(l.license_id || ''),
+        product: l.product || orders[l.order_id]?.product || null,
+        productName: orders[l.order_id]?.product_name || null,
+        key: l.key,
+        keyShort: l.key_short || null,
+        status: l.status || null,
+        activationLimit: l.activation_limit ?? null,
+        instancesCount: l.instances_count ?? 0,
+        orderId: l.order_id || null,
+        created: l.created || null,
+      }))
+      .sort((x, y) => String(y.created || '').localeCompare(String(x.created || '')));
+    return res.json({ licenses });
+  } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+});
+
+const CODES_CACHE_MS = 30_000;
+const codesCache = new Map();
+
+// GET /api/launch/codes?launch=launch2 → {total, claimed} or {available:false}.
 // Read from launch/counter, the one counter every claim increments — the
 // /launch button and the Instagram DMs both end up there. Any failure answers
 // {available:false} and the page shows no number, never a guess.
 app.get('/api/launch/codes', async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=30');
-  if (codesCache.body && Date.now() - codesCache.at < CODES_CACHE_MS) {
-    return res.json(codesCache.body);
-  }
+  const launchId = validLaunchId(req.query.launch) || 'launch';
+  const launchService = launches[launchId];
+  const cached = codesCache.get(launchId);
+  if (cached?.body && Date.now() - cached.at < CODES_CACHE_MS) return res.json(cached.body);
   let body;
   try {
-    body = await withTimeout(launch.readCounter(), 5000);
+    body = await withTimeout(launchService.readCounter(), 5000);
   } catch (err) {
     console.error('launch codes:', err.message);
     body = { available: false };
   }
   // Failures are cached too, so an outage is asked about twice a minute rather
   // than once per visitor.
-  codesCache = { at: Date.now(), body };
+  codesCache.set(launchId, { at: Date.now(), body });
   res.json(body);
 });
 
@@ -285,7 +473,7 @@ const licenceLimit = tokenBucket({ perMinute: 30 });
 // send JSON. Either way a licence request is a few hundred bytes.
 
 // POST /api/launch/claim   Authorization: Bearer <Firebase ID token>
-// One free launch licence per verified e-mail and per Firebase account, while
+// One free launch licence per e-mail and per Firebase account, while
 // the 1,000 last; asking again returns the same key.
 app.post('/api/launch/claim', smallBody, async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -294,6 +482,8 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
   const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return res.status(401).json({ error: 'Sign in first' });
 
+  const launchId = validLaunchId(req.body?.launchId) || 'launch';
+  const launchService = launches[launchId];
   let admin;
   try {
     admin = await adminFirestore();
@@ -312,19 +502,309 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
     }
     return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
   }
-  if (!decoded.email || decoded.email_verified !== true) {
+  if (!decoded.email || (launchId === 'launch2' && emailVerificationRequired(decoded) && decoded.email_verified !== true)) {
     return res.status(403).json({ error: 'Verify your e-mail address first' });
   }
 
+  // Launch 2 seats are sold, not given (testers are let in, not counted): nothing is minted here.
+  if (launchId === 'launch2') {
+    try {
+      const standing = await launch2Access(admin, decoded.email);
+      if (!launch2Open(standing)) return res.status(402).json(launch2Denied(standing));
+      return res.json({ paid: standing === 'paid', tester: standing === 'tester', ...(await withTimeout(launchService.readCounter(), 5000)) });
+    } catch (err) {
+      console.error('launch2 claim:', err.message);
+      return res.status(503).json({ error: 'The licence service is not available right now' });
+    }
+  }
+
   try {
-    const { status, body } = await withTimeout(launch.claim({ uid: decoded.uid, email: decoded.email }), 15000);
-    if (status === 200 || status === 410) codesCache = { at: Date.now(), body: { total: body.total, claimed: body.claimed } };
+    const { status, body } = await withTimeout(launchService.claim({ uid: decoded.uid, email: decoded.email }), 15000);
+    if (status === 200 || status === 410) codesCache.set(launchId, { at: Date.now(), body: { total: body.total, claimed: body.claimed } });
     res.status(status).json(body);
   } catch (err) {
     console.error('launch claim:', err.message);
     const busy = /ABORTED|contention/i.test(err.message) || err.code === 10;
     res.status(503).json({ error: busy ? 'Many people are claiming right now — try again in a few seconds'
       : 'The licence service is not available right now' });
+  }
+});
+
+// GET /api/admin/members   Authorization: Bearer <Firebase ID token>
+// The admin panel's member list, read from Firebase Auth itself (the old
+// Firestore `users` collection stopped being written and froze at 11), joined
+// with the per-account download counts from `downloads`. Admin only, and only
+// for a *verified* admin address: sign-up no longer requires verification, so
+// an unverified account holding an admin address must not get in.
+const ADMIN_EMAILS = ['info@subverselab.com', 'senolsahan037@gmail.com'];
+const adminLimit = tokenBucket({ perMinute: 20 });
+app.get('/api/admin/members', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!adminLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Member service unavailable' : 'Your sign-in has expired — sign in again' }); }
+  if (decoded.email_verified !== true || !ADMIN_EMAILS.includes(String(decoded.email || '').toLowerCase())) return res.status(403).json({ error: 'Admins only' });
+  try {
+    const members = [];
+    let pageToken;
+    do {
+      const page = await withTimeout(admin.auth.listUsers(1000, pageToken), 15000);
+      for (const u of page.users) {
+        members.push({
+          uid: u.uid, email: u.email || '', displayName: u.displayName || '',
+          provider: u.providerData.map((p) => p.providerId).join(', ') || 'none',
+          createdAt: u.metadata.creationTime, lastSignInAt: u.metadata.lastSignInTime,
+          downloads: 0,
+        });
+      }
+      pageToken = page.pageToken;
+    } while (pageToken);
+    const byUid = new Map(members.map((m) => [m.uid, m]));
+    const snap = await withTimeout(admin.db.collection('downloads').get(), 15000);
+    for (const d of snap.docs) {
+      const m = byUid.get(d.id);
+      if (!m) continue;
+      const v = d.data() || {};
+      for (const slug of ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk']) for (const platform of ['mac', 'win']) m.downloads += Number(v?.[slug]?.[platform]?.count) || 0;
+    }
+    const counter = await admin.db.collection('launch').doc('counter').get();
+    return res.json({ members, launch: counter.exists ? counter.data() : null });
+  } catch (err) {
+    console.error('admin members:', err.message);
+    return res.status(503).json({ error: 'Member service unavailable' });
+  }
+});
+
+/* ---- The 100 testers --------------------------------------------------------
+   Launch 2 is given free to 100 hand-picked testers, chosen so that operating
+   systems and DAWs are covered and the people know enough to report bugs.
+   tester_applications/{lowercased e-mail} {status, os, osVersion, daws, dawOther,
+                                            formats, years, link, answer, at, decidedAt}
+   launch2_testers/{lowercased e-mail}     {approvedAt, os, daws, reports}  the gate
+   launch2/testers                         {approved}  seats taken, max TESTER_CAP
+   tester_reports/{auto id}                {email, plugin, os, daw, dawVersion, kind, text, at}
+   Testers are never paid seats: launch2/counter.claimed is not touched. */
+const TESTER_CAP = 100;
+const TESTER_REPORT_CAP = 50;
+const TESTER_OS = ['macOS Apple Silicon', 'macOS Intel', 'Windows 11', 'Windows 10'];
+const TESTER_DAWS = ['Ableton Live', 'FL Studio', 'Logic Pro', 'Cubase', 'Studio One', 'Reaper', 'Pro Tools', 'Bitwig Studio', 'Other'];
+const TESTER_FORMATS = ['VST3', 'AU'];
+const TESTER_PLUGINS = ['koro', 'yanki', 'hava', 'mihenk'];
+const TESTER_KINDS = ['bug', 'sound', 'ui', 'works'];
+const testerBody = express.json({ limit: '16kb' });
+const testerLimit = tokenBucket({ perMinute: 20 });
+const testerSeatsLimit = tokenBucket({ perMinute: 30 });
+const cleanText = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '');
+const cleanParagraph = (value, max) => (typeof value === 'string' ? value.replace(/\r\n?/g, '\n').trim().slice(0, max) : '');
+
+// Authenticates a tester-programme request exactly like the download ticket
+// (verified e-mail), or — with adminOnly — exactly like /api/admin/members.
+// Answers the error itself and returns null, so callers just `if (!caller) return`.
+async function testerCaller(req, res, { adminOnly = false } = {}) {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!(adminOnly ? adminLimit : testerLimit)(req.ip)) { res.status(429).json({ error: 'Too many requests' }); return null; }
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) { res.status(401).json({ error: 'Sign in first' }); return null; }
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) {
+    res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Tester service unavailable' : 'Your sign-in has expired — sign in again' });
+    return null;
+  }
+  if (adminOnly) {
+    if (decoded.email_verified !== true || !ADMIN_EMAILS.includes(String(decoded.email || '').toLowerCase())) { res.status(403).json({ error: 'Admins only' }); return null; }
+  } else if (!decoded.email || decoded.email_verified !== true) { res.status(403).json({ error: 'Verify your e-mail address first' }); return null; }
+  const email = launch2Email(decoded.email);
+  if (!email && !adminOnly) { res.status(403).json({ error: 'Verify your e-mail address first' }); return null; }
+  return { admin, decoded, email };
+}
+
+// Every field is checked and clamped here; the page's own checks are only a courtesy.
+function readApplication(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const os = TESTER_OS.includes(b.os) ? b.os : null;
+  if (!os) return { error: 'Choose your operating system' };
+  const osVersion = cleanText(b.osVersion, 40);
+  if (!osVersion) return { error: 'Enter your operating system version' };
+  const daws = [...new Set(Array.isArray(b.daws) ? b.daws.filter((d) => TESTER_DAWS.includes(d)) : [])];
+  if (!daws.length) return { error: 'Choose at least one DAW' };
+  const dawOther = daws.includes('Other') ? cleanText(b.dawOther, 60) : '';
+  if (daws.includes('Other') && !dawOther) return { error: 'Name the other DAW you use' };
+  const formats = [...new Set(Array.isArray(b.formats) ? b.formats.filter((f) => TESTER_FORMATS.includes(f)) : [])];
+  if (!formats.length) return { error: 'Choose VST3, AU or both' };
+  if (os.startsWith('Windows') && formats.includes('AU')) return { error: 'AU is a macOS format' };
+  const years = Number(b.years);
+  if (b.years === '' || b.years == null || !Number.isFinite(years) || years < 0) return { error: 'Enter how many years you have been producing' };
+  let link = '';
+  if (typeof b.link === 'string' && b.link.trim()) {
+    link = b.link.trim().slice(0, 300);
+    try { if (!/^https?:$/.test(new URL(link).protocol)) throw new Error('scheme'); } catch { return { error: 'The link must start with http:// or https://' }; }
+  }
+  const answer = cleanParagraph(b.answer, 1200);
+  if (answer.length < 40) return { error: 'Describe the bug in at least 40 characters' };
+  return { value: { os, osVersion, daws, dawOther, formats, years: Math.min(60, Math.floor(years)), link, answer } };
+}
+
+// GET /api/testers/seats → {total, approved}. Public: the page shows the seats left.
+app.get('/api/testers/seats', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, max-age=30');
+  if (!testerSeatsLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  try {
+    const admin = await adminFirestore();
+    const snap = await withTimeout(admin.db.collection('launch2').doc('testers').get(), 5000);
+    return res.json({ total: TESTER_CAP, approved: snap.exists ? Number(snap.data().approved) || 0 : 0 });
+  } catch (err) {
+    console.error('testers seats:', err.message);
+    return res.status(503).json({ error: 'Seat count unavailable' });
+  }
+});
+
+// GET /api/testers/me → {status: 'none' | 'pending' | 'approved' | 'declined'}
+app.get('/api/testers/me', async (req, res) => {
+  const caller = await testerCaller(req, res);
+  if (!caller) return;
+  try {
+    const snap = await caller.admin.db.collection('tester_applications').doc(caller.email).get();
+    return res.json({ status: snap.exists && ['pending', 'approved', 'declined'].includes(snap.data().status) ? snap.data().status : 'none' });
+  } catch (err) {
+    console.error('testers me:', err.message);
+    return res.status(503).json({ error: 'Tester service unavailable' });
+  }
+});
+
+// POST /api/testers/apply   one application per e-mail. Sending it again while
+// it is still pending replaces it; once the owner has decided it is locked.
+app.post('/api/testers/apply', testerBody, async (req, res) => {
+  const caller = await testerCaller(req, res);
+  if (!caller) return;
+  const { value, error } = readApplication(req.body);
+  if (error) return res.status(400).json({ error });
+  try {
+    const { db } = caller.admin;
+    const ref = db.collection('tester_applications').doc(caller.email);
+    const out = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (snap.exists && snap.data().status !== 'pending') return { status: snap.data().status };
+      tx.set(ref, { email: caller.email, uid: caller.decoded.uid, ...value, status: 'pending', at: new Date().toISOString() });
+      return { status: 'pending' };
+    });
+    if (out.status !== 'pending') return res.status(409).json({ error: 'Your application has already been decided', status: out.status });
+    return res.json({ status: 'pending' });
+  } catch (err) {
+    console.error('testers apply:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Tester service unavailable' });
+  }
+});
+
+// POST /api/testers/report   approved testers only; TESTER_REPORT_CAP reports each.
+app.post('/api/testers/report', testerBody, async (req, res) => {
+  const caller = await testerCaller(req, res);
+  if (!caller) return;
+  const b = req.body && typeof req.body === 'object' ? req.body : {};
+  const os = TESTER_OS.includes(b.os) ? b.os : null;
+  const daw = cleanText(b.daw, 60);
+  const text = cleanParagraph(b.text, 4000);
+  if (!TESTER_PLUGINS.includes(b.plugin)) return res.status(400).json({ error: 'Choose a plugin' });
+  if (!os) return res.status(400).json({ error: 'Choose your operating system' });
+  if (!daw) return res.status(400).json({ error: 'Name the DAW you were using' });
+  if (!TESTER_KINDS.includes(b.kind)) return res.status(400).json({ error: 'Choose what kind of report this is' });
+  if (text.length < 20) return res.status(400).json({ error: 'Write at least 20 characters' });
+  try {
+    const { db } = caller.admin;
+    const testerRef = db.collection('launch2_testers').doc(caller.email);
+    const out = await db.runTransaction(async (tx) => {
+      const snap = await tx.get(testerRef);
+      if (!snap.exists) return { status: 403, error: 'Tester reports are for approved testers' };
+      const sent = Number(snap.data().reports) || 0;
+      if (sent >= TESTER_REPORT_CAP) return { status: 429, error: `You have sent the maximum of ${TESTER_REPORT_CAP} reports` };
+      tx.set(testerRef, { reports: sent + 1 }, { merge: true });
+      tx.set(db.collection('tester_reports').doc(), {
+        email: caller.email, plugin: b.plugin, os, daw, dawVersion: cleanText(b.dawVersion, 40), kind: b.kind, text, at: new Date().toISOString(),
+      });
+      return { status: 200, left: TESTER_REPORT_CAP - sent - 1 };
+    });
+    return out.status === 200 ? res.json({ ok: true, left: out.left }) : res.status(out.status).json({ error: out.error });
+  } catch (err) {
+    console.error('testers report:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Tester service unavailable' });
+  }
+});
+
+// GET /api/admin/testers → every application, newest first, and how well the
+// approved testers cover the operating systems and DAWs.
+app.get('/api/admin/testers', async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  try {
+    const { db } = caller.admin;
+    const [apps, counter] = await withTimeout(Promise.all([db.collection('tester_applications').get(), db.collection('launch2').doc('testers').get()]), 15000);
+    const applications = apps.docs.map((d) => ({ email: d.id, ...d.data() })).sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const coverage = { os: Object.fromEntries(TESTER_OS.map((o) => [o, 0])), daws: Object.fromEntries(TESTER_DAWS.map((d) => [d, 0])) };
+    for (const a of applications) {
+      if (a.status !== 'approved') continue;
+      if (a.os in coverage.os) coverage.os[a.os] += 1;
+      for (const d of a.daws || []) if (d in coverage.daws) coverage.daws[d] += 1;
+    }
+    return res.json({ applications, coverage, approved: counter.exists ? Number(counter.data().approved) || 0 : 0, total: TESTER_CAP });
+  } catch (err) {
+    console.error('admin testers:', err.message);
+    return res.status(503).json({ error: 'Tester service unavailable' });
+  }
+});
+
+// POST /api/admin/testers/decide {email, decision: 'approve' | 'decline'}
+// Approving takes a seat in one transaction and is refused at TESTER_CAP;
+// declining an approved tester gives the seat back and closes the gate.
+app.post('/api/admin/testers/decide', smallBody, async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  const email = launch2Email(req.body?.email);
+  const decision = req.body?.decision;
+  if (!email || !['approve', 'decline'].includes(decision)) return res.status(400).json({ error: 'Send an e-mail and a decision (approve or decline)' });
+  try {
+    const { db } = caller.admin;
+    const appRef = db.collection('tester_applications').doc(email);
+    const testerRef = db.collection('launch2_testers').doc(email);
+    const counterRef = db.collection('launch2').doc('testers');
+    const out = await db.runTransaction(async (tx) => {
+      const [appSnap, testerSnap, counterSnap] = await Promise.all([tx.get(appRef), tx.get(testerRef), tx.get(counterRef)]);
+      if (!appSnap.exists) return { status: 404, error: 'No application from this e-mail' };
+      const approved = counterSnap.exists ? Number(counterSnap.data().approved) || 0 : 0;
+      const now = new Date().toISOString();
+      if (decision === 'approve') {
+        if (testerSnap.exists) return { status: 200, result: 'already-approved', approved };
+        if (approved >= TESTER_CAP) return { status: 409, error: `All ${TESTER_CAP} tester seats are taken` };
+        const a = appSnap.data();
+        tx.set(testerRef, { email, approvedAt: now, os: a.os || null, daws: a.daws || [], reports: 0 });
+        tx.set(counterRef, { approved: approved + 1 }, { merge: true });
+        tx.set(appRef, { status: 'approved', decidedAt: now }, { merge: true });
+        return { status: 200, result: 'approved', approved: approved + 1 };
+      }
+      if (testerSnap.exists) {
+        tx.delete(testerRef);
+        tx.set(counterRef, { approved: Math.max(0, approved - 1) }, { merge: true });
+      }
+      tx.set(appRef, { status: 'declined', decidedAt: now }, { merge: true });
+      return { status: 200, result: 'declined', approved: testerSnap.exists ? Math.max(0, approved - 1) : approved };
+    });
+    return out.status === 200 ? res.json({ ok: true, result: out.result, approved: out.approved }) : res.status(out.status).json({ error: out.error });
+  } catch (err) {
+    console.error('admin testers decide:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Tester service unavailable' });
+  }
+});
+
+// GET /api/admin/testers/reports → the newest 500 reports, newest first.
+app.get('/api/admin/testers/reports', async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  try {
+    const snap = await withTimeout(caller.admin.db.collection('tester_reports').orderBy('at', 'desc').limit(500).get(), 15000);
+    return res.json({ reports: snap.docs.map((d) => ({ id: d.id, ...d.data() })) });
+  } catch (err) {
+    console.error('admin tester reports:', err.message);
+    return res.status(503).json({ error: 'Tester service unavailable' });
   }
 });
 
@@ -409,6 +889,30 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
 
   const email = String(a.user_email || '').trim().toLowerCase();
   if (!email || !data.id) return res.json({ ok: true, ignored: 'no e-mail' });
+
+  // Launch 2 ($20 bundle of four): order_created (paid) records the purchase and
+  // claims a seat; order_refunded flags it. Handled here and nowhere else.
+  if ((event === 'order_created' || event === 'order_refunded') && isBundle4Order(a.first_order_item)) {
+    const orderId = String(data.id);
+    try {
+      const admin = await adminFirestore();
+      const mail = launch2Email(email);
+      if (!mail) return res.json({ ok: true, ignored: 'no usable e-mail' });
+      if (event === 'order_refunded') {
+        const out = await refundLaunch2Order(admin, { email: mail, orderId, at: new Date().toISOString() });
+        console.warn(`launch2 refund: order ${orderId} ${out.result}; seat not released — owner decides`);
+        return res.json({ ok: true, launch2: out.result });
+      }
+      if (a.status !== 'paid') return res.json({ ok: true, ignored: `status ${a.status || 'unknown'}` });
+      const out = await recordLaunch2Order(admin, { email: mail, orderId, paidAt: a.created_at || new Date().toISOString() });
+      if (out.result === 'over-cap') console.warn(`launch2 OVER CAP: order ${orderId} paid but all ${LAUNCH2_CAP} seats are taken — refund it`);
+      if (out.result === 'extra-order') console.warn(`launch2 extra order ${orderId} from an e-mail that already paid — refund it`);
+      return res.json({ ok: true, launch2: out.result });
+    } catch (err) {
+      console.error('launch2 webhook:', err.message);
+      return res.status(500).json({ error: 'write failed' });
+    }
+  }
 
   try {
     const { db, FieldValue } = await adminFirestore();

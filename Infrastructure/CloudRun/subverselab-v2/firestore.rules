@@ -45,6 +45,23 @@ service cloud.firestore {
     match /launch_claims/{document=**} {
       allow read, write: if false;
     }
+    // The 100-tester programme for launch 2 (server.js, Admin SDK only):
+    // applications, the approved list that opens the download gate, and the bug
+    // reports. launch2/testers is the seat counter. Applications hold personal
+    // answers and the approved list is the gate itself, so nothing is readable
+    // or writable from a client; the page goes through /api/testers/*.
+    match /tester_applications/{document=**} {
+      allow read, write: if false;
+    }
+    match /launch2_testers/{document=**} {
+      allow read, write: if false;
+    }
+    match /tester_reports/{document=**} {
+      allow read, write: if false;
+    }
+    match /launch2/{document=**} {
+      allow read, write: if false;
+    }
     match /analytics/{document=**} {
       allow read: if request.auth != null;
     }

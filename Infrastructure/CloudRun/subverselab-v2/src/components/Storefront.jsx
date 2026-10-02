@@ -6,11 +6,13 @@ import SEOSection from './SEOSection';
 import Icon from './Icon';
 import PageMeta from './PageMeta';
 import { HOME } from '../data/siteMeta';
-import { LAUNCH, PRICES, RELEASE_LABEL } from '../data/plugins';
+import { LAUNCH, LAUNCH2, PRICES, RELEASE_LABEL, RELEASE2_LABEL, RELEASE2_AT } from '../data/plugins';
 import LaunchCountdown from './LaunchCountdown';
 import ProductActions from './ProductActions';
+import { useLaunch1Full } from '../hooks/useLaunchCounter';
 
 export default function Storefront({ packs = [], publishedGuideSlugs = new Set(), activeTrack, isPlaying, onPlayPause, user, onLoginClick, searchQuery = '' }) {
+  const launch1Full = useLaunch1Full();
   const [filter, setFilter] = useState('all');
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedReportPack, setSelectedReportPack] = useState(null);
@@ -111,9 +113,22 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
           <span className="plugin-strip-tag">New plugins</span>
           <span className="plugin-strip-name">KUBBE · KASET</span>
           <span className="plugin-strip-text">
-            Reverb and cassette colour, out {RELEASE_LABEL} — ${PRICES.kubbe} each. <b>{LAUNCH.offer}.</b>
+            {launch1Full
+              ? <>Reverb and cassette colour — ${PRICES.kubbe} each, ${PRICES.bundle} for both. <b>The free 1,000 are gone.</b></>
+              : <>Reverb and cassette colour, out {RELEASE_LABEL} — ${PRICES.kubbe} each. <b>{LAUNCH.offer}.</b></>}
           </span>
           <LaunchCountdown compact />
+          <span className="plugin-strip-go">{launch1Full ? 'Buy →' : 'See the launch →'}</span>
+        </Link>
+
+        {/* Second launch row: the next four products, own page and counter. */}
+        <Link to={LAUNCH2.path} className="plugin-strip" style={{ marginTop: '12px' }}>
+          <span className="plugin-strip-tag">Next {RELEASE2_LABEL}</span>
+          <span className="plugin-strip-name">KORO · YANKI · HAVA · MIHENK</span>
+          <span className="plugin-strip-text">
+            Vocal doubler, tape echo, air, mastering app. <b>{LAUNCH2.offer.replace('The first', 'First')}.</b>
+          </span>
+          <LaunchCountdown compact target={RELEASE2_AT} />
           <span className="plugin-strip-go">See the launch →</span>
         </Link>
 

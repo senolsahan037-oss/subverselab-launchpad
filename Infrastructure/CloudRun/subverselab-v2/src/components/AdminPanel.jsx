@@ -18,10 +18,15 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
   const [activeTab, setActiveTab] = useState('members');
   const [usersList, setUsersList] = useState([]);
   const [usersError, setUsersError] = useState(null);
+  const [launchStats, setLaunchStats] = useState(null);
   const [reports, setReports] = useState([]);
   const [reportsError, setReportsError] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [testers, setTesters] = useState(null);
+  const [testerReports, setTesterReports] = useState([]);
+  const [testersError, setTestersError] = useState(null);
+  const [testerBusy, setTesterBusy] = useState('');
 
   // Product Management reads the same Firestore-backed `packs` state App.jsx
   // already loads for the Storefront/ToolRoom — one source of truth, no
@@ -32,9 +37,8 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
   // independently so a failure here can never block Product Management,
   // which reads Firestore `packs` from props and doesn't touch any of this.
   //
-  // Members: the `users` collection is the one genuinely live source here —
-  // real accounts, with real creation and sign-in timestamps. Read directly
-  // via the client SDK, same pattern as products.
+  // Members: Firebase Auth's own account list (through the server), with each
+  // account's plugin download count joined in.
   //
   // There used to be an "Analytics" tab above this one, fed by an
   // `analytics/global` Firestore document. It was removed: nothing writes to
@@ -53,18 +57,13 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
   useEffect(() => {
     if (!user) return;
 
-    getDocs(collection(db, 'users'))
-      .then((snapshot) => {
-        const users = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            ...data,
-            createdAt: data.creationTime,
-            lastSignInAt: data.lastSignInTime
-          };
-        });
-        setUsersList(users);
-      })
+    // Members come from Firebase Auth via the admin-only /api/admin/members,
+    // not the Firestore `users` collection: nothing writes that collection any
+    // more, so it froze at 11 members while real sign-ups kept arriving.
+    user.getIdToken()
+      .then((token) => fetch('/api/admin/members', { headers: { Authorization: `Bearer ${token}` } }))
+      .then(async (r) => { const body = await r.json().catch(() => ({})); if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`); return body; })
+      .then((body) => { setUsersList(body.members || []); setLaunchStats(body.launch || null); })
       .catch((err) => setUsersError('Member list is unavailable right now: ' + err.message));
 
     getDocs(collection(db, 'reports'))
@@ -117,6 +116,41 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
     () => [...usersList].sort((a, b) => new Date(b.lastSignInAt || 0) - new Date(a.lastSignInAt || 0)),
     [usersList]
   );
+
+  // The 100-tester programme: applications and reports come from the
+  // admin-only /api/admin/testers* routes (server.js), not from Firestore
+  // directly — those collections have no client access in firestore.rules.
+  const adminFetch = async (path, body) => {
+    const token = await user.getIdToken();
+    const r = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    return data;
+  };
+  const loadTesters = () => Promise.all([adminFetch('/api/admin/testers'), adminFetch('/api/admin/testers/reports')])
+    .then(([t, r]) => { setTesters(t); setTesterReports(r.reports || []); setTestersError(null); })
+    .catch((err) => setTestersError('Testers are unavailable right now: ' + err.message));
+
+  useEffect(() => {
+    if (user && activeTab === 'testers') loadTesters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, activeTab]);
+
+  const decideTester = async (email, decision) => {
+    setTesterBusy(email);
+    try {
+      await adminFetch('/api/admin/testers/decide', { email, decision });
+      await loadTesters();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setTesterBusy('');
+    }
+  };
 
   const handleSaveProduct = async (savedProduct) => {
     await refreshProducts?.();
@@ -176,6 +210,12 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
           Reports & Broken Links ({reports.filter(r => r.status === 'open').length > 0 ? `${reports.filter(r => r.status === 'open').length} open` : reports.length})
         </button>
         <button
+          onClick={() => setActiveTab('testers')}
+          className={`btn ${activeTab === 'testers' ? 'btn-primary' : 'btn-outline'}`}
+        >
+          Testers{testers ? ` (${testers.approved} / ${testers.total})` : ''}
+        </button>
+        <button
           onClick={() => setActiveTab('seo')}
           className={`btn ${activeTab === 'seo' ? 'btn-primary' : 'btn-outline'}`}
         >
@@ -203,6 +243,12 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
               <div style={{ fontSize: '3rem', fontWeight: 'bold', color: 'var(--color-danger)' }}>{memberStats.neverReturned}</div>
             </div>
           </div>
+
+          {launchStats && (
+            <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+              Launch: <strong style={{ color: 'var(--color-text)' }}>{launchStats.claimed ?? 0} / 1,000</strong> producers claimed · <strong style={{ color: 'var(--color-text)' }}>{launchStats.downloads ?? 0}</strong> plugin downloads in total.
+            </div>
+          )}
 
           {memberStats.daysSinceSignup !== null && (
             <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
@@ -238,6 +284,8 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
                   <th style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Joined</th>
                   <th style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Last Sign In</th>
                   <th style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Returned?</th>
+                  <th style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Sign-in</th>
+                  <th style={{ padding: '12px', color: 'var(--color-text-muted)' }}>Downloads</th>
                 </tr>
               </thead>
               <tbody>
@@ -259,17 +307,96 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
                       <td style={{ padding: '12px', fontSize: '0.85rem', color: returned ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>
                         {returned ? 'Yes' : 'Sign-up only'}
                       </td>
+                      <td style={{ padding: '12px', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{u.provider === 'google.com' ? 'Google' : u.provider === 'password' ? 'E-mail' : u.provider}</td>
+                      <td style={{ padding: '12px', fontSize: '0.9rem' }}>{u.downloads || 0}</td>
                     </tr>
                   );
                 })}
                 {usersList.length === 0 && (
                   <tr>
-                    <td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: 'var(--color-text-muted)' }}>No registered members found.</td>
+                    <td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--color-text-muted)' }}>No registered members found.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+        </>
+      )}
+
+      {activeTab === 'testers' && (
+        <>
+          {testersError && (
+            <div className="glass-panel" style={{ padding: '16px', marginBottom: '16px', color: 'var(--color-text-muted)' }}>{testersError}</div>
+          )}
+          {testers && (
+            <>
+              <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px' }}>
+                <h2 style={{ margin: '0 0 12px', fontSize: '1.4rem' }}>Coverage — {testers.approved} / {testers.total} seats approved</h2>
+                {[['Operating system', testers.coverage.os], ['DAW', testers.coverage.daws]].map(([label, counts]) => (
+                  <p key={label} style={{ margin: '0 0 8px', color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>
+                    <strong style={{ color: 'var(--color-text)' }}>{label}:</strong>{' '}
+                    {Object.entries(counts).map(([name, n]) => (
+                      <span key={name} style={{ marginRight: '14px', color: n === 0 ? 'var(--color-text-muted)' : 'var(--color-text)' }}>{name} <strong>{n}</strong></span>
+                    ))}
+                  </p>
+                ))}
+              </div>
+
+              <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Applications ({testers.applications.length})</h2>
+              <div className="glass-panel" style={{ padding: '20px', overflowX: 'auto', marginBottom: '32px' }}>
+                <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', minWidth: '900px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      {['Applicant', 'System', 'DAWs', 'Years', 'Link', 'Bug answer', 'Status'].map((h) => (
+                        <th key={h} style={{ padding: '12px', color: 'var(--color-text-muted)' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {testers.applications.map((a) => (
+                      <tr key={a.email} style={{ borderBottom: '1px solid var(--color-border)', verticalAlign: 'top' }}>
+                        <td style={{ padding: '12px', fontWeight: '600', color: 'var(--color-accent)' }}>
+                          {a.email}
+                          <div style={{ fontWeight: '400', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{a.at ? new Date(a.at).toLocaleDateString('en-GB') : ''}</div>
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '0.9rem' }}>{a.os}<div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{a.osVersion} · {(a.formats || []).join(', ')}</div></td>
+                        <td style={{ padding: '12px', fontSize: '0.9rem' }}>{(a.daws || []).map((d) => (d === 'Other' && a.dawOther ? `Other: ${a.dawOther}` : d)).join(', ')}</td>
+                        <td style={{ padding: '12px', fontSize: '0.9rem' }}>{a.years}</td>
+                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '180px', wordBreak: 'break-all' }}>
+                          {a.link ? <a href={a.link} target="_blank" rel="noopener noreferrer">{a.link}</a> : '—'}
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '340px', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{a.answer}</td>
+                        <td style={{ padding: '12px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+                          <div style={{ marginBottom: '8px', color: a.status === 'approved' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>{a.status}</div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {a.status !== 'approved' && <button className="btn btn-primary" style={{ fontSize: '0.8rem' }} disabled={testerBusy === a.email} onClick={() => decideTester(a.email, 'approve')}>Approve</button>}
+                            {a.status !== 'declined' && <button className="btn btn-outline" style={{ fontSize: '0.8rem' }} disabled={testerBusy === a.email} onClick={() => decideTester(a.email, 'decline')}>Decline</button>}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {testers.applications.length === 0 && (
+                      <tr><td colSpan="7" style={{ padding: '30px', textAlign: 'center', color: 'var(--color-text-muted)' }}>No applications yet.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Tester reports ({testerReports.length})</h2>
+              <div style={{ display: 'grid', gap: '12px' }}>
+                {testerReports.map((r) => (
+                  <div key={r.id} className="glass-panel" style={{ padding: '16px' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+                      <strong style={{ color: 'var(--color-text)' }}>{r.plugin}</strong> · {r.kind} · {r.os} · {r.daw}{r.dawVersion ? ` ${r.dawVersion}` : ''} · {r.email} · {r.at ? new Date(r.at).toLocaleString('en-GB') : ''}
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>{r.text}</div>
+                  </div>
+                ))}
+                {testerReports.length === 0 && <div className="glass-panel" style={{ padding: '20px', color: 'var(--color-text-muted)' }}>No reports yet.</div>}
+              </div>
+            </>
+          )}
+          {!testers && !testersError && <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading testers…</div>}
         </>
       )}
 

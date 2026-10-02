@@ -39,7 +39,7 @@ import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
 import {
-  PLUGINS_INDEX, PLUGINS, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM,
+  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, LAUNCH2_PLUGINS, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM,
 } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
@@ -675,6 +675,73 @@ async function main() {
       <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>
       <h2>Getting the plugins</h2>
       <p>Sign in on subverselab.com/launch and download. No key or activation is needed.</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Launch 2: KORO, YANKI, HAVA and MIHENK, one $20 bundle, own counter.
+  // Same rule as above: no codes-left number is written here.
+  for (const pl of LAUNCH2_PLUGINS) {
+    writePage(pl.path.slice(1), buildHead({
+      title: pl.title,
+      description: pl.description,
+      canonical: `${SITE_URL}${pl.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: `SubverseLab ${pl.name}`,
+          applicationCategory: 'MultimediaApplication',
+          operatingSystem: 'macOS, Windows',
+          url: `${SITE_URL}${pl.path}`,
+          image: `${SITE_URL}${pl.og}`,
+          offers: { '@type': 'Offer', price: String(PRICES.bundle4), priceCurrency: 'USD' },
+          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
+      ],
+    }), `<h1>${escapeHtml(pl.name)}</h1>
+      <p>${escapeHtml(pl.tagline)} Out ${escapeHtml(pl.releaseLabel)} &middot; ${escapeHtml(pl.formats)}.</p>
+      <p>${escapeHtml(pl.intro)}</p>
+      <h2>${escapeHtml(pl.modesLabel)}</h2>
+      ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      <h2>The controls</h2>
+      <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
+      <h2>Price and download</h2>
+      <p>$${PRICES.bundle4} for all four: KORO, YANKI, HAVA and MIHENK. Sign in to enter the Download Room; no key or activation is needed.</p>
+      <p>${escapeHtml(LAUNCH2.askHow)}: the first ${LAUNCH2.codesTotal.toLocaleString('en-US')} people can download all four. <a href="${LAUNCH2.path}">How the launch works</a>.</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  writePage('launch2', buildHead({
+    title: LAUNCH2.title,
+    description: LAUNCH2.description,
+    canonical: `${SITE_URL}${LAUNCH2.path}`,
+    image: `${SITE_URL}${LAUNCH2_PLUGINS[0].og}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch 2', url: `${SITE_URL}${LAUNCH2.path}` }])],
+  }), `<h1>KORO, YANKI, HAVA and MIHENK &mdash; out October 5</h1>
+      <p>${escapeHtml(LAUNCH2.offer)}. ${escapeHtml(LAUNCH2.askHow)}.</p>
+      <p>${escapeHtml(LAUNCH2.instagram)} <a href="${INSTAGRAM_DM}">Instagram</a>.</p>
+      ${LAUNCH2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
+      <p>All four together: $${PRICES.bundle4}.</p>
+      <h2>Download Room</h2>
+      <ol>${LAUNCH2.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  writePage('testers', buildHead({
+    title: TESTERS.title,
+    description: TESTERS.description,
+    canonical: `${SITE_URL}${TESTERS.path}`,
+    image: `${SITE_URL}${LAUNCH2_PLUGINS[0].og}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Testers', url: `${SITE_URL}${TESTERS.path}` }])],
+  }), `<h1>Test KORO, YANKI, HAVA and MIHENK</h1>
+      <p>100 producers get all four free, chosen so that every operating system and DAW is covered.</p>
+      <h2>What you get</h2>
+      <p>KORO, YANKI, HAVA and MIHENK for macOS and Windows, free, from the Download Room. No key or activation is needed.</p>
+      <h2>What we ask in return</h2>
+      <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li></ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   // Published guides — the site's real long-form content.

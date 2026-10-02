@@ -19,13 +19,14 @@ import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginPage from './components/PluginPage';
 import LaunchPage from './components/LaunchPage';
+import TestersPage from './components/TestersPage';
 import PluginManualPage from './components/PluginManualPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
 import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import { LEARN_INDEX } from './data/siteMeta';
-import { KUBBE, KASET } from './data/plugins';
+import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK } from './data/plugins';
 import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
 
 /* ============================================================
@@ -170,7 +171,9 @@ export default function App() {
     else { setActiveTrack(pack); setIsPlaying(true); }
   };
 
-  const isAdmin = user && ['info@subverselab.com', 'senolsahan037@gmail.com'].includes(user.email);
+  // Verified only: sign-up no longer requires e-mail verification, so an
+  // unverified password account holding an admin address must not see /admin.
+  const isAdmin = user && user.emailVerified && ['info@subverselab.com', 'senolsahan037@gmail.com'].includes(user.email);
 
   const sharedProps = {
     packs, packsLoading, publishedGuideSlugs, user, activeTrack, isPlaying,
@@ -234,9 +237,15 @@ export default function App() {
               <Route path="/plugins" element={<PluginsPage />} />
               <Route path={KUBBE.path} element={<PluginPage key={KUBBE.slug} plugin={KUBBE} />} />
               <Route path={KASET.path} element={<PluginPage key={KASET.slug} plugin={KASET} />} />
+              <Route path={KORO.path} element={<PluginPage key={KORO.slug} plugin={KORO} />} />
+              <Route path={YANKI.path} element={<PluginPage key={YANKI.slug} plugin={YANKI} />} />
+              <Route path={HAVA.path} element={<PluginPage key={HAVA.slug} plugin={HAVA} />} />
+              <Route path={MIHENK.path} element={<PluginPage key={MIHENK.slug} plugin={MIHENK} />} />
               <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
               <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
+              <Route path="/launch2" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} launchId="launch2" />} />
+              <Route path="/testers" element={<TestersPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/forum/:topicId" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

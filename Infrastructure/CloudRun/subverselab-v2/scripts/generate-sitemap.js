@@ -165,6 +165,12 @@ async function main() {
     urlEntry(`${SITE_URL}/plugins/kubbe/manual`, new Date().toISOString().slice(0, 10), '0.6'),
     urlEntry(`${SITE_URL}/plugins/kaset/manual`, new Date().toISOString().slice(0, 10), '0.6'),
     urlEntry(`${SITE_URL}/launch`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/koro`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/yanki`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/hava`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/mihenk`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/launch2`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/testers`, new Date().toISOString().slice(0, 10), '0.6'),
   ];
 
   // Published guides — the real, fully public, keyword-rich SEO content.

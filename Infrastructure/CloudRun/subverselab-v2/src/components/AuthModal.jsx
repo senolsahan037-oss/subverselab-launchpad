@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
 import {
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendEmailVerification,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
 } from 'firebase/auth';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
@@ -23,6 +23,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
       }
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
+        window.__svlLastDownloadError = `google sign-in: ${err.code || err.message}`;
         setError('Google sign-in failed: ' + err.message);
       }
     }
@@ -34,15 +35,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     try {
       if (activeTab === 'signup') {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Download Room access requires a verified address.
-        sendEmailVerification(cred.user).catch(() => {});
+        await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
       onLoginSuccess({ email });
       onClose();
     } catch (err) {
+      window.__svlLastDownloadError = `sign-in: ${err.code || err.message}`;
       switch (err.code) {
         case 'auth/email-already-in-use': setError('Email already registered.'); break;
         case 'auth/invalid-email': setError('Invalid email address.'); break;

@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { sendEmailVerification } from 'firebase/auth';
 import { db } from '../firebase';
 import ProductActions from './ProductActions';
 import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
+import DownloadRoomReport from './DownloadRoomReport';
 import {
-  PLUGINS,
+  PLUGINS, LAUNCH2_PLUGINS,
 } from '../data/plugins';
 
 // The account page: the signed-in producer's Download Room.
@@ -16,54 +16,81 @@ import {
 // writes: from signed Lemon Squeezy webhooks (order_created,
 // license_key_created, license_key_updated), and from a free launch-licence
 // claim on /launch (launchLicence.js; those entries carry source "launch" and
-// product "bundle", so they list under both plugins). firestore.rules lets a user read
-// that one document only when Firebase has verified they own the address, so
-// an unverified sign-in is asked to verify first rather than shown an empty
-// list that looks like "you own nothing".
+// product "bundle", so they list under both plugins). Downloads need only a
+// signed-in account; e-mail verification is deliberately not required
+// (owner decision, 2026-09-30).
 //
 // The downloads block replaces the old "Library" concept — collecting free
 // packs via /api/library and /api/purchases, which were never served. Asking
 // each product whether it has a download action is correct now and correct if
 // one ever ships again.
 
+// Licence keys from paid orders: GET /api/purchases/licenses returns only this
+// signed-in account's keys. Nothing is shown when there are none.
+function LicenceKeys({ user }) {
+  const [licenses, setLicenses] = useState([]);
+  const [copied, setCopied] = useState('');
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const r = await fetch('/api/purchases/licenses', { headers: { Authorization: `Bearer ${token}` } });
+        const body = await r.json().catch(() => ({}));
+        if (alive && r.ok && Array.isArray(body.licenses)) setLicenses(body.licenses);
+      } catch { /* no keys shown */ }
+    })();
+    return () => { alive = false; };
+  }, [user]);
+  if (licenses.length === 0) return null;
+  const copy = async (l) => {
+    try { await navigator.clipboard.writeText(l.key); setCopied(l.id); setTimeout(() => setCopied(''), 2000); } catch { setCopied(''); }
+  };
+  const nameOf = (l) => l.productName || [...PLUGINS, ...LAUNCH2_PLUGINS].find((p) => p.slug === l.product)?.name || (l.product === 'bundle' ? 'Kubbe + Kaset bundle' : 'Plugin');
+  return (
+    <div className="acct-help" style={{ marginBottom: '20px' }}>
+      <h4>Your licence keys</h4>
+      {licenses.map((l) => (
+        <p key={l.id || l.key} style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <strong>{nameOf(l)}</strong>
+          <code style={{ wordBreak: 'break-all' }}>{l.key}</code>
+          <button type="button" className="btn btn-outline acct-small-btn" onClick={() => copy(l)}>
+            {copied === l.id ? 'Copied' : 'Copy'}
+          </button>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function MyPlugins({ user }) {
-  const [verifySent, setVerifySent] = useState(false);
-
-  if (!user.emailVerified) {
-    return (
-      <div className="glass-panel acct-panel">
-        <p>Verify your e-mail address to enter the Download Room.</p>
-        <button type="button" className="btn btn-primary" disabled={verifySent}
-                onClick={() => sendEmailVerification(user).then(() => setVerifySent(true)).catch(() => setVerifySent(false))}>
-          {verifySent ? 'Verification e-mail sent — reload after clicking the link' : 'Send verification e-mail'}
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div>
+      <LicenceKeys user={user} />
       <div className="acct-plugin-list">
-        {PLUGINS.map((plugin) => (
+        {[...PLUGINS, ...LAUNCH2_PLUGINS].map((plugin) => (
           <article key={plugin.slug} className="acct-plugin">
             <img src={plugin.cardImage} alt="" width={plugin.imageSize[0]} height={plugin.imageSize[1]}
                  className="acct-plugin-img" loading="lazy" />
             <div className="acct-plugin-body">
               <h4>{plugin.name} <span>{plugin.kind} · Model {plugin.model}</span></h4>
-              <p className="acct-note">Free download access is tied to this verified sign-in. No keys.</p>
-              <DownloadButtons slug={plugin.slug} className="acct-downloads" btnExtra="acct-small-btn" />
-              <p className="acct-manual">
-                <Link to={plugin.manualPage}>{plugin.name} manual</Link>
-                {' · '}
-                <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
-              </p>
+              <p className="acct-note">Download access is tied to this sign-in. Purchased plugins come with a licence key, shown below.</p>
+              <DownloadButtons slug={plugin.slug} launchId={plugin.launchId || 'launch'} className="acct-downloads" btnExtra="acct-small-btn" />
+              {plugin.manualPage && (
+                <p className="acct-manual">
+                  <Link to={plugin.manualPage}>{plugin.name} manual</Link>
+                  {' · '}
+                  <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
+                </p>
+              )}
             </div>
           </article>
         ))}
       </div>
       <div className="acct-help">
         <h4>Moving to another computer</h4>
-        <p>Downloads are tied to this verified sign-in. See each manual for installation.</p>
+        <p>Downloads are tied to this sign-in. See each manual for installation.</p>
+        <DownloadRoomReport />
       </div>
     </div>
   );

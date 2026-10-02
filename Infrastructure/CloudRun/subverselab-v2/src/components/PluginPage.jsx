@@ -6,9 +6,10 @@ import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
 import DownloadButtons from './DownloadButtons';
 import {
-  INSTAGRAM_DM, LAUNCH, PRICES, FORMATS, RELEASE_LABEL, PLUGINS, PRESS_KIT,
+  INSTAGRAM_DM, LAUNCH, LAUNCH2, LAUNCH2_PLUGINS, PRICES, FORMATS, RELEASE_LABEL, PLUGINS, PRESS_KIT, RELEASE2_AT,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
+import { useLaunch1Full } from '../hooks/useLaunchCounter';
 
 /*  One plugin's page — /plugins/kubbe, /plugins/kaset.
  *
@@ -21,8 +22,18 @@ import { SITE_URL } from '../data/siteMeta';
 
 export default function PluginPage({ plugin }) {
   const [modeKey, setModeKey] = useState(plugin.defaultMode);
+  // Free 1,000 of launch 1 gone (counter read and full): Kubbe/Kaset pages show the buy call.
+  const full = useLaunch1Full() && plugin.launchId !== 'launch2';
   const mode = plugin.modes.find((m) => m.key === modeKey) || plugin.modes[0];
-  const other = PLUGINS.find((p) => p.slug !== plugin.slug);
+  // Launch 2 products (KORO, YANKI, HAVA, MIHENK) sell as one $20 bundle and
+  // download through /launch2; Kubbe and Kaset keep their own launch and prices.
+  const second = plugin.launchId === 'launch2';
+  const launch = second ? LAUNCH2 : LAUNCH;
+  const family = second ? LAUNCH2_PLUGINS : PLUGINS;
+  const other = family.find((p) => p.slug !== plugin.slug);
+  const releaseLabel = second ? plugin.releaseLabel : RELEASE_LABEL;
+  const headPrice = second ? `Part of the $${PRICES.bundle4} bundle` : `$${PRICES[plugin.slug]}`;
+  const offerPrice = second ? PRICES.bundle4 : PRICES[plugin.slug];
   const [w, h] = plugin.imageSize;
   const demos = (plugin.demos || []).filter((d) => d.youtube);
 
@@ -34,7 +45,7 @@ export default function PluginPage({ plugin }) {
     operatingSystem: 'macOS, Windows',
     url: `${SITE_URL}${plugin.path}`,
     image: `${SITE_URL}${plugin.og}`,
-    offers: { '@type': 'Offer', price: String(PRICES[plugin.slug]), priceCurrency: 'USD' },
+    offers: { '@type': 'Offer', price: String(offerPrice), priceCurrency: 'USD' },
     author: { '@type': 'Person', name: 'Şenol Şahan' },
     publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
     description: plugin.description,
@@ -55,16 +66,17 @@ export default function PluginPage({ plugin }) {
 
           <div className="plugin-offer">
             <div>
-              <p className="plugin-offer-head">${PRICES[plugin.slug]} · out {RELEASE_LABEL}</p>
-              <p className="plugin-offer-sub">{FORMATS}</p>
+              <p className="plugin-offer-head">{headPrice} · out {releaseLabel}</p>
+              <p className="plugin-offer-sub">{plugin.formats || FORMATS}</p>
             </div>
-            <LaunchCountdown />
+            {second ? <LaunchCountdown target={RELEASE2_AT} /> : <LaunchCountdown />}
           </div>
 
           <div className="plugin-cta-row">
-            <BuyButton slug={plugin.slug} className="btn plugin-btn" />
-            <Link to={LAUNCH.path} className="plugin-cta-note">
-              {LAUNCH.offer} — enter the Download Room →
+            <BuyButton slug={second ? plugin.bundleSlug : plugin.slug} className="btn plugin-btn" full={full}
+                       label={second ? `All four — $${PRICES.bundle4}` : undefined} />
+            <Link to={launch.path} className="plugin-cta-note">
+              {full ? `$${PRICES.kubbe} each, $${PRICES.bundle} for both — see the launch page` : `${launch.offer} — enter the Download Room`} →
             </Link>
           </div>
 
@@ -128,21 +140,42 @@ export default function PluginPage({ plugin }) {
 
         <section className="plugin-section">
           <h2>Price and download</h2>
-          <p>
-            ${PRICES[plugin.slug]} on its own, or ${PRICES.bundle} together with {other.name}.
-            Sold through Lemon Squeezy. Free launch downloads are gated by sign-in on the Download Room.
-          </p>
-          <div className="plugin-buy-row">
-            <BuyButton slug={plugin.slug} />
-            <BuyButton slug="bundle" label={`Both plugins — $${PRICES.bundle}`} className="btn btn-outline" />
-          </div>
+          {second ? (
+            <>
+              <p>
+                {plugin.displayName} comes in the ${PRICES.bundle4} bundle with {family.filter((p) => p.slug !== plugin.slug).map((p) => p.displayName).join(', ')}.
+                Sold through Lemon Squeezy. Free launch downloads are gated by sign-in on the Download Room.
+              </p>
+              <div className="plugin-buy-row">
+                <BuyButton slug={plugin.bundleSlug} label={`All four — $${PRICES.bundle4}`} />
+              </div>
+            </>
+          ) : (
+            <>
+              <p>
+                ${PRICES[plugin.slug]} on its own, or ${PRICES.bundle} together with {other.name}.
+                Sold through Lemon Squeezy.{full ? ' The free 1,000 downloads are gone.' : ' Free launch downloads are gated by sign-in on the Download Room.'}
+              </p>
+              <div className="plugin-buy-row">
+                <BuyButton slug={plugin.slug} full={full} />
+                <BuyButton slug="bundle" full={full} label={`Both plugins — $${PRICES.bundle}`} className="btn btn-outline" />
+              </div>
+            </>
+          )}
         </section>
 
         <section className="plugin-section">
-          <h2>Free Download Room</h2>
-          <p>
-            {LAUNCH.askHow}. The first {LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <Link to={LAUNCH.path}>The steps are on the launch page.</Link>
-          </p>
+          <h2>{full ? 'Download Room' : 'Free Download Room'}</h2>
+          {full ? (
+            <p>
+              The free 1,000 have been claimed. {plugin.name} is ${PRICES[plugin.slug]}, or ${PRICES.bundle} with {other.name}.
+              Already bought it? Sign in on <Link to={launch.path}>the launch page</Link> with your order e-mail and download.
+            </p>
+          ) : (
+            <p>
+              {launch.askHow}. The first {launch.codesTotal.toLocaleString('en-US')} {second ? 'people can download all four' : 'producers can download both plugins'}. <Link to={launch.path}>The steps are on the launch page.</Link>
+            </p>
+          )}
         </section>
 
         {plugin.notYet.length > 0 && (
@@ -156,28 +189,38 @@ export default function PluginPage({ plugin }) {
 
         <section className="plugin-section">
           <h2>Download</h2>
-          <p>
-            Sign in to enter the Download Room. No key or activation is needed. Installation steps are in the manual.
-          </p>
-          <DownloadButtons slug={plugin.slug} />
+          {full ? (
+            <p>
+              Downloads open once your purchase is confirmed. Buy above, then sign in on <Link to={launch.path}>the launch page</Link> with the e-mail you paid with. Installation steps are in the manual.
+            </p>
+          ) : (
+            <>
+              <p>
+                Sign in to enter the Download Room. No key or activation is needed. Installation steps are in the manual.
+              </p>
+              <DownloadButtons slug={plugin.slug} launchId={plugin.launchId || 'launch'} />
+            </>
+          )}
         </section>
 
-        <section className="plugin-section">
-          <h2>Manual</h2>
-          <p>
-            Installation on macOS and Windows, every control with its range and default, recipes,
-            specifications and installation.
-          </p>
-          <p>
-            <Link to={plugin.manualPage}>Read the {plugin.name} manual</Link>
-            {' · '}
-            <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
-          </p>
-          <p>
-            Writing about {plugin.name}? <a href={PRESS_KIT}>Press kit</a> — screenshots, demo
-            video links, logos and a fact sheet (zip, 5 MB).
-          </p>
-        </section>
+        {plugin.manualPage && (
+          <section className="plugin-section">
+            <h2>Manual</h2>
+            <p>
+              Installation on macOS and Windows, every control with its range and default, recipes,
+              specifications and installation.
+            </p>
+            <p>
+              <Link to={plugin.manualPage}>Read the {plugin.name} manual</Link>
+              {' · '}
+              <a href={plugin.manual} target="_blank" rel="noopener noreferrer">PDF</a>
+            </p>
+            <p>
+              Writing about {plugin.name}? <a href={PRESS_KIT}>Press kit</a> — screenshots, demo
+              video links, logos and a fact sheet (zip, 5 MB).
+            </p>
+          </section>
+        )}
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
           <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer" className="btn btn-primary">

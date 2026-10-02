@@ -26,7 +26,7 @@ import { randomBytes, randomUUID } from 'crypto';
 
 export const LAUNCH_TOTAL = 1000;
 export const STORE_ID = 1;
-export const PRODUCT_IDS = { kubbe: 9001, kaset: 9002, bundle: 9003 };
+export const PRODUCT_IDS = { kubbe: 9001, kaset: 9002, bundle: 9003, koro: 9011, yanki: 9012, hava: 9013, mihenk: 9014, bundle4: 9015 };
 export const BUNDLE_NAME = 'SubverseLab Launch Bundle';
 export const ACTIVATION_LIMIT = 3;
 export const SOLD_OUT = 'All 1,000 launch licences are taken';
@@ -100,10 +100,12 @@ function unusableReason(doc) {
  * @param {() => Promise<{db, FieldValue}>} getAdmin  lazy Firestore handle
  * @param {() => string} now                          ISO timestamp source (tests pin it)
  */
-export function createLaunchService({ getAdmin, now = () => new Date().toISOString(), newKey = generateKey, newId = randomUUID }) {
+export function createLaunchService({ getAdmin, now = () => new Date().toISOString(), newKey = generateKey, newId = randomUUID, launchId = 'launch', product = 'bundle', productId = PRODUCT_IDS.bundle }) {
+  const claimsCollection = `${launchId}_claims`;
+  const keysCollection = `${launchId}_keys`;
   async function readCounter() {
     const { db } = await getAdmin();
-    const snap = await db.collection('launch').doc('counter').get();
+    const snap = await db.collection(launchId).doc('counter').get();
     const claimed = snap.exists ? Number(snap.data().claimed) || 0 : 0;
     return { total: LAUNCH_TOTAL, claimed: Math.min(claimed, LAUNCH_TOTAL) };
   }
@@ -118,9 +120,9 @@ export function createLaunchService({ getAdmin, now = () => new Date().toISOStri
     const mail = String(email || '').trim().toLowerCase();
     if (!uid || !mail || mail.includes('/')) return { status: 400, body: { error: 'This account has no usable e-mail address' } };
 
-    const counterRef = db.collection('launch').doc('counter');
-    const byUid = db.collection('launch_claims').doc(`uid:${uid}`);
-    const byEmail = db.collection('launch_claims').doc(`email:${mail}`);
+    const counterRef = db.collection(launchId).doc('counter');
+    const byUid = db.collection(claimsCollection).doc(`uid:${uid}`);
+    const byEmail = db.collection(claimsCollection).doc(`email:${mail}`);
 
     return db.runTransaction(async (tx) => {
       const [counterSnap, uidSnap, emailSnap] = await Promise.all([tx.get(counterRef), tx.get(byUid), tx.get(byEmail)]);
@@ -137,16 +139,16 @@ export function createLaunchService({ getAdmin, now = () => new Date().toISOStri
       let key;
       for (let i = 0; i < 5 && !key; i += 1) {
         const candidate = newKey();
-        if (!(await tx.get(db.collection('launch_keys').doc(candidate))).exists) key = candidate;
+        if (!(await tx.get(db.collection(keysCollection).doc(candidate))).exists) key = candidate;
       }
       if (!key) throw new Error('could not mint a unique key');
 
       const created = now();
-      tx.set(db.collection('launch_keys').doc(key), {
+      tx.set(db.collection(keysCollection).doc(key), {
         email: mail,
         uid,
-        product: 'bundle',
-        product_id: PRODUCT_IDS.bundle,
+        product,
+        product_id: productId,
         status: 'active',
         activation_limit: ACTIVATION_LIMIT,
         instances: {},
@@ -162,8 +164,8 @@ export function createLaunchService({ getAdmin, now = () => new Date().toISOStri
         licenses: {
           [key]: {
             license_id: key,
-            product: 'bundle',
-            product_id: PRODUCT_IDS.bundle,
+            product,
+            product_id: productId,
             key,
             key_short: keyShort(key),
             status: 'active',
