@@ -66,6 +66,17 @@ service cloud.firestore {
     match /launch2_uids/{document=**} {
       allow read, write: if false;
     }
+    // What an account deletion leaves behind: hashed-e-mail markers (accountDeletion.js).
+    // Server only; spelled out so a broad rule can never open them.
+    match /erased_emails/{document=**} {
+      allow read, write: if false;
+    }
+    match /reports_archive/{document=**} {
+      allow read, write: if false;
+    }
+    match /forum_topics_archive/{document=**} {
+      allow read, write: if false;
+    }
     match /analytics/{document=**} {
       allow read: if request.auth != null;
     }

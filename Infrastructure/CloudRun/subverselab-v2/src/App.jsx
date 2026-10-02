@@ -25,6 +25,7 @@ import TestersPage from './components/TestersPage';
 import PluginManualPage from './components/PluginManualPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
+import CookieBanner from './components/CookieBanner';
 import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import { LEARN_INDEX } from './data/siteMeta';
@@ -97,6 +98,7 @@ function GlobalPlayer({ track, isPlaying, onPlayPause }) {
    ============================================================ */
 export default function App() {
   const [user, setUser] = useState(null);
+  const [accountNotice, setAccountNotice] = useState('');
   const [authLoading, setAuthLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   useEffect(() => { const open = () => setAuthModalOpen(true); window.addEventListener('svl-open-auth', open); return () => window.removeEventListener('svl-open-auth', open); }, []);
@@ -167,6 +169,13 @@ export default function App() {
     setUser(null);
   };
 
+  // The server has already deleted the account; this only clears the local sign-in.
+  const handleAccountDeleted = async () => {
+    try { await signOut(auth); } catch { /* the account is gone either way */ }
+    setUser(null);
+    setAccountNotice('Your account has been deleted.');
+  };
+
   const handlePlayPause = (pack) => {
     if (!pack) { setIsPlaying(false); setActiveTrack(null); return; }
     if (activeTrack && activeTrack.id === pack.id) setIsPlaying(prev => !prev);
@@ -206,12 +215,17 @@ export default function App() {
           />
 
           <main style={{ flex: 1 }}>
+            {accountNotice && (
+              <div className="account-notice" role="status">
+                {accountNotice} <button type="button" className="link-button" onClick={() => setAccountNotice('')}>Dismiss</button>
+              </div>
+            )}
             <Routes>
               <Route path="/" element={<Storefront {...sharedProps} />} />
 
               <Route path="/account" element={
                 user
-                  ? <AccountPage user={user} packs={packs} onLogout={handleLogout} />
+                  ? <AccountPage user={user} packs={packs} onLogout={handleLogout} onDeleted={handleAccountDeleted} />
                   : <Navigate to="/" replace />
               } />
 
@@ -291,6 +305,7 @@ export default function App() {
             <Footer />
           </main>
 
+          <CookieBanner />
           <GlobalPlayer track={activeTrack} isPlaying={isPlaying} onPlayPause={handlePlayPause} />
           <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} onLoginSuccess={() => setUser(auth.currentUser)} />
 

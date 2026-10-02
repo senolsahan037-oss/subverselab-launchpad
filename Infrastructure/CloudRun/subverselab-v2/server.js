@@ -11,6 +11,7 @@ import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
 import { ownedLaunch1Slugs } from './entitlements.js';
+import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, 'dist');
@@ -213,7 +214,10 @@ async function launch2Purchase(admin, email) {
   const mail = launch2Email(email);
   if (!mail) return null;
   const snap = await admin.db.collection('launch2_purchases').doc(mail).get();
-  return snap.exists ? snap.data() : null;
+  if (snap.exists) return snap.data();
+  // After an account deletion only the hashed, reduced purchase is left (accountDeletion.js).
+  const kept = await admin.db.collection(ERASED_COLLECTION).doc(emailMarker(mail)).get();
+  return kept.exists && kept.data().purchase ? kept.data().purchase : null;
 }
 // 'paid' | 'refunded' | 'oversold' | 'none'
 const launch2Standing = (purchase) => !purchase ? 'none' : purchase.refunded ? 'refunded' : purchase.overCap ? 'oversold' : 'paid';
@@ -264,8 +268,12 @@ async function recordLaunch2Order(admin, { email, uid, orderId, paidAt }) {
     const seatRef = db.collection('launch2_seats').doc(email);
     const counterRef = db.collection('launch2').doc('counter');
     const uidRef = launch2Uid(uid) ? db.collection('launch2_uids').doc(launch2Uid(uid)) : null;
-    const [purchaseSnap, seatSnap, counterSnap, uidSnap] = await Promise.all([tx.get(purchaseRef), tx.get(seatRef), tx.get(counterRef), uidRef ? tx.get(uidRef) : null]);
+    const erasedRef = db.collection(ERASED_COLLECTION).doc(emailMarker(email));
+    const [purchaseSnap, seatSnap, counterSnap, uidSnap, erasedSnap] = await Promise.all([tx.get(purchaseRef), tx.get(seatRef), tx.get(counterRef), uidRef ? tx.get(uidRef) : null, tx.get(erasedRef)]);
     const purchase = purchaseSnap.exists ? purchaseSnap.data() : null;
+    // A purchase or seat that survives an account deletion only as a hashed marker still counts.
+    const erased = erasedSnap.exists ? erasedSnap.data() : {};
+    if (!purchase && erased.purchase?.orderId === orderId) return { result: 'duplicate' };
     // A uid already bound to a live (paid, not refunded) order of another purchase keeps it; the new
     // order stays e-mail matched only. Read here, before any write.
     let bindUid = Boolean(uidRef);
@@ -285,7 +293,7 @@ async function recordLaunch2Order(admin, { email, uid, orderId, paidAt }) {
     }
     const claimed = counterSnap.exists ? Number(counterSnap.data().claimed) || 0 : 0;
     let overCap = false, seat = true;
-    if (!seatSnap.exists) {
+    if (!seatSnap.exists && !erased.seat) {
       if (claimed >= LAUNCH2_CAP) { overCap = true; seat = false; }
       else {
         tx.set(seatRef, { orderId, at: paidAt });
@@ -301,8 +309,16 @@ async function refundLaunch2Order(admin, { email, orderId, at }) {
   const { db } = admin;
   return db.runTransaction(async (tx) => {
     const ref = db.collection('launch2_purchases').doc(email);
-    const snap = await tx.get(ref);
-    if (!snap.exists) return { result: 'unknown-order' };
+    const erasedRef = db.collection(ERASED_COLLECTION).doc(emailMarker(email));
+    const [snap, erasedSnap] = await Promise.all([tx.get(ref), tx.get(erasedRef)]);
+    if (!snap.exists) {
+      // The buyer deleted their account: the reduced purchase lives in the hashed marker.
+      if (erasedSnap.exists && erasedSnap.data().purchase?.orderId === orderId) {
+        tx.set(erasedRef, { purchase: { refunded: true, refundedAt: at } }, { merge: true });
+        return { result: 'refunded' };
+      }
+      return { result: 'unknown-order' };
+    }
     const purchase = snap.data();
     if (purchase.orderId !== orderId) return { result: 'other-order' };
     // The seat is deliberately NOT released: the owner decides what to do with it.
@@ -853,6 +869,61 @@ app.get('/api/admin/testers/reports', async (req, res) => {
   }
 });
 
+// POST /api/admin/reports/purge   Authorization: admin ID token
+// Problem reports are kept 12 months after they are marked resolved, then
+// deleted (privacy text, "How long we keep it"). There is no scheduler in this
+// service, so the admin panel calls this each time it opens: it deletes the
+// expired ones and starts the clock on resolved reports that have no
+// resolvedAt yet. → {deleted, stamped}
+app.post('/api/admin/reports/purge', smallBody, async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  try {
+    const out = await withTimeout(purgeResolvedReports(caller.admin.db), 30000);
+    if (out.deleted) console.log(`reports purge: deleted ${out.deleted} resolved report(s) older than 12 months`);
+    return res.json(out);
+  } catch (err) {
+    console.error('reports purge:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Report service unavailable' });
+  }
+});
+
+// POST /api/account/delete   Authorization: Bearer <Firebase ID token>   body {confirm: "DELETE"}
+// Self-service account deletion (accountDeletion.js has the rules: what is
+// deleted, and the hashed markers that stay). Refused for the admin accounts,
+// and for a sign-in older than ten minutes, with code "requires-recent-login"
+// so the page asks the person to sign in again. Idempotent. The log line has
+// no e-mail address.
+const accountDeleter = createAccountDeleter({ getAdmin: adminFirestore });
+const deleteLimit = tokenBucket({ perMinute: 5 });
+const RECENT_LOGIN_SECONDS = 600;
+app.post('/api/account/delete', smallBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!deleteLimit(req.ip)) return res.status(429).json({ error: 'Too many requests — try again in a minute' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Account service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+  const mail = String(decoded.email || '').trim().toLowerCase();
+  if (ADMIN_EMAILS.includes(mail)) return res.status(403).json({ error: 'Admin accounts cannot be deleted here' });
+  if (req.body?.confirm !== 'DELETE') return res.status(400).json({ error: 'Type DELETE to confirm' });
+  const authTime = Number(decoded.auth_time);
+  if (!authTime || Date.now() / 1000 - authTime > RECENT_LOGIN_SECONDS) {
+    return res.status(401).json({ error: 'Sign in again to delete your account', code: 'requires-recent-login' });
+  }
+  const emailOwned = Boolean(mail) && (!emailVerificationRequired(decoded) || decoded.email_verified === true);
+  try {
+    const counts = await withTimeout(accountDeleter.deleteAccount({ uid: decoded.uid, email: mail, emailOwned }), 90000);
+    console.log(`account delete: uid ${String(decoded.uid).slice(0, 6)}… done ${JSON.stringify(counts)}`);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('account delete:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'The account could not be deleted right now — try again, or write to info@subverselab.com' });
+  }
+});
+
 // Licence API for the plugins, in Lemon Squeezy's License API shapes.
 // When the service itself is down the answer is deliberately NOT JSON: the
 // plugin treats a non-object body as "could not ask" and keeps its activation,
@@ -961,6 +1032,16 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
 
   try {
     const { db, FieldValue } = await adminFirestore();
+    // A refund of an order whose buyer deleted their account updates the
+    // reduced, hashed record instead of re-creating a plain-text document.
+    if (event === 'order_refunded') {
+      const erasedRef = db.collection(ERASED_COLLECTION).doc(emailMarker(email));
+      const erasedSnap = await erasedRef.get();
+      if (erasedSnap.exists && erasedSnap.data().orders?.[String(data.id)]) {
+        await erasedRef.set({ orders: { [String(data.id)]: { status: a.status || null, refunded: Boolean(a.refunded) } } }, { merge: true });
+        return res.json({ ok: true, erased: true });
+      }
+    }
     const ref = db.collection('plugin_licenses').doc(email);
     const update = { email, updated: FieldValue.serverTimestamp() };
 

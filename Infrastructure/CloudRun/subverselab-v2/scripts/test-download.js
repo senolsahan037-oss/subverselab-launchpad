@@ -111,12 +111,14 @@ globalThis.__downloadTestStorage = { Storage: class { constructor() { return sta
 const serverSource = await readFile(resolve(root, 'server.js'), 'utf8');
 const launchUrl = pathToFileURL(resolve(root, 'launchLicence.js')).href;
 const entitlementsUrl = pathToFileURL(resolve(root, 'entitlements.js')).href;
+const accountUrl = pathToFileURL(resolve(root, 'accountDeletion.js')).href;
 const transformed = serverSource
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
   .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(root)};`)
   .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${launchUrl}';`)
   .replace("import { ownedLaunch1Slugs } from './entitlements.js';", `import { ownedLaunch1Slugs } from '${entitlementsUrl}';`)
+  .replace("import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';", `import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from '${accountUrl}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__downloadTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__downloadTestAdminFirestore)')

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { openConsentSettings } from '../consent';
 
 export default function Footer() {
   return (
@@ -114,6 +115,15 @@ export default function Footer() {
             >
               Terms
             </Link>
+            <button
+              type="button"
+              onClick={openConsentSettings}
+              style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-text-muted)', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+            >
+              Cookie settings
+            </button>
           </div>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', opacity: 0.7 }}>
             Created for subverselab.com

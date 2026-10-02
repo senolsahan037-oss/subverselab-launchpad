@@ -66,6 +66,12 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
       .then((body) => { setUsersList(body.members || []); setLaunchStats(body.launch || null); })
       .catch((err) => setUsersError('Member list is unavailable right now: ' + err.message));
 
+    // Problem reports are kept 12 months after they are resolved. There is no
+    // scheduler, so opening the panel runs the purge (admin-only endpoint).
+    user.getIdToken()
+      .then((token) => fetch('/api/admin/reports/purge', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }))
+      .catch(() => {});
+
     getDocs(collection(db, 'reports'))
       .then((snapshot) => {
         const fetchedReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -166,7 +172,7 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
   // form on the Storefront does.
   const handleUpdateReportStatus = async (reportId, newStatus) => {
     try {
-      await updateDoc(doc(db, 'reports', reportId), { status: newStatus });
+      await updateDoc(doc(db, 'reports', reportId), { status: newStatus, resolvedAt: newStatus === 'resolved' ? new Date().toISOString() : null });
       setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: newStatus } : r));
     } catch (err) {
       console.error('Could not update report status', err);

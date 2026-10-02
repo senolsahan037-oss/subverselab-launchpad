@@ -6,7 +6,7 @@
 // does; the source of each fact is noted beside it. If the code changes (a new
 // form, a new third party, a new collection), change the text in the same
 // commit. A block is either a paragraph (string) or a list (array of strings).
-export const LEGAL_UPDATED = '2 October 2026';
+export const LEGAL_UPDATED = '3 October 2026';
 export const LEGAL_EMAIL = 'info@subverselab.com';
 
 export const PRIVACY = {
@@ -38,7 +38,7 @@ export const PRIVACY = {
           'Problem reports. The report forms on the Download Room and on the storefront store the affected product, your operating system, the e-mail address you type (or "Anonymous" if you leave it empty), and your description. The Download Room form also stores your account ID if you are signed in, your browser\'s user-agent string (the first 300 characters), the page you were on, the step, the DAW you name and the last download message shown to you. You can send these without signing in.',
           'Forum. If you post a topic or a reply we store the text, your account ID and a display name. The display name is your profile name or, if you have none, the part of your e-mail address before the @ sign. Topics and replies are public.',
           'Server logs. Our web server runs on Google Cloud Run in Belgium (europe-west1). Google Cloud Logging records each request with the time, the URL, your IP address and your browser\'s user-agent string. Cloud Logging keeps these for 30 days by default.',
-          'Usage statistics. The site loads Google Analytics 4 (through Firebase) on every page. Google Analytics measures visits and pages using identifiers stored in your browser and your IP address, and reports to us in aggregate. We use it to see which pages are read.',
+          'Usage statistics, only if you accept. Google Analytics 4 (through Firebase) is switched off until you press "Accept analytics" in the banner at the bottom of the page; before that nothing from it is loaded or stored. If you accept, it measures visits and pages using identifiers stored in your browser, and reports to us in aggregate. It records your approximate location (country, region and city, worked out from your IP address; Google Analytics does not store the IP address itself) and device data (device type, operating system, browser and screen size). Google signals is off, so there are no advertising features, no ad personalisation and no cross-device tracking. We use it to see which pages are read. You can decline, or change your mind at any time with "Cookie settings" in the footer; declining stops collection and removes the Google Analytics cookies.',
         ],
       ],
     },
@@ -52,9 +52,10 @@ export const PRIVACY = {
           'Your light or dark theme choice, if you made one (local storage).',
           'An unsent forum topic draft, so you do not lose it (local storage; removed once the topic is published).',
           'A flag in session storage that a checkout was opened in this tab, so the Download Room knows to wait for your order.',
-          'Google Analytics identifiers (cookies or local storage, set by Google).',
+          'Your cookie choice, "granted" or "denied" (local storage), so the banner does not ask again.',
+          'Google Analytics identifiers (cookies or local storage, set by Google), only after you accept analytics.',
         ],
-        'We do not use advertising cookies, ad pixels or ad networks, and the site loads no advertising scripts. You can clear or block any of the above in your browser; blocking Google Analytics does not affect how the site works.',
+        'We do not use advertising cookies, ad pixels or ad networks, and the site loads no advertising scripts. You can clear or block any of the above in your browser; declining or blocking Google Analytics does not affect how the site works.',
       ],
     },
     {
@@ -75,14 +76,25 @@ export const PRIVACY = {
       id: 'basis',
       h: 'Legal grounds',
       blocks: [
-        'We process your data to perform our agreement with you (your account, your downloads, your licence, your order), on our legitimate interest in running, securing and improving the site and answering your reports, to meet legal obligations, and, where the law requires it, on your consent. You may withdraw consent at any time without affecting what was done before.',
+        'We process your data to perform our agreement with you (your account, your downloads, your licence, your order), on our legitimate interest in running, securing and improving the site and answering your reports, to meet legal obligations, and, where the law requires it, on your consent (Google Analytics runs only on your consent). You may withdraw consent at any time without affecting what was done before.',
       ],
     },
     {
       id: 'keep',
       h: 'How long we keep it',
       blocks: [
-        'Account, licence, download and order records are kept while your account exists and while we need them to honour your licence, answer questions about your order, prevent a second free claim, and meet legal duties. Reports and tester applications are kept until the matter is closed and for as long afterwards as is useful for fixing the product. Server logs are kept for 30 days by default. Lemon Squeezy keeps its own records under its own policy. When you ask us to delete your data (see below) we delete it, except what we must keep by law or to defend a legal claim.',
+        'Each kind of data has its own period:',
+        [
+          'Account, free launch claim, download counters and licences: while your account exists. They are deleted when you delete your account. The only thing kept is a one-way hash of your e-mail address (it cannot be turned back into the address), so that the free launch licence stays one per person and the public count of claimed licences does not go down.',
+          'Paid orders: Lemon Squeezy, the merchant of record, keeps the invoices under its own policy. We keep the order ID, product, status and a hashed e-mail address for as long as the licence exists, to handle refunds and re-downloads. When you delete your account we delete the rest of the order record (your e-mail address, receipt link and licence key) and keep only those fields.',
+          'Problem reports: 12 months after we mark them resolved or move them to our archive, then they are deleted automatically. A report that is not resolved yet is kept until it is.',
+          'Tester applications and tester reports: until the tester programme ends, and for 12 months after that, or until you delete your account, whichever comes first.',
+          'Forum topics and replies: until you delete them or delete your account; then they are removed.',
+          'Server request logs: 30 days (the Google Cloud Logging default).',
+          'Analytics: only with your consent. Google Analytics keeps event data for 2 months (the retention period we set); older data is deleted by Google.',
+          'Your cookie choice: in your browser until you clear it.',
+        ],
+        'Lemon Squeezy and Google keep their own records under their own policies. Where the law requires us to keep something longer, or we need it to defend a legal claim, we keep only that.',
       ],
     },
     {
@@ -93,12 +105,12 @@ export const PRIVACY = {
         [
           'confirm whether we process your data and give you a copy (access);',
           'correct data that is wrong or incomplete (correction);',
-          'delete your data, including your account, licence and download records, reports and tester application (deletion);',
+          'delete your data, including your account, licence and download records, reports and tester application (deletion): sign in, open your Account page and press "Delete my account";',
           'stop or restrict processing that rests on our legitimate interest (objection);',
           'give you your data in a common machine-readable format (portability);',
           'tell us that you withdraw a consent you gave.',
         ],
-        'To use any of these, e-mail info@subverselab.com from the address on your account, saying what you want. We may ask you to confirm that the account is yours. We answer within 30 days. Forum posts can be deleted by their author; ask us if you cannot do it yourself. If you are not satisfied with our answer you can complain to the Turkish Personal Data Protection Board (KVKK Kurulu) or to the data protection authority where you live.',
+        'Deletion you can do yourself: on your Account page, "Delete my account" removes your account and the personal data described under "How long we keep it" straight away, apart from the hashed e-mail marker explained there. For anything else (access, correction, portability, objection, withdrawing consent), e-mail info@subverselab.com from the address on your account, saying what you want. We may ask you to confirm that the account is yours. We answer within 30 days. Forum posts can be deleted by their author. If you are not satisfied with our answer you can complain to the Turkish Personal Data Protection Board (KVKK Kurulu) or to the data protection authority where you live.',
       ],
     },
     {
@@ -150,7 +162,7 @@ export const TERMS = {
           'Use an e-mail address that is really yours and keep your sign-in details to yourself. Some downloads need a verified e-mail address.',
           'One person, one account, and one free launch claim per person. Making several accounts or using other people\'s e-mail addresses to claim more than one is not allowed.',
           'We may suspend or close an account, and withdraw its licence, if it is used abusively, to get around the limits above, to attack the site, or to share or resell the plugins. We will tell you why when we can.',
-          'You can ask us to delete your account at any time (see the Privacy Policy).',
+          'You can delete your account yourself at any time with "Delete my account" on your Account page (see the Privacy Policy for what is kept).',
         ],
       ],
     },

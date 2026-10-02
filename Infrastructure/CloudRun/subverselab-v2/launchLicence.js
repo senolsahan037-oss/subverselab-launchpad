@@ -23,6 +23,7 @@
 //                                Squeezy webhook writes, so /account shows it.
 
 import { randomBytes, randomUUID } from 'crypto';
+import { emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
 
 export const LAUNCH_TOTAL = 1000;
 export const STORE_ID = 1;
@@ -30,6 +31,7 @@ export const PRODUCT_IDS = { kubbe: 9001, kaset: 9002, bundle: 9003, koro: 9011,
 export const BUNDLE_NAME = 'SubverseLab Launch Bundle';
 export const ACTIVATION_LIMIT = 3;
 export const SOLD_OUT = 'All 1,000 launch licences are taken';
+export const ALREADY_USED = 'This e-mail address has already used its free launch licence. If you think this is a mistake, write to info@subverselab.com';
 
 // Crockford base32: no I, L, O or U, so a key read aloud or typed from a
 // screenshot has no 1/I/L or 0/O confusion.
@@ -123,13 +125,19 @@ export function createLaunchService({ getAdmin, now = () => new Date().toISOStri
     const counterRef = db.collection(launchId).doc('counter');
     const byUid = db.collection(claimsCollection).doc(`uid:${uid}`);
     const byEmail = db.collection(claimsCollection).doc(`email:${mail}`);
+    // What an account deletion leaves behind: a hashed marker that this
+    // address already took its free licence (accountDeletion.js).
+    const erasedRef = db.collection(ERASED_COLLECTION).doc(emailMarker(mail));
 
     return db.runTransaction(async (tx) => {
-      const [counterSnap, uidSnap, emailSnap] = await Promise.all([tx.get(counterRef), tx.get(byUid), tx.get(byEmail)]);
+      const [counterSnap, uidSnap, emailSnap, erasedSnap] = await Promise.all([tx.get(counterRef), tx.get(byUid), tx.get(byEmail), tx.get(erasedRef)]);
       const claimed = counterSnap.exists ? Number(counterSnap.data().claimed) || 0 : 0;
       const existing = (uidSnap.exists && uidSnap.data().key) || (emailSnap.exists && emailSnap.data().key);
       if (existing) {
         return { status: 200, body: { key: existing, claimed: Math.min(claimed, LAUNCH_TOTAL), total: LAUNCH_TOTAL, existing: true } };
+      }
+      if (erasedSnap.exists && erasedSnap.data()?.claimed?.[launchId]) {
+        return { status: 409, body: { error: ALREADY_USED, claimed: Math.min(claimed, LAUNCH_TOTAL), total: LAUNCH_TOTAL } };
       }
       if (claimed >= LAUNCH_TOTAL) {
         return { status: 410, body: { error: SOLD_OUT, claimed: LAUNCH_TOTAL, total: LAUNCH_TOTAL } };

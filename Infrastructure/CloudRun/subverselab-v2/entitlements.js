@@ -4,6 +4,8 @@
 // the webhook in server.js and by nothing else; this file only reads it.
 // An earlier free download is deliberately NOT an entitlement.
 
+import { emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
+
 export const LAUNCH1_SLUGS = ['kubbe', 'kaset'];
 
 export function ownedFromOrders(orders) {
@@ -19,6 +21,11 @@ export function ownedFromOrders(orders) {
 export async function ownedLaunch1Slugs(admin, email) {
   const mail = String(email || '').trim().toLowerCase();
   if (!mail || mail.includes('/')) return [];
-  const snap = await admin.db.collection('plugin_licenses').doc(mail).get();
-  return snap.exists ? ownedFromOrders(snap.data().orders) : [];
+  const [snap, kept] = await Promise.all([
+    admin.db.collection('plugin_licenses').doc(mail).get(),
+    admin.db.collection(ERASED_COLLECTION).doc(emailMarker(mail)).get(),
+  ]);
+  // Orders kept in reduced form after an account deletion (accountDeletion.js)
+  // still count, so a buyer who signs up again can download again.
+  return ownedFromOrders({ ...(kept.exists ? kept.data().orders : {}), ...(snap.exists ? snap.data().orders : {}) });
 }

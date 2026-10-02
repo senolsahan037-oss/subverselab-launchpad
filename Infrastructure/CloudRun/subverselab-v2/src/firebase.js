@@ -1,6 +1,5 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getAnalytics } from 'firebase/analytics';
 import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 
@@ -14,10 +13,14 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-const app = initializeApp(firebaseConfig);
+// Google Analytics is NOT started here. It is opt-in: src/consent.js loads
+// firebase/analytics and calls getAnalytics(app) only after the visitor accepts
+// in the cookie banner, so nothing from Google Analytics runs or is stored
+// before that choice.
+export const app = initializeApp(firebaseConfig);
+export const MEASUREMENT_ID = firebaseConfig.measurementId;
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(() => {});
 
-export const analytics = getAnalytics(app);
 export const storage = getStorage(app);
 export const db = getFirestore(app);

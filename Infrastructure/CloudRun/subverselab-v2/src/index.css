@@ -1409,3 +1409,44 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .launch-key-steps a, .launch-key-links a, .launch-insta a { color: var(--pl-gold); }
 .launch-key-links { margin: 0; color: var(--pl-muted); font-size: 0.9rem; }
 .launch-insta { margin: 0 0 30px; color: var(--pl-muted); font-size: 0.9rem; }
+
+/* ============================================================
+   COOKIE BANNER (analytics consent)
+   Fixed, so it never shifts the layout; both buttons are equal.
+   ============================================================ */
+.cookie-banner {
+  position: fixed;
+  left: 16px; right: 16px; bottom: 16px;
+  max-width: 760px; margin: 0 auto;
+  z-index: 400;
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 40px var(--shadow-color);
+  animation: cookie-banner-in 0.25s ease-out;
+}
+.cookie-banner-text { margin: 0; flex: 1; min-width: 0; font-size: 0.85rem; line-height: 1.5; color: var(--color-text-muted); }
+.cookie-banner-text a { color: var(--color-accent); }
+.cookie-banner-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.cookie-banner-actions .btn { flex: 1 1 0; min-width: 130px; padding: 8px 14px; font-size: 0.85rem; }
+@keyframes cookie-banner-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@media (max-width: 640px) {
+  .cookie-banner { left: 8px; right: 8px; bottom: 8px; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+  .cookie-banner-actions .btn { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .cookie-banner { animation: none; } }
+
+/* Delete my account (Account page) */
+.acct-danger { margin-top: 48px; padding: 20px; border: 1px solid var(--color-danger); border-radius: var(--radius-lg); }
+.acct-danger h3 { margin: 0 0 10px; font-size: 1.2rem; font-weight: 800; }
+.acct-danger p, .acct-danger li { color: var(--color-text-muted); line-height: 1.6; font-size: 0.92rem; }
+.acct-danger ul { margin: 0 0 14px; padding-left: 20px; }
+.acct-danger-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+.acct-danger-row .input-field { max-width: 240px; }
+.btn.btn-danger { background: transparent; color: var(--color-danger); border-color: var(--color-danger); }
+.btn.btn-danger:hover:not(:disabled) { background: var(--color-danger); color: var(--color-bg); }
+.acct-danger-error { color: var(--color-danger); margin: 12px 0 0; }
+.account-notice { background: var(--color-surface); border-bottom: 1px solid var(--color-border); padding: 12px 16px; text-align: center; color: var(--color-text); font-size: 0.9rem; }

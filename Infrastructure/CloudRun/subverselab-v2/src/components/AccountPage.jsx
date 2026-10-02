@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import {
+  GoogleAuthProvider, EmailAuthProvider, reauthenticateWithPopup, reauthenticateWithCredential,
+} from 'firebase/auth';
 import ProductActions from './ProductActions';
 import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
@@ -96,7 +97,90 @@ function MyPlugins({ user }) {
   );
 }
 
-export default function AccountPage({ user, packs = [], onLogout }) {
+// Self-service deletion: POST /api/account/delete (accountDeletion.js has the
+// rules). The server wants a sign-in from the last ten minutes and answers
+// code "requires-recent-login" otherwise; Firebase's own
+// auth/requires-recent-login is handled the same way. The person signs in
+// again here (Google popup, or their password) and the deletion is retried.
+function DeleteAccount({ user, onDeleted }) {
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [needReauth, setNeedReauth] = useState(false);
+  const [password, setPassword] = useState('');
+  const isGoogle = user.providerData?.some((p) => p.providerId === 'google.com');
+
+  const send = async () => {
+    const token = await user.getIdToken(true);
+    const r = await fetch('/api/account/delete', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm: 'DELETE' }),
+    });
+    const body = await r.json().catch(() => ({}));
+    if (r.ok) { await onDeleted(); return; }
+    if (body.code === 'requires-recent-login') { setNeedReauth(true); setError('For your safety, sign in again before deleting your account.'); return; }
+    setError(body.error || 'The account could not be deleted. Try again, or write to info@subverselab.com.');
+  };
+
+  const run = async (step) => {
+    setBusy(true); setError('');
+    try { await step(); } catch (err) {
+      if (err?.code === 'auth/requires-recent-login') { setNeedReauth(true); setError('For your safety, sign in again before deleting your account.'); }
+      else if (err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') setError('That password is not right.');
+      else if (err?.code === 'auth/popup-closed-by-user') setError('The sign-in window was closed.');
+      else setError('Something went wrong. Try again, or write to info@subverselab.com.');
+    } finally { setBusy(false); }
+  };
+
+  const reauth = () => run(async () => {
+    if (isGoogle) await reauthenticateWithPopup(user, new GoogleAuthProvider());
+    else await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+    setNeedReauth(false); setPassword('');
+    await send();
+  });
+
+  return (
+    <section className="acct-danger" aria-labelledby="delete-account-h">
+      <h3 id="delete-account-h">Delete my account</h3>
+      <p>This removes your sign-in and, straight away:</p>
+      <ul>
+        <li>your free launch licence key and its activations, your download counters and your profile;</li>
+        <li>your tester application and tester reports, if you sent any;</li>
+        <li>problem reports you filed while signed in or with your e-mail address;</li>
+        <li>your forum topics and replies.</li>
+      </ul>
+      <p>
+        What stays: a one-way hash of your e-mail address, so the free launch licence stays one per person and the public
+        count does not go down; and, for paid orders, only the order ID, product, status and that hash, so refunds and
+        re-downloads still work. Your invoices stay with Lemon Squeezy. Licence keys from paid orders are removed here; they
+        remain in your Lemon Squeezy receipt. This cannot be undone. See the <Link to="/privacy#keep">Privacy Policy</Link>.
+      </p>
+      <label htmlFor="delete-confirm" style={{ display: 'block', marginTop: '14px', fontWeight: 700 }}>Type DELETE to confirm</label>
+      <div className="acct-danger-row">
+        <input id="delete-confirm" className="input-field" value={typed} autoComplete="off"
+               onChange={(e) => setTyped(e.target.value)} disabled={busy} />
+        <button type="button" className="btn btn-danger" disabled={busy || typed !== 'DELETE'} onClick={() => run(send)}>
+          {busy ? 'Working…' : 'Delete my account'}
+        </button>
+      </div>
+      {needReauth && (
+        <div className="acct-danger-row">
+          {!isGoogle && (
+            <input type="password" className="input-field" placeholder="Your password" autoComplete="current-password"
+                   value={password} onChange={(e) => setPassword(e.target.value)} disabled={busy} />
+          )}
+          <button type="button" className="btn btn-outline" disabled={busy || (!isGoogle && !password)} onClick={reauth}>
+            {isGoogle ? 'Sign in with Google again' : 'Confirm password and delete'}
+          </button>
+        </div>
+      )}
+      {error && <p className="acct-danger-error" role="alert">{error}</p>}
+    </section>
+  );
+}
+
+export default function AccountPage({ user, packs = [], onLogout, onDeleted }) {
   const downloadable = packs.filter(
     (pack) => (pack.actions || []).some((action) => action.type === 'download'),
   );
@@ -160,6 +244,8 @@ export default function AccountPage({ user, packs = [], onLogout }) {
             <Link to="/" className="btn btn-primary" style={{ marginTop: '20px', display: 'inline-block' }}>Browse Tools</Link>
           </div>
         )}
+
+        <DeleteAccount user={user} onDeleted={onDeleted || onLogout} />
       </div>
     </div>
   );
