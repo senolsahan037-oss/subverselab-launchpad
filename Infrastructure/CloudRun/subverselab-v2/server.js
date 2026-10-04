@@ -10,7 +10,7 @@ import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
-import { ownedLaunch1Slugs } from './entitlements.js';
+import { ownedLaunch1Slugs, LAUNCH1_SLUGS } from './entitlements.js';
 import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -101,7 +101,8 @@ app.use((req, res, next) => {
    licences (launchLicence.js).
    Env names only; values live in Cloud Run:
      LEMONSQUEEZY_WEBHOOK_SECRET   the webhook's signing secret
-     LS_BUNDLE4_PRODUCT_ID / LS_BUNDLE4_VARIANT_ID   the $20 launch-2 bundle (either one matches)
+     LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID     the $19.99 plugin-family bundle, six products (either one matches)
+     LS_BUNDLE4_PRODUCT_ID / LS_BUNDLE4_VARIANT_ID   old names of the same two settings, still accepted
      LS_PRODUCT_SLUGS (optional)   "productId:slug,…" e.g. "111:kubbe,222:kaset,333:bundle"
    Field names checked against https://docs.lemonsqueezy.com/api on 2026-09-26.
    ============================================================ */
@@ -194,7 +195,7 @@ app.get('/api/download/manifest', async (req, res) => {
 });
 const downloadLimit = tokenBucket({ perMinute: 30 });
 
-/* ---- Launch 2 is PAID: $20 through Lemon Squeezy --------------------------
+/* ---- Launch 2 (the plugin family, $19.99) is PAID through Lemon Squeezy --------------------------
    launch2_purchases/{lowercased e-mail} {orderId, paidAt, refunded, overCap, seat}
    launch2_seats/{lowercased e-mail}     {orderId, at}   one seat per buyer
    launch2_uids/{Firebase uid}           {email, orderId, at}  the account that clicked Buy
@@ -204,9 +205,12 @@ const downloadLimit = tokenBucket({ perMinute: 30 });
    The webhook is the only writer; the ticket route only reads. */
 const LAUNCH2_CAP = 1000;
 const launch2Email = (value) => { const e = String(value || '').trim().toLowerCase(); return e && !e.includes('/') ? e : null; };
-function isBundle4Order(item) {
-  const product = process.env.LS_BUNDLE4_PRODUCT_ID, variant = process.env.LS_BUNDLE4_VARIANT_ID;
-  return Boolean((product && String(item?.product_id) === String(product)) || (variant && String(item?.variant_id) === String(variant)));
+// The family bundle (KUBBE, KASET, KORO, YANKI, HAVA, MIHENK). The LS_FAMILY_* names are
+// the current ones; LS_BUNDLE4_* (the old four-product bundle) keep working.
+function isFamilyOrder(item) {
+  const products = [process.env.LS_FAMILY_PRODUCT_ID, process.env.LS_BUNDLE4_PRODUCT_ID].filter(Boolean).map(String);
+  const variants = [process.env.LS_FAMILY_VARIANT_ID, process.env.LS_BUNDLE4_VARIANT_ID].filter(Boolean).map(String);
+  return products.includes(String(item?.product_id)) || variants.includes(String(item?.variant_id));
 }
 // Firebase uids are up to 128 chars of [A-Za-z0-9] (custom-token uids may add _ and -); anything else is not a usable doc id here.
 const launch2Uid = (value) => { const u = String(value || '').trim(); return /^[A-Za-z0-9_-]{1,128}$/.test(u) ? u : null; };
@@ -251,7 +255,8 @@ async function launch2Access(admin, decoded) {
   if (standing === 'paid') return standing;
   const mail = launch2Email(decoded.email);
   if (mail && (await admin.db.collection('launch2_testers').doc(mail).get()).exists) return 'tester';
-  return standing;
+  // A refunded / oversold order bound to this uid (checkout e-mail differs) is reported as such, not as 'none'.
+  return standing === 'none' ? uidStanding : standing;
 }
 const launch2Open = (standing) => standing === 'paid' || standing === 'tester';
 const launch2Denied = (standing) => standing === 'unverified'
@@ -337,7 +342,8 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   const { slug, platform } = req.body || {};
   const launchId = validLaunchId(req.body?.launchId) || 'launch';
   // launch2: the verification rule lives in launch2Access (a uid-bound paid order needs none).
-  if (!decoded.email) return res.status(403).json({ error: 'Verify your e-mail address first' });
+  // An e-mail/password account must have verified its address before anything is handed out (before any claim or entitlement logic).
+  if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
   const launchService = launches[launchId];
   const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk'] : ['kubbe', 'kaset'];
   if (!launchSlugs.includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
@@ -359,7 +365,8 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
       const { claimed, total } = await withTimeout(launchService.readCounter(), 8000);
       if (claimed >= total) {
         const owned = await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000);
-        if (!owned.includes(slug)) return res.status(402).json({ error: 'The free 1,000 are gone. Buy this plugin to download it.' });
+        // The family bundle (paid, not refunded) also opens Kubbe and Kaset.
+        if (!owned.includes(slug) && !(await withTimeout(launch2Access(admin, decoded), 8000) === 'paid')) return res.status(402).json({ error: 'The free 1,000 are gone. Buy this plugin to download it.' });
       } else {
         const claim = await withTimeout(launchService.claim({ uid: decoded.uid, email: decoded.email }), 15000);
         if (claim.status === 410) return res.status(410).json(claim.body);
@@ -427,7 +434,7 @@ app.get('/api/launch2/status', async (req, res) => {
   try {
     const admin = await adminFirestore();
     const decoded = await admin.auth.verifyIdToken(token);
-    if (!decoded.email) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
     const standing = await launch2Access(admin, decoded);
     if (standing === 'unverified') return res.status(403).json(launch2Denied(standing));
     return res.json({ paid: standing === 'paid', tester: standing === 'tester', standing });
@@ -449,7 +456,10 @@ app.get('/api/purchases/status', async (req, res) => {
     const decoded = await admin.auth.verifyIdToken(token);
     if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
     const { claimed, total } = await withTimeout(launch.readCounter(), 8000);
-    return res.json({ full: claimed >= total, owned: await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000) });
+    let owned = await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000);
+    // A paid family bundle opens Kubbe and Kaset as well.
+    if (owned.length < LAUNCH1_SLUGS.length && await withTimeout(launch2Access(admin, decoded), 8000) === 'paid') owned = [...LAUNCH1_SLUGS];
+    return res.json({ full: claimed >= total, owned });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
   }
@@ -563,7 +573,8 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
     }
     return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
   }
-  if (!decoded.email) {
+  // Verified e-mail first (Google sign-in is verified by the provider), before any claim or entitlement logic.
+  if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) {
     return res.status(403).json({ error: 'Verify your e-mail address first' });
   }
 
@@ -1006,9 +1017,9 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
   const email = String(a.user_email || '').trim().toLowerCase();
   if (!email || !data.id) return res.json({ ok: true, ignored: 'no e-mail' });
 
-  // Launch 2 ($20 bundle of four): order_created (paid) records the purchase and
+  // Launch 2 (plugin family bundle, six products): order_created (paid) records the purchase and
   // claims a seat; order_refunded flags it. Handled here and nowhere else.
-  if ((event === 'order_created' || event === 'order_refunded') && isBundle4Order(a.first_order_item)) {
+  if ((event === 'order_created' || event === 'order_refunded') && isFamilyOrder(a.first_order_item)) {
     const orderId = String(data.id);
     try {
       const admin = await adminFirestore();
@@ -1096,6 +1107,17 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
 // ~890 KB of raw JavaScript on every request. gzip takes it to ~268 KB.
 app.use(compression());
 
+// RFC 9116 security contact. Served explicitly, before express.static, whose
+// default dotfiles policy would otherwise hide the .well-known path. The file
+// is copied out of public/ into dist/ at build.
+app.get('/.well-known/security.txt', (req, res) => {
+  res.type('text/plain; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(join(DIST_DIR, '.well-known', 'security.txt'), { dotfiles: 'allow' }, (err) => {
+    if (err && !res.headersSent) res.status(404).type('text/plain').send('Not found');
+  });
+});
+
 app.use(express.static(DIST_DIR, {
   // Without this, /learn/sensei gets a 301 to /learn/sensei/ before the file
   // is served. Every canonical URL on the site is the no-trailing-slash form,
@@ -1127,6 +1149,18 @@ function htmlCacheControl() {
 
 const LOOKS_LIKE_A_FILE = /\.[a-z0-9]{2,5}$/i;
 
+// Real app routes that are rendered entirely in the browser and so have no
+// prerendered dist/{route}/index.html of their own: the signed-in pages, and
+// the forum (its topics are read from Firestore at runtime). They must answer
+// 200 with the SPA shell. Every path that is neither one of these NOR a
+// prerendered file is a genuine unknown URL and must 404 — otherwise the shell
+// goes back under a 200, which is the "soft 404" Google penalises and which
+// hides broken links from the logs.
+const CLIENT_ONLY_ROUTES = new Set(['/account', '/admin', '/forum']);
+function isKnownClientRoute(path) {
+  return CLIENT_ONLY_ROUTES.has(path) || path.startsWith('/forum/');
+}
+
 app.use((req, res) => {
   // A request for a file that isn't there must 404, not hand back the SPA
   // shell under a 200 — that is the "soft 404" Google penalises, and it hides
@@ -1144,7 +1178,18 @@ app.use((req, res) => {
     res.sendFile(candidate);
     return;
   }
-  res.sendFile(join(DIST_DIR, 'index.html'));
+
+  // A real client-rendered route with no prerendered file still answers 200;
+  // the SPA paints it.
+  if (isKnownClientRoute(req.path)) {
+    res.sendFile(join(DIST_DIR, 'index.html'));
+    return;
+  }
+
+  // Anything else is an unknown URL. The SPA shell is still sent so the
+  // in-app 404 page renders for a visitor, but under a real 404 status so
+  // crawlers — and the access logs — see it for what it is.
+  res.status(404).sendFile(join(DIST_DIR, 'index.html'));
 });
 
 const PORT = process.env.PORT || 8080;

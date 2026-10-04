@@ -1,0 +1,6 @@
+# SubverseLab — security contact
+# If you find a security issue, please report it to the address below.
+Contact: mailto:info@subverselab.com
+Expires: 2027-10-04T00:00:00.000Z
+Preferred-Languages: tr, en
+Canonical: https://subverselab.com/.well-known/security.txt

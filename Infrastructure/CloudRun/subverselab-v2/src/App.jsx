@@ -28,6 +28,7 @@ import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
+import NotFound from './components/NotFound';
 import { LEARN_INDEX } from './data/siteMeta';
 import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK } from './data/plugins';
 import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
@@ -279,7 +280,7 @@ export default function App() {
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(42,157,143,0.1)', border: '1px solid rgba(42,157,143,0.25)', borderRadius: '999px', padding: '5px 14px', marginBottom: '14px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--color-accent)' }}>
                         ◆ Learn Hub
                       </div>
-                      <h1 style={{ fontSize: '2.4rem', fontWeight: '900', color: 'var(--color-text)', margin: 0 }}>AI Music Production Guides</h1>
+                      <h1 style={{ fontSize: '2.4rem', fontWeight: '900', color: 'var(--color-text)', margin: 0 }}>Music Production Guides</h1>
                       <p style={{ color: 'var(--color-text-muted)', marginTop: '8px', fontSize: '1rem' }}>In-depth tutorials, workflow templates, and FAQs about SubverseLab tools.</p>
                     </div>
                     <Link to="/" className="btn btn-outline">← Back to Store</Link>
@@ -300,7 +301,7 @@ export default function App() {
                 </div>
               } />
 
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
             <Footer />
           </main>
