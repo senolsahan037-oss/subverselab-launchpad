@@ -51,11 +51,9 @@ export const CHECKOUT = {
   tutkal: 'https://subverselab.lemonsqueezy.com/checkout/buy/34b33342-0de7-439f-b5fd-4722687a947b',
   mihenk: 'https://subverselab.lemonsqueezy.com/checkout/buy/be1389b5-1087-4252-a1bc-640ba3167a2d',
   // Free plugins: a $0 Lemon Squeezy product (pricing "Lead magnet", licence keys off, no card asked).
-  // TODO(owner): create the TABAN product, paste its checkout URL here and add "<productId>:taban" to
-  // LS_PRODUCT_SLUGS. Empty = the "Get TABAN free" button renders disabled ("Available shortly").
-  taban: '',
-  // TODO(owner): the ALEV $0 product is 1419837 (draft); paste its checkout URL here, "1419837:alev" goes into LS_PRODUCT_SLUGS.
-  alev: '',
+  // LS products: TABAN 1422884, ALEV 1419837 (both in LS_PRODUCT_SLUGS as "<id>:<slug>").
+  taban: 'https://subverselab.lemonsqueezy.com/checkout/buy/f86f586c-6c3e-42dc-a541-fe6ac3d6b1b3',
+  alev: 'https://subverselab.lemonsqueezy.com/checkout/buy/69c7387d-e316-498b-ab55-dcd23d0456a0',
 };
 
 // Installers are not in this repository and not in this constant. They live
