@@ -88,6 +88,7 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
   .replace("from './launchLicence.js';", `from '${url('launchLicence.js')}';`)
   .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
   .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
+  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__acctTestApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__acctTestFirestore)')
@@ -141,8 +142,15 @@ function seed() {
   D.set('launch_keys/SVL-AAAA', { email: 'alice@example.com', uid: 'alice', product: 'bundle', status: 'active', instances: { i1: { name: 'Alice laptop' } } });
   D.set('plugin_licenses/alice@example.com', {
     email: 'alice@example.com',
-    licenses: { 'SVL-AAAA': { key: 'SVL-AAAA', source: 'launch' }, 77: { key: 'LS-KEY-77', order_id: '1001' } },
-    orders: { 1001: { order_id: '1001', product: 'kubbe', product_name: 'Kubbe', status: 'paid', refunded: false, receipt_url: 'https://ls.example/receipt/alice', created: '2026-10-01' } },
+    licenses: {
+      'SVL-AAAA': { key: 'SVL-AAAA', source: 'launch' }, 77: { key: 'LS-KEY-77', order_id: '1001' },
+      78: { key: 'LS-KEY-KORO-78', order_id: '1003', uid: 'alice', instances_count: 1 }, 79: { key: 'LS-KEY-FAM-79', order_id: '2002' },
+    },
+    orders: {
+      1001: { order_id: '1001', product: 'kubbe', product_name: 'Kubbe', status: 'paid', refunded: false, receipt_url: 'https://ls.example/receipt/alice', created: '2026-10-01' },
+      1003: { order_id: '1003', product: 'koro', product_name: 'KORO', status: 'paid', refunded: false, receipt_url: 'https://ls.example/receipt/alice2', uid: 'alice', created: '2026-10-03T09:00:00Z' },
+      2002: { order_id: '2002', product: 'family', product_name: 'Family', status: 'paid', refunded: false, receipt_url: 'https://ls.example/receipt/alice3', uid: 'alice', created: '2026-10-02T09:00:00Z' },
+    },
   });
   D.set('downloads/alice', { kubbe: { mac: { count: 2 } } });
   D.set('users/alice', { name: 'Alice' });
@@ -162,6 +170,13 @@ function seed() {
   D.set('forum_topics/t2', { authorId: 'bob', title: 'Bob topic' });
   D.set('forum_topics/t2/replies/y1', { authorId: 'alice', body: 'Alice reply' });
   D.set('forum_topics/t2/replies/y2', { authorId: 'bob', body: 'Bob reply' });
+  D.set('credits/alice', { balance: 900, granted: 1000, spent: 100, updatedAt: '2026-10-05' });
+  D.set('credit_ledger/purchase_2002', { uid: 'alice', delta: 1000, reason: 'purchase', orderId: '2002', at: '2026-10-05' });
+  D.set('credit_ledger/spend_splitter_j1', { uid: 'alice', delta: -50, reason: 'spend', tool: 'splitter', jobId: 'j1', at: '2026-10-05' });
+  D.set('pending_credits/alice@example.com', { email: 'alice@example.com', orders: { 3003: { credits: 500, at: '2026-10-05' } } });
+  D.set('credits/bob', { balance: 5, granted: 5, spent: 0 });
+  D.set('credit_ledger/purchase_9', { uid: 'bob', delta: 5, reason: 'purchase', orderId: '9' });
+  D.set('pending_credits/bob@example.com', { email: 'bob@example.com', orders: {} });
   // bob: must survive untouched
   D.set('launch_claims/uid:bob', { key: 'SVL-BBBB', email: 'bob@example.com' });
   D.set('launch_claims/email:bob@example.com', { key: 'SVL-BBBB', uid: 'bob' });
@@ -224,6 +239,10 @@ await test('deletion removes every personal document, keeps only hashed markers,
   const kept = D.get(`erased_emails/${erasedHash}`);
   assert.equal(kept.claimed.launch, true);
   assert.deepEqual(kept.orders['1001'], { order_id: '1001', product: 'kubbe', status: 'paid', refunded: false, created: '2026-10-01' });
+  // A single plugin and the family keep their purchase date (the "updates until" date), nothing else; no licence key survives.
+  assert.deepEqual(kept.orders['1003'], { order_id: '1003', product: 'koro', status: 'paid', refunded: false, created: '2026-10-03T09:00:00Z' });
+  assert.deepEqual(kept.orders['2002'], { order_id: '2002', product: 'family', status: 'paid', refunded: false, created: '2026-10-02T09:00:00Z' });
+  for (const secret of ['LS-KEY-77', 'LS-KEY-KORO-78', 'LS-KEY-FAM-79', 'receipt']) assert.ok(!dump().includes(secret), `${secret} must not survive`);
   assert.equal(kept.purchase.orderId, '2002');
   assert.equal(kept.seat.orderId, '2002');
   assert.ok(!dump().toLowerCase().includes('alice'), 'no trace of the name or address is left anywhere');
@@ -256,7 +275,44 @@ await test('a paid order survives deletion in reduced form, so re-downloads stil
   D.set('launch/counter', { claimed: 1000, downloads: 12 });
   const status = await call('/api/purchases/status', { token: 'valid-alice2' });
   assert.equal(status.status, 200);
-  assert.deepEqual(status.body.owned, ['kubbe']);
+  // alice also holds a paid family (launch-2) purchase (and a KORO single): all seven plugins open, with the kept purchase dates.
+  assert.deepEqual(status.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal']);
+  assert.equal(status.body.updatesUntil.koro, '2028-10-03');
+  assert.equal(status.body.updatesUntil.kubbe, '2028-10-02');
+  const keys = await call('/api/purchases/licenses', { token: 'valid-alice2' });
+  assert.deepEqual(keys.body, { licenses: [] }, 'deleted licence keys do not come back');
+});
+
+await test('a family order paid under another checkout e-mail but bound to the account: its key and record go, only a hashed marker stays; the rest of that e-mail\'s document stays', async () => {
+  seed();
+  D.delete('launch2_purchases/alice@example.com'); D.delete('launch2_seats/alice@example.com');
+  D.set('launch2_uids/alice', { email: 'alice.work@example.com', orderId: '2002' });
+  D.set('launch2_purchases/alice.work@example.com', { email: 'alice.work@example.com', orderId: '2002', paidAt: '2026-10-02', refunded: false, overCap: false, seat: true, uid: 'alice' });
+  D.set('plugin_licenses/alice.work@example.com', {
+    email: 'alice.work@example.com',
+    orders: {
+      2002: { order_id: '2002', product: 'family', status: 'paid', refunded: false, receipt_url: 'https://ls.example/r/work', created: '2026-10-02T09:00:00Z' },
+      3003: { order_id: '3003', product: 'hava', status: 'paid', refunded: false, created: '2026-10-04T09:00:00Z' },
+    },
+    licenses: { 88: { key: 'FAM-KEY-WORK-88', order_id: '2002' }, 89: { key: 'HAVA-KEY-WORK-89', order_id: '3003' } },
+  });
+  const out = await call('/api/account/delete', { token: login('alice', 'alice', 'alice@example.com'), body: { confirm: 'DELETE' } });
+  assert.equal(out.status, 200, JSON.stringify(out.body));
+  const left = D.get('plugin_licenses/alice.work@example.com');
+  assert.ok(left, 'the other order of that e-mail is not this account\'s and stays');
+  assert.deepEqual(Object.keys(left.orders), ['3003']); assert.deepEqual(Object.keys(left.licenses), ['89']);
+  assert.ok(!dump().includes('FAM-KEY-WORK-88') && !dump().includes('ls.example/r/work'));
+  const marker = D.get(`erased_emails/${emailMarker('alice.work@example.com')}`);
+  assert.deepEqual(marker.orders['2002'], { order_id: '2002', product: 'family', status: 'paid', refunded: false, created: '2026-10-02T09:00:00Z' });
+  // With nothing else in that document it is deleted outright.
+  seed();
+  D.delete('launch2_purchases/alice@example.com');
+  D.set('launch2_uids/alice', { email: 'solo.work@example.com', orderId: '2002' });
+  D.set('launch2_purchases/solo.work@example.com', { email: 'solo.work@example.com', orderId: '2002', paidAt: '2026-10-02', refunded: false, overCap: false, seat: true, uid: 'alice' });
+  D.set('plugin_licenses/solo.work@example.com', { email: 'solo.work@example.com', orders: { 2002: { order_id: '2002', product: 'family', status: 'paid', created: '2026-10-02T09:00:00Z' } }, licenses: { 90: { key: 'FAM-KEY-SOLO-90', order_id: '2002' } } });
+  assert.equal((await call('/api/account/delete', { token: login('alice', 'alice', 'alice@example.com'), body: { confirm: 'DELETE' } })).status, 200);
+  assert.ok(!D.has('plugin_licenses/solo.work@example.com'));
+  assert.ok(!dump().includes('FAM-KEY-SOLO-90'));
 });
 
 await test('an unverified account with someone else\'s address cannot delete that person\'s records', async () => {
@@ -270,6 +326,25 @@ await test('an unverified account with someone else\'s address cannot delete tha
   assert.equal(out.status, 200);
   for (const p of ['plugin_licenses/victim@example.com', 'tester_applications/victim@example.com', 'launch_claims/email:victim@example.com', 'launch_keys/SVL-VVVV']) assert.ok(D.has(p), `${p} must survive`);
   assert.ok(state.deletedUsers.has('mal'));
+});
+
+await test('account deletion removes credits, their ledger lines and e-mail-parked credits; others stay', async () => {
+  seed();
+  const out = await call('/api/account/delete', { token: login('alice', 'alice', 'alice@example.com'), body: { confirm: 'DELETE' } });
+  assert.equal(out.status, 200);
+  for (const p of ['credits/alice', 'credit_ledger/purchase_2002', 'credit_ledger/spend_splitter_j1', 'pending_credits/alice@example.com']) assert.ok(!D.has(p), `${p} must be gone`);
+  for (const p of ['credits/bob', 'credit_ledger/purchase_9', 'pending_credits/bob@example.com']) assert.ok(D.has(p), `${p} must stay`);
+  assert.ok(!dump().includes('"credits":500'));
+});
+
+await test('unverified account does not delete credits parked under an e-mail it does not own', async () => {
+  seed();
+  D.set('pending_credits/victim@example.com', { email: 'victim@example.com', orders: { 1: { credits: 100 } } });
+  D.set('credits/mal', { balance: 1, granted: 1, spent: 0 });
+  const out = await call('/api/account/delete', { token: login('mal', 'mal', 'victim@example.com', { email_verified: false }), body: { confirm: 'DELETE' } });
+  assert.equal(out.status, 200);
+  assert.ok(D.has('pending_credits/victim@example.com'));
+  assert.ok(!D.has('credits/mal'));
 });
 
 await test('report purge: resolved for over 12 months go, newer stay, unstamped get a start date; admin only', async () => {

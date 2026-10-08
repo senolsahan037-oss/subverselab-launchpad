@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, addDoc } from 'firebase/firestore';
@@ -6,14 +6,27 @@ import SEOSection from './SEOSection';
 import Icon from './Icon';
 import PageMeta from './PageMeta';
 import { HOME } from '../data/siteMeta';
-import { LAUNCH, LAUNCH2, PRICES, RELEASE_LABEL, RELEASE2_LABEL, RELEASE2_AT } from '../data/plugins';
-import LaunchCountdown from './LaunchCountdown';
+import PluginShowcase from './PluginShowcase';
 import ProductActions from './ProductActions';
-import { useLaunch1Full } from '../hooks/useLaunchCounter';
 
 export default function Storefront({ packs = [], publishedGuideSlugs = new Set(), activeTrack, isPlaying, onPlayPause, user, onLoginClick, searchQuery = '' }) {
-  const launch1Full = useLaunch1Full();
   const [filter, setFilter] = useState('all');
+  // Staggered reveal of the tool cards when the grid scrolls into view. Armed only in the browser (so the
+  // prerendered HTML and no-JS visitors see every card) and never with prefers-reduced-motion.
+  const gridRef = useRef(null);
+  const [reveal, setReveal] = useState('off');
+  useEffect(() => {
+    const el = gridRef.current;
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!el || reduce || typeof IntersectionObserver === 'undefined') return undefined;
+    if (el.getBoundingClientRect().top < window.innerHeight * 0.9) return undefined; // already in view: no hide-then-show flash
+    setReveal('armed');
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { setReveal('done'); io.disconnect(); }
+    }, { rootMargin: '0px 0px -12% 0px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [selectedReportPack, setSelectedReportPack] = useState(null);
   const [reportDescription, setReportDescription] = useState('');
@@ -53,6 +66,8 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
     <div>
       <PageMeta title={HOME.title} description={HOME.description} path={HOME.path} />
 
+      <PluginShowcase />
+
       {/* ── Compact Hero ── */}
       <div className="container">
         <header style={{
@@ -83,7 +98,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               textWrap: 'balance',
             }}>
-            SubverseLab: Free Music Production Tools
+            SubverseLab: Plugins and Tools for Music Producers
             </h1>
             <p style={{
               fontSize: '0.9rem', color: 'var(--color-text-muted)',
@@ -107,38 +122,13 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
           )}
         </header>
 
-        {/* Plugin launch strip. Links to /launch; it carries no counts of its
-            own — the only codes-left number lives on /launch and is read live. */}
-        <Link to={LAUNCH.path} className="plugin-strip">
-          <span className="plugin-strip-tag">New plugins</span>
-          <span className="plugin-strip-name">KUBBE · KASET</span>
-          <span className="plugin-strip-text">
-            {launch1Full
-              ? <>Reverb and cassette colour — ${PRICES.kubbe} each, ${PRICES.bundle} for both. <b>The free 1,000 are gone.</b></>
-              : <>Reverb and cassette colour, out {RELEASE_LABEL} — ${PRICES.kubbe} each. <b>{LAUNCH.offer}.</b></>}
-          </span>
-          <LaunchCountdown compact />
-          <span className="plugin-strip-go">{launch1Full ? 'Buy →' : 'See the launch →'}</span>
-        </Link>
-
-        {/* Second launch row: the next four products, own page and counter. */}
-        <Link to={LAUNCH2.path} className="plugin-strip" style={{ marginTop: '12px' }}>
-          <span className="plugin-strip-tag">Next {RELEASE2_LABEL}</span>
-          <span className="plugin-strip-name">KORO · YANKI · HAVA · MIHENK</span>
-          <span className="plugin-strip-text">
-            Vocal doubler, tape echo, air, mastering app. <b>{LAUNCH2.offer.replace('The first', 'First')}.</b>
-          </span>
-          <LaunchCountdown compact target={RELEASE2_AT} />
-          <span className="plugin-strip-go">See the launch →</span>
-        </Link>
-
         {/* ── Category Filters (flush below hero) ── */}
         {/* No Plugins filter. It existed for one product, the Splitter, which
             became a web tool in August 2026 — leaving a tab that could only
             ever answer "No products found in this category". Workflows stays
             despite holding no products of its own: it renders the channel's
             uploads rather than a product grid. */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <div id="online-tools" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px', scrollMarginTop: '90px' }}>
           {[
             { key: 'all',         label: 'All' },
             { key: 'ai tool',     label: 'Production Tools' },
@@ -188,7 +178,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
         )}
 
         {/* Pack Grid */}
-        <div className="card-grid">
+        <div className={`card-grid${reveal === 'armed' ? ' reveal-armed' : reveal === 'done' ? ' reveal-go' : ''}`} ref={gridRef}>
           {filteredPacks.map((pack, index) => {
             const isCurrentTrack = activeTrack && activeTrack.id === pack.id;
             const isCurrentTrackPlaying = isCurrentTrack && isPlaying;
@@ -207,7 +197,8 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
             return (
               <div
                 key={pack.id}
-                className={`pack-card fade-in delay-${(index % 4) + 1} ${pack.content_type === 'ai_tool' ? 'ai-tool-card' : ''}`}
+                className={`pack-card ${pack.content_type === 'ai_tool' ? 'ai-tool-card' : ''}`}
+                style={{ '--i': Math.min(index, 10) }}
               >
                 {/* Image */}
                 <div className="pack-image-container">

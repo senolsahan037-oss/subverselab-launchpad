@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
+import ToolsStrip from './ToolsStrip';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import Icon from './Icon';
 import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
+import FamilyOffer from './FamilyOffer';
+import { useFamilyLive } from '../hooks/useFamilyLive';
 import DownloadButtons from './DownloadButtons';
 import {
-  INSTAGRAM_DM, LAUNCH, LAUNCH2, LAUNCH2_PLUGINS, PRICES, FORMATS, RELEASE_LABEL, PLUGINS, PRESS_KIT, RELEASE2_AT,
+  INSTAGRAM_DM, LAUNCH, LAUNCH2, PRICES, FORMATS, PLUGINS, PRESS_KIT, RELEASE2_AT,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_PLUGINS, FAMILY_VALUE_LINE, FAMILY_OFFER_TERMS, FAMILY_UNTIL, UPDATES_LINE,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 import { useLaunch1Full } from '../hooks/useLaunchCounter';
@@ -24,16 +28,18 @@ export default function PluginPage({ plugin }) {
   const [modeKey, setModeKey] = useState(plugin.defaultMode);
   // Free 1,000 of launch 1 gone (counter read and full): Kubbe/Kaset pages show the buy call.
   const full = useLaunch1Full() && plugin.launchId !== 'launch2';
+  const familyLive = useFamilyLive();
   const mode = plugin.modes.find((m) => m.key === modeKey) || plugin.modes[0];
-  // Launch 2 products (KORO, YANKI, HAVA, MIHENK) sell as one $20 bundle and
-  // download through /launch2; Kubbe and Kaset keep their own launch and prices.
+  // Launch 2 products (KORO, YANKI, HAVA, MIHENK, TUTKAL) are sold on their own
+  // and in the plugin family and download through /launch2; Kubbe and Kaset are
+  // sold the same way and keep their own launch page.
   const second = plugin.launchId === 'launch2';
   const launch = second ? LAUNCH2 : LAUNCH;
-  const family = second ? LAUNCH2_PLUGINS : PLUGINS;
-  const other = family.find((p) => p.slug !== plugin.slug);
-  const releaseLabel = second ? plugin.releaseLabel : RELEASE_LABEL;
-  const headPrice = second ? `Part of the $${PRICES.bundle4} bundle` : `$${PRICES[plugin.slug]}`;
-  const offerPrice = second ? PRICES.bundle4 : PRICES[plugin.slug];
+  const other = PLUGINS.find((p) => p.slug !== plugin.slug) || PLUGINS[0];
+  const otherFamily = FAMILY_PLUGINS.filter((p) => p.slug !== plugin.slug);
+  const releaseLabel = second ? plugin.releaseLabel : 'now';
+  const headPrice = second ? (familyLive ? `$${PRICES[plugin.slug]} · or in the plugin family` : null) : `$${PRICES[plugin.slug]}`;
+  const offerPrice = PRICES[plugin.slug];
   const [w, h] = plugin.imageSize;
   const demos = (plugin.demos || []).filter((d) => d.youtube);
 
@@ -45,7 +51,7 @@ export default function PluginPage({ plugin }) {
     operatingSystem: 'macOS, Windows',
     url: `${SITE_URL}${plugin.path}`,
     image: `${SITE_URL}${plugin.og}`,
-    offers: { '@type': 'Offer', price: String(offerPrice), priceCurrency: 'USD' },
+    ...(offerPrice == null ? {} : { offers: { '@type': 'Offer', price: String(offerPrice), priceCurrency: 'USD' } }),
     author: { '@type': 'Person', name: 'Şenol Şahan' },
     publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
     description: plugin.description,
@@ -66,17 +72,22 @@ export default function PluginPage({ plugin }) {
 
           <div className="plugin-offer">
             <div>
-              <p className="plugin-offer-head">{headPrice} · out {releaseLabel}</p>
+              <p className="plugin-offer-head">{headPrice ? `${headPrice} · out ${releaseLabel}` : `Out ${releaseLabel}`}</p>
               <p className="plugin-offer-sub">{plugin.formats || FORMATS}</p>
             </div>
             {second ? <LaunchCountdown target={RELEASE2_AT} /> : <LaunchCountdown />}
           </div>
 
           <div className="plugin-cta-row">
-            <BuyButton slug={second ? plugin.bundleSlug : plugin.slug} className="btn plugin-btn" full={full}
-                       label={second ? `All four — $${PRICES.bundle4}` : undefined} />
+            {/* The family is the highlighted best-value offer; the single is the quieter button beside it. */}
+            {familyLive && <BuyButton slug="family" className="btn plugin-btn" label={`Get the family — $${FAMILY_PRICE}`} />}
+            <BuyButton slug={plugin.slug} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn plugin-btn'} full={second ? undefined : full} />
             <Link to={launch.path} className="plugin-cta-note">
-              {full ? `$${PRICES.kubbe} each, $${PRICES.bundle} for both — see the launch page` : `${launch.offer} — enter the Download Room`} →
+              {second
+                ? (familyLive ? `${FAMILY_UNTIL}, all seven plugins — ${UPDATES_LINE}` : `Out ${releaseLabel} — see the launch page`)
+                : full
+                  ? (familyLive ? `$${PRICES[plugin.slug]} on its own, or the plugin family of seven for ${FAMILY_UNTIL}. ${UPDATES_LINE}` : `$${PRICES.kubbe} each — see the launch page`)
+                  : `${launch.offer} — enter the Download Room`} →
             </Link>
           </div>
 
@@ -140,40 +151,60 @@ export default function PluginPage({ plugin }) {
 
         <section className="plugin-section">
           <h2>Price and download</h2>
-          {second ? (
+          {second && !familyLive ? (
+            <p>
+              {plugin.displayName} is out {plugin.releaseLabel}. The price is shown here from that day.
+            </p>
+          ) : second ? (
             <>
               <p>
-                {plugin.displayName} comes in the ${PRICES.bundle4} bundle with {family.filter((p) => p.slug !== plugin.slug).map((p) => p.displayName).join(', ')}.
-                Sold through Lemon Squeezy. Free launch downloads are gated by sign-in on the Download Room.
+                {plugin.displayName} is ${PRICES[plugin.slug]} on its own. Or get the {FAMILY_NAME}: {otherFamily.map((p) => p.displayName).join(', ')} and {plugin.displayName} together for ${FAMILY_PRICE}.
+                {' '}{FAMILY_VALUE_LINE}. {FAMILY_OFFER_TERMS}. Sold through Lemon Squeezy.
               </p>
+              <p>{UPDATES_LINE}</p>
               <div className="plugin-buy-row">
-                <BuyButton slug={plugin.bundleSlug} label={`All four — $${PRICES.bundle4}`} />
+                <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />
+                <BuyButton slug={plugin.slug} className="btn btn-outline plugin-buy-single" />
               </div>
             </>
           ) : (
             <>
               <p>
-                ${PRICES[plugin.slug]} on its own, or ${PRICES.bundle} together with {other.name}.
-                Sold through Lemon Squeezy.{full ? ' The free 1,000 downloads are gone.' : ' Free launch downloads are gated by sign-in on the Download Room.'}
+                {familyLive
+                  ? `$${PRICES[plugin.slug]} on its own. Or get the ${FAMILY_NAME} — seven products, ${FAMILY_UNTIL}.`
+                  : `$${PRICES[plugin.slug]} on its own.`}
+                {' '}Sold through Lemon Squeezy.{full ? ' The free 1,000 downloads are gone.' : ' Free launch downloads are gated by sign-in on the Download Room.'}
               </p>
+              <p>{UPDATES_LINE}</p>
               <div className="plugin-buy-row">
-                <BuyButton slug={plugin.slug} full={full} />
-                <BuyButton slug="bundle" full={full} label={`Both plugins — $${PRICES.bundle}`} className="btn btn-outline" />
+                {familyLive && <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />}
+                <BuyButton slug={plugin.slug} full={full} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn btn-primary'} />
               </div>
             </>
           )}
         </section>
 
+        <FamilyOffer style={{ marginTop: 0, marginBottom: '8px' }} />
+
         <section className="plugin-section">
-          <h2>{full ? 'Download Room' : 'Free Download Room'}</h2>
-          {full ? (
+          <h2>{second ? 'Download Room' : full ? 'Download Room' : 'Free Download Room'}</h2>
+          {second && !familyLive ? (
             <p>
-              The free 1,000 have been claimed. {plugin.name} is ${PRICES[plugin.slug]}, or ${PRICES.bundle} with {other.name}.
+              {plugin.displayName} is out {plugin.releaseLabel}. Downloads open from that day on <Link to={launch.path}>the launch page</Link>.
+            </p>
+          ) : second ? (
+            <p>
+              Buy {plugin.displayName} or the family, then sign in on <Link to={launch.path}>the family page</Link> with the e-mail you paid with and download.
+              {' '}{plugin.displayName} is out {plugin.releaseLabel}.
+            </p>
+          ) : full ? (
+            <p>
+              The free 1,000 have been claimed. {plugin.name} is ${PRICES[plugin.slug]}, {familyLive ? `or part of the ${FAMILY_NAME} (${FAMILY_UNTIL})` : ''}.
               Already bought it? Sign in on <Link to={launch.path}>the launch page</Link> with your order e-mail and download.
             </p>
           ) : (
             <p>
-              {launch.askHow}. The first {launch.codesTotal.toLocaleString('en-US')} {second ? 'people can download all four' : 'producers can download both plugins'}. <Link to={launch.path}>The steps are on the launch page.</Link>
+              {launch.askHow}. The first {launch.codesTotal.toLocaleString('en-US')} producers can download both plugins. <Link to={launch.path}>The steps are on the launch page.</Link>
             </p>
           )}
         </section>
@@ -189,7 +220,13 @@ export default function PluginPage({ plugin }) {
 
         <section className="plugin-section">
           <h2>Download</h2>
-          {full ? (
+          {second && !familyLive ? (
+            <p>Downloads open on {plugin.releaseLabel}.</p>
+          ) : second ? (
+            <p>
+              Downloads open once your family purchase is confirmed. Buy above, then sign in on <Link to={launch.path}>the family page</Link> with the e-mail you paid with. Installation steps are in the manual.
+            </p>
+          ) : full ? (
             <p>
               Downloads open once your purchase is confirmed. Buy above, then sign in on <Link to={launch.path}>the launch page</Link> with the e-mail you paid with. Installation steps are in the manual.
             </p>
@@ -202,6 +239,16 @@ export default function PluginPage({ plugin }) {
             </>
           )}
         </section>
+
+        {plugin.manual && !plugin.manualPage && (
+          <section className="plugin-section">
+            <h2>Manual</h2>
+            <p>
+              Every control with its range and default, quick-start recipes, specifications and installation.
+              {' '}<a href={plugin.manual} target="_blank" rel="noopener noreferrer">Read the {plugin.name} manual (PDF)</a>
+            </p>
+          </section>
+        )}
 
         {plugin.manualPage && (
           <section className="plugin-section">
@@ -223,11 +270,14 @@ export default function PluginPage({ plugin }) {
         )}
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-          <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-            <Icon name="external" /> DM “{plugin.name.toUpperCase()}” on Instagram
-          </a>
-          <Link to={other.path} className="btn btn-outline">See {other.name}</Link>
+          {!second && !full && (
+            <a href={INSTAGRAM_DM} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              <Icon name="external" /> DM “{plugin.name.toUpperCase()}” on Instagram
+            </a>
+          )}
+          <Link to={second ? LAUNCH2.path : other.path} className="btn btn-outline">{second ? (familyLive ? `See the ${FAMILY_NAME}` : 'See the launch') : `See ${other.name}`}</Link>
         </div>
+        <ToolsStrip />
       </div>
     </div>
   );

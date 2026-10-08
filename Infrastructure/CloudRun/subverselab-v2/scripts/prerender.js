@@ -38,8 +38,11 @@ import { writeFileSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
+import { FREE_TOOLS } from '../src/data/tools.js';
 import {
-  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, LAUNCH2_PLUGINS, PRICES, FORMATS, RELEASE_LABEL, INSTAGRAM_DM,
+  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, PRICES, FORMATS,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_VALUE_LINE, FAMILY_OFFER_TERMS, FAMILY_LATER, FAMILY_IMAGE, UPDATES_LINE, FAMILY_STARTS_AT, isFamilyLive,
+  ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS,
 } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
@@ -328,9 +331,15 @@ function buildHomeBody(products, articleBySlug) {
   }).join('');
 
   return page(`
-      <h1>SubverseLab: Free Music Production Tools</h1>
+      <h1>SubverseLab: Plugins and Tools for Music Producers</h1>
       <p>SubverseLab builds free browser-based tools for arranging, generating, measuring, mixing and separating music. Everything runs in the browser with nothing to install, and everything below is free to use; some tools ask for a free account.</p>
       ${siteNav()}
+      <section>
+        <h2>Out now: seven audio plugins</h2>
+        <p>VST3 and AU plugins from SubverseLab. Buy each on its own or all seven in the ${escapeHtml(FAMILY_NAME)} for $${FAMILY_PRICE} (regular price $${FAMILY_REGULAR_PRICE}${familyOfferEndLabel() ? `, launch price until ${escapeHtml(familyOfferEndLabel())}` : ''}).</p>
+        <ul>${SHOWCASE_SLUGS.map((slug) => { const pl = ALL_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} ($${PRICES[slug]})</li>`; }).join('')}</ul>
+        <p><a href="/plugins">See all plugins</a></p>
+      </section>
       <h2>The tools</h2>${toolSections}
       <section>
         <h2>Guides</h2>
@@ -428,7 +437,11 @@ async function main() {
   }
   const productById = new Map(products.map((p) => [p.id, p]));
 
+  // Plugin and launch pages carry the free-tools links too, so crawlers that
+  // land there (most launch traffic) can reach every tool page.
+  const toolsHtml = `<section><h2>Free tools for producers</h2><ul>${FREE_TOOLS.map(([slug, name, line]) => `<li><a href="/tools/${slug}">${escapeHtml(name)}</a> — ${escapeHtml(line)}</li>`).join('')}</ul></section>`;
   function writePage(routePath, head, bodyHtml) {
+    if (bodyHtml && /^(plugins|launch)/.test(routePath) && !/manual/.test(routePath)) bodyHtml += toolsHtml;
     const html = bodyHtml ? renderPageWithBody(template, head, bodyHtml) : renderPage(template, head);
     const dir = join(ROOT, 'dist', routePath);
     mkdirSync(dir, { recursive: true });
@@ -569,6 +582,20 @@ async function main() {
   const pluginsCrumb = { name: 'Plugins', url: `${SITE_URL}${PLUGINS_INDEX.path}` };
   const homeCrumb = { name: 'Home', url: `${SITE_URL}/` };
 
+  // The static HTML is the state AT BUILD TIME: before FAMILY_STARTS_AT no
+  // family block; from it the plugin family next to the single prices. The React
+  // pages decide again in the visitor's browser; rebuild after the switch to
+  // refresh what crawlers see.
+  const FAMILY_LIVE = isFamilyLive();
+  console.log(`prerender: plugin family ${FAMILY_LIVE ? 'LIVE' : `not live yet (starts ${FAMILY_STARTS_AT})`}`);
+  const bundleLine = FAMILY_LIVE
+    ? `<h2>${escapeHtml(FAMILY_NAME)} &mdash; $${FAMILY_PRICE}</h2>
+      <p>${escapeHtml(FAMILY_PLUGINS.map((p) => p.displayName).join(', '))}. ${escapeHtml(FAMILY_LATER)} ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(UPDATES_LINE)} <a href="${LAUNCH2.path}">The plugin family</a> &middot; <a href="${LAUNCH.path}">Kubbe and Kaset launch</a>.</p>
+      <p>Each on its own: ${escapeHtml(FAMILY_PLUGINS.map((p) => `${p.displayName} $${PRICES[p.slug]}`).join(' · '))}.</p>`
+    : '';
+  const ownLine = (pl) => FAMILY_LIVE
+    ? `$${PRICES[pl.slug]} on its own, or the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(UPDATES_LINE)}`
+    : `$${PRICES[pl.slug]} on its own. ${escapeHtml(UPDATES_LINE)}`;
   writePage('plugins', buildHead({
     title: PLUGINS_INDEX.title,
     description: PLUGINS_INDEX.description,
@@ -578,7 +605,9 @@ async function main() {
       <p>Audio plugins you install in your own DAW. ${escapeHtml(FORMATS)}.</p>
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      <p>Both plugins together: $${PRICES.bundle}. <a href="${LAUNCH.path}">Launch and free codes</a>.</p>
+      ${bundleLine}
+      ${FREE_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; free</h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <nav><a href="/">Tools</a> &middot; <a href="/loom">Loom</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   for (const pl of PLUGINS) {
@@ -603,7 +632,7 @@ async function main() {
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
       ],
     }), `<h1>${escapeHtml(pl.name)}</h1>
-      <p>${escapeHtml(pl.tagline)}. $${PRICES[pl.slug]}, out ${escapeHtml(RELEASE_LABEL)} &middot; ${escapeHtml(FORMATS)}.</p>
+      <p>${escapeHtml(pl.tagline)}. $${PRICES[pl.slug]} &middot; ${escapeHtml(FORMATS)}.</p>
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
@@ -611,8 +640,8 @@ async function main() {
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Price and download</h2>
-      <p>$${PRICES[pl.slug]}, or $${PRICES.bundle} for both plugins. Sign in to enter the Download Room; no key or activation is needed.</p>
-      <p>${escapeHtml(LAUNCH.askHow)}: the first ${LAUNCH.codesTotal.toLocaleString('en-US')} producers can download both plugins. <a href="${LAUNCH.path}">How the launch works</a>.</p>
+      <p>${ownLine(pl)} Sold through Lemon Squeezy. Sign in to enter the Download Room; no key or activation is needed.</p>
+      <p>The free first ${LAUNCH.codesTotal.toLocaleString('en-US')} are claimed. <a href="${LAUNCH.path}">Kubbe and Kaset launch page</a>.</p>
       <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
@@ -664,23 +693,22 @@ async function main() {
     canonical: `${SITE_URL}${LAUNCH.path}`,
     image: `${SITE_URL}/plugins/kubbe/og.jpg`,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch', url: `${SITE_URL}${LAUNCH.path}` }])],
-  }), `<h1>Kubbe and Kaset — out ${escapeHtml(RELEASE_LABEL)}</h1>
-      <p>${escapeHtml(LAUNCH.offer)}. ${escapeHtml(LAUNCH.askHow)}.</p>
-      <p>${escapeHtml(LAUNCH.instagram)} <a href="${INSTAGRAM_DM}">Instagram</a>.</p>
+  }), `<h1>Kubbe and Kaset</h1>
+      <p>The free first ${LAUNCH.codesTotal.toLocaleString('en-US')} are claimed &mdash; thank you. Kubbe and Kaset are $${PRICES.kubbe} each. ${escapeHtml(UPDATES_LINE)}</p>
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      <p>Both together: $${PRICES.bundle}. ${escapeHtml(FORMATS)}.</p>
+      <p>${FAMILY_LIVE ? `Or the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ` : ''}${escapeHtml(FORMATS)}.</p>
       <h2>Download Room</h2>
-      <ol>${LAUNCH.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
+      <ol><li><strong>Buy.</strong> Buy with Lemon Squeezy.</li><li><strong>Sign in.</strong> Sign in on this page with the e-mail you paid with.</li><li><strong>Download.</strong> Download Kubbe and Kaset for macOS or Windows.</li><li><strong>Install.</strong> No key or activation is needed.</li></ol>
       <h2>Manuals</h2>
       <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>
       <h2>Getting the plugins</h2>
-      <p>Sign in on subverselab.com/launch and download. No key or activation is needed.</p>
+      <p>Buy, then sign in on subverselab.com/launch with the same e-mail and download. No key or activation is needed.</p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
-  // Launch 2: KORO, YANKI, HAVA and MIHENK, one $20 bundle, own counter.
+  // Launch 2: KORO, YANKI, HAVA, MIHENK and TUTKAL, sold on their own and in the family, own counter.
   // Same rule as above: no codes-left number is written here.
-  for (const pl of LAUNCH2_PLUGINS) {
+  for (const pl of FAMILY_ONLY_PLUGINS) {
     writePage(pl.path.slice(1), buildHead({
       title: pl.title,
       description: pl.description,
@@ -695,7 +723,7 @@ async function main() {
           operatingSystem: 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
-          offers: { '@type': 'Offer', price: String(PRICES.bundle4), priceCurrency: 'USD' },
+          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD' },
           author: { '@type': 'Person', name: 'Şenol Şahan' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
@@ -710,8 +738,44 @@ async function main() {
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Price and download</h2>
-      <p>$${PRICES.bundle4} for all four: KORO, YANKI, HAVA and MIHENK. Sign in to enter the Download Room; no key or activation is needed.</p>
-      <p>${escapeHtml(LAUNCH2.askHow)}: the first ${LAUNCH2.codesTotal.toLocaleString('en-US')} people can download all four. <a href="${LAUNCH2.path}">How the launch works</a>.</p>
+      ${FAMILY_LIVE
+        ? `<p>${escapeHtml(pl.displayName)} is $${PRICES[pl.slug]} on its own, or part of the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(UPDATES_LINE)}</p>
+      <p>${escapeHtml(LAUNCH2.askHow)}. <a href="${LAUNCH2.path}">How the family offer works</a>.</p>`
+        : `<p>${escapeHtml(pl.displayName)} is out ${escapeHtml(pl.releaseLabel)}. The price is shown from that day. <a href="${LAUNCH2.path}">Launch page</a>.</p>`}
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  // Free plugins (FREE_PLUGINS): free forever, a $0 Lemon Squeezy checkout, the download on /account.
+  for (const pl of FREE_PLUGINS) {
+    writePage(pl.path.slice(1), buildHead({
+      title: pl.title,
+      description: pl.description,
+      canonical: `${SITE_URL}${pl.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: `SubverseLab ${pl.displayName}`,
+          applicationCategory: 'MultimediaApplication',
+          operatingSystem: 'macOS, Windows',
+          url: `${SITE_URL}${pl.path}`,
+          image: `${SITE_URL}${pl.og}`,
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
+      ],
+    }), `<h1>${escapeHtml(pl.displayName)}</h1>
+      <p>${escapeHtml(pl.tagline)} Free, forever &middot; ${escapeHtml(pl.formats)}.</p>
+      <p>${escapeHtml(pl.intro)}</p>
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      <h2>The controls</h2>
+      <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
+      <h2>Get it free</h2>
+      <p>The checkout asks for an e-mail address, no card. The download then appears on your account page.</p>
+      <p><a href="${pl.manual}">${escapeHtml(pl.displayName)} manual (PDF)</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
@@ -719,16 +783,22 @@ async function main() {
     title: LAUNCH2.title,
     description: LAUNCH2.description,
     canonical: `${SITE_URL}${LAUNCH2.path}`,
-    image: `${SITE_URL}${LAUNCH2_PLUGINS[0].og}`,
-    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Launch 2', url: `${SITE_URL}${LAUNCH2.path}` }])],
-  }), `<h1>KORO, YANKI, HAVA and MIHENK &mdash; out October 5</h1>
-      <p>${escapeHtml(LAUNCH2.offer)}. ${escapeHtml(LAUNCH2.askHow)}.</p>
-      <p>${escapeHtml(LAUNCH2.instagram)} <a href="${INSTAGRAM_DM}">Instagram</a>.</p>
-      ${LAUNCH2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
+    image: `${SITE_URL}${FAMILY_LIVE ? FAMILY_IMAGE : LAUNCH2_PLUGINS[0].og}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: FAMILY_LIVE ? FAMILY_NAME : 'KORO, YANKI, HAVA and MIHENK', url: `${SITE_URL}${LAUNCH2.path}` }])],
+  }), FAMILY_LIVE
+    ? `<h1>${escapeHtml(FAMILY_NAME)} &mdash; seven products, $${FAMILY_PRICE}</h1>
+      <p>${escapeHtml(LAUNCH2.offerNow)}. ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(FAMILY_LATER)}</p>
+      <p>KORO, YANKI, HAVA, MIHENK and TUTKAL are out October 5. Every plugin is also sold on its own. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(LAUNCH2.askHow)}.</p>
+      ${FAMILY_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]} on its own</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      <p>All four together: $${PRICES.bundle4}.</p>
+      <p>All seven together: $${FAMILY_PRICE}.</p>
       <h2>Download Room</h2>
       <ol>${LAUNCH2.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`
+    : `<h1>KORO, YANKI, HAVA and MIHENK &mdash; out October 5</h1>
+      <p>Four new SubverseLab products, out October 5. Price and checkout open with the release.</p>
+      ${LAUNCH2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   writePage('testers', buildHead({
@@ -737,10 +807,10 @@ async function main() {
     canonical: `${SITE_URL}${TESTERS.path}`,
     image: `${SITE_URL}${LAUNCH2_PLUGINS[0].og}`,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Testers', url: `${SITE_URL}${TESTERS.path}` }])],
-  }), `<h1>Test KORO, YANKI, HAVA and MIHENK</h1>
-      <p>100 producers get all four free, chosen so that every operating system and DAW is covered.</p>
+  }), `<h1>Test KORO, YANKI, HAVA, MIHENK and TUTKAL</h1>
+      <p>100 producers get all five free, chosen so that every operating system and DAW is covered.</p>
       <h2>What you get</h2>
-      <p>KORO, YANKI, HAVA and MIHENK for macOS and Windows, free, from the Download Room. No key or activation is needed.</p>
+      <p>KORO, YANKI, HAVA, MIHENK and TUTKAL for macOS and Windows, free, from the Download Room. No key or activation is needed.</p>
       <h2>What we ask in return</h2>
       <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li></ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);

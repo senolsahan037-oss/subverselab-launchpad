@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react';
 import Icon from './Icon';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { CHECKOUT, PRICES } from '../data/plugins';
+import VerifyEmailNotice from './VerifyEmailNotice';
+import { CHECKOUT, PRICES, pluginBySlug } from '../data/plugins';
 
 // One Lemon Squeezy checkout button. The links live in CHECKOUT in
-// src/data/plugins.js; while one is empty the button is shown disabled: the
-// first 1,000 people download free from /launch, and paid checkout opens after
-// that, so no page ever links to a checkout that does not exist.
+// src/data/plugins.js; while one is empty the button is shown disabled as
+// "Available shortly" (the single checkouts of KORO, YANKI, HAVA, TUTKAL and
+// MIHENK are still to be created), so no page ever links to a checkout that
+// does not exist. Only Kubbe and Kaset pass `full`: while their free 1,000 last
+// (full === false) the button reads "After the first 1,000".
 // `email` (optional) pre-fills Lemon Squeezy's checkout e-mail, so a paid launch-2
 // order matches the signed-in account (?checkout[email]=).
 // `uid` (optional) is the signed-in Firebase uid, passed as checkout[custom][uid]:
@@ -37,12 +40,24 @@ export default function BuyButton({ slug, label, email, uid, full, className = '
   const [signedIn, setSignedIn] = useState(() => auth.currentUser);
   useEffect(() => onAuthStateChanged(auth, setSignedIn), []);
   const url = full === false ? '' : withBuyer(CHECKOUT[slug], email || signedIn?.email, uid || signedIn?.uid);
-  const text = label || `Buy — $${PRICES[slug]}`;
+  const text = label || `Buy ${pluginBySlug(slug)?.displayName || ''} — $${PRICES[slug]}`.replace('Buy  —', 'Buy —');
+  // An e-mail/password account must verify its address before it can buy (the order is matched to it).
+  const unverified = Boolean(signedIn) && !signedIn.emailVerified && signedIn.providerData?.some((p) => p.providerId === 'password') && url;
+  if (unverified) {
+    return (
+      <span className="plugin-buy-unverified" role="status">
+        <strong>Check your inbox to verify your e-mail</strong> before buying ({signedIn.email}). Then reload this page.
+        <VerifyEmailNotice />
+      </span>
+    );
+  }
   if (!url) {
+    // Only a product with a free period (full === false) waits for the 1,000; every other empty link is "available shortly".
+    const soon = full !== false;
     return (
       <button type="button" className={`${className} plugin-buy-closed`} disabled
-              title={full ? 'The free 1,000 are gone; checkout is opening shortly' : 'Paid checkout opens after the first 1,000 free downloads'}>
-        {text} · {full ? 'Opening shortly' : 'After the first 1,000'}
+              title={soon ? 'Available shortly' : 'Paid checkout opens after the first 1,000 free downloads'}>
+        {text} · {soon ? 'Available shortly' : 'After the first 1,000'}
       </button>
     );
   }

@@ -6,9 +6,9 @@
 export const SITE_URL = 'https://subverselab.com';
 
 export const HOME = {
-  title: 'SubverseLab — Free Music Production Tools',
+  title: 'SubverseLab — Plugins and Tools for Music Producers',
   description:
-    'Free browser-based tools for music producers: drum and MIDI generation, arrangement planning, mix measurement, BPM and frequency math, and stem separation.',
+    'Seven audio plugins for music producers (KUBBE, KASET, KORO, YANKI, HAVA, TUTKAL, MIHENK) for macOS and Windows, plus browser tools for mix measurement, stem separation and arrangement.',
   path: '/',
 };
 

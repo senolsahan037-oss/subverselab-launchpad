@@ -20,6 +20,7 @@ import { PRIVACY, TERMS } from './data/legalContent';
 import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginPage from './components/PluginPage';
+import FreePluginPage from './components/FreePluginPage';
 import LaunchPage from './components/LaunchPage';
 import TestersPage from './components/TestersPage';
 import PluginManualPage from './components/PluginManualPage';
@@ -30,7 +31,7 @@ import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import NotFound from './components/NotFound';
 import { LEARN_INDEX } from './data/siteMeta';
-import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK } from './data/plugins';
+import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK, TUTKAL, FREE_PLUGINS } from './data/plugins';
 import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
 
 /* ============================================================
@@ -258,6 +259,8 @@ export default function App() {
               <Route path={YANKI.path} element={<PluginPage key={YANKI.slug} plugin={YANKI} />} />
               <Route path={HAVA.path} element={<PluginPage key={HAVA.slug} plugin={HAVA} />} />
               <Route path={MIHENK.path} element={<PluginPage key={MIHENK.slug} plugin={MIHENK} />} />
+              <Route path={TUTKAL.path} element={<PluginPage key={TUTKAL.slug} plugin={TUTKAL} />} />
+              {FREE_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<FreePluginPage key={p.slug} plugin={p} />} />)}
               <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
               <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
-import { LAUNCH2_PLUGINS, TESTERS } from '../data/plugins';
+import { FAMILY_ONLY_PLUGINS as TESTER_PLUGINS, TESTERS } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 
-/* /testers — the 100 tester seats for KORO, YANKI, HAVA and MIHENK.
+/* /testers — the 100 tester seats for KORO, YANKI, HAVA, MIHENK and TUTKAL.
  * Application: POST /api/testers/apply. State: GET /api/testers/me. Once
  * approved the page shows the same launch-2 download buttons as /launch2 (the
  * server lets an approved tester through the ticket gate) and a report form
@@ -116,7 +116,7 @@ function ApplicationForm({ user, onSent, replacing }) {
 }
 
 function ReportForm({ user }) {
-  const [f, setF] = useState({ plugin: LAUNCH2_PLUGINS[0].slug, os: '', daw: '', dawVersion: '', kind: 'bug', text: '' });
+  const [f, setF] = useState({ plugin: TESTER_PLUGINS[0].slug, os: '', daw: '', dawVersion: '', kind: 'bug', text: '' });
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState('');
   const [error, setError] = useState('');
@@ -138,7 +138,7 @@ function ReportForm({ user }) {
       <p>One report per finding, with the operating system and DAW it happened in. Reports that say everything works are welcome too.</p>
       <Field id="tr-plugin" label="Plugin">
         <select id="tr-plugin" className="input-field" value={f.plugin} onChange={(e) => set({ plugin: e.target.value })}>
-          {LAUNCH2_PLUGINS.map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
+          {TESTER_PLUGINS.map((p) => <option key={p.slug} value={p.slug}>{p.name}</option>)}
         </select>
       </Field>
       <Field id="tr-kind" label="What kind of report is it?">
@@ -187,15 +187,15 @@ export default function TestersPage({ user, onLoginClick }) {
   return (
     <div className="plugin-page">
       <PageMeta title={TESTERS.title} description={TESTERS.description} path={TESTERS.path}
-                image={`${SITE_URL}${LAUNCH2_PLUGINS[0].og}`} />
+                image={`${SITE_URL}${TESTER_PLUGINS[0].og}`} />
 
       <section className="plugin-hero">
         <div className="container plugin-hero-inner">
           <Link to="/plugins" className="plugin-back">← Plugins</Link>
           <p className="plugin-kicker">SubverseLab · 100 tester seats</p>
-          <h1 className="plugin-title launch-title">Test KORO · YANKI · HAVA · MIHENK</h1>
+          <h1 className="plugin-title launch-title">Test KORO · YANKI · HAVA · MIHENK · TUTKAL</h1>
           <p className="plugin-tagline">
-            100 producers get all four free — chosen so that every operating system and DAW is covered.
+            100 producers get all five free — chosen so that every operating system and DAW is covered.
           </p>
           {left !== null && (
             <div className="launch-codes" role="status">
@@ -209,7 +209,7 @@ export default function TestersPage({ user, onLoginClick }) {
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <section className="plugin-section">
           <h2>What you get</h2>
-          <p>KORO, YANKI, HAVA and MIHENK for macOS and Windows, free, from the Download Room on this page. No key or activation is needed.</p>
+          <p>KORO, YANKI, HAVA, MIHENK and TUTKAL for macOS and Windows, free, from the Download Room on this page. No key or activation is needed.</p>
         </section>
 
         <section className="plugin-section">
@@ -246,8 +246,8 @@ export default function TestersPage({ user, onLoginClick }) {
           {user && status === 'declined' && <p role="status">We could not offer you a seat this time. Thank you for applying.</p>}
           {user && status === 'approved' && (
             <>
-              <p role="status">You are a tester. Download all four, use them in your sessions, and send a report for anything that breaks.</p>
-              {LAUNCH2_PLUGINS.map((p) => (
+              <p role="status">You are a tester. Download all five, use them in your sessions, and send a report for anything that breaks.</p>
+              {TESTER_PLUGINS.map((p) => (
                 <div key={p.slug} className="launch-download">
                   <h3>{p.name}</h3>
                   <DownloadButtons slug={p.slug} launchId="launch2" />

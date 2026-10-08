@@ -162,6 +162,26 @@ await test('claim: idempotent per account and per e-mail, and keeps LS entries',
   assert.ok(db.docs.get('plugin_licenses/a@example.com').licenses['123'], 'the webhook entry survives the merge');
 });
 
+await test('claim: paid single and family keys of the same e-mail (webhook entries, incl. uid and activations) survive the free-key merge', async () => {
+  const { db, svc } = service();
+  db.docs.set('plugin_licenses/a@example.com', {
+    email: 'a@example.com',
+    orders: { 10: { order_id: '10', product: 'tutkal', status: 'paid', created: '2026-10-05T10:00:00Z' }, 11: { order_id: '11', product: 'family', status: 'paid', created: '2026-10-05T11:00:00Z' } },
+    licenses: {
+      501: { license_id: '501', product: 'tutkal', key: 'TUTKAL-KEY', order_id: '10', uid: 'u1', activation_limit: 5, instances_count: 2 },
+      502: { license_id: '502', product: 'family', key: 'FAMILY-KEY', order_id: '11', activation_limit: 5, instances_count: 0 },
+    },
+  });
+  const r = await svc.claim({ uid: 'u1', email: 'a@example.com' });
+  const doc = db.docs.get('plugin_licenses/a@example.com');
+  assert.equal(Object.keys(doc.licenses).length, 3, 'two paid keys plus the free launch key');
+  assert.deepEqual([doc.licenses['501'].key, doc.licenses['501'].uid, doc.licenses['501'].instances_count, doc.licenses['502'].product], ['TUTKAL-KEY', 'u1', 2, 'family']);
+  assert.equal(doc.licenses[r.body.key].source, 'launch');
+  assert.deepEqual(Object.keys(doc.orders), ['10', '11'], 'orders (purchase dates for the updates line) are untouched');
+  // The free launch key never validates a paid key and vice versa: the launch service only knows launch_keys.
+  assert.equal((await svc.validate({ licenseKey: 'TUTKAL-KEY', instanceId: 'x' })).status, 404);
+});
+
 await test('claim: concurrent requests from one person still make one key', async () => {
   const { db, svc } = service();
   const rs = await Promise.all(Array.from({ length: 10 }, () => svc.claim({ uid: 'u1', email: 'a@example.com' })));

@@ -6,7 +6,7 @@
 // does; the source of each fact is noted beside it. If the code changes (a new
 // form, a new third party, a new collection), change the text in the same
 // commit. A block is either a paragraph (string) or a list (array of strings).
-export const LEGAL_UPDATED = '3 October 2026';
+export const LEGAL_UPDATED = '5 October 2026';
 export const LEGAL_EMAIL = 'info@subverselab.com';
 
 export const PRIVACY = {
@@ -86,7 +86,7 @@ export const PRIVACY = {
         'Each kind of data has its own period:',
         [
           'Account, free launch claim, download counters and licences: while your account exists. They are deleted when you delete your account. The only thing kept is a one-way hash of your e-mail address (it cannot be turned back into the address), so that the free launch licence stays one per person and the public count of claimed licences does not go down.',
-          'Paid orders: Lemon Squeezy, the merchant of record, keeps the invoices under its own policy. We keep the order ID, product, status and a hashed e-mail address for as long as the licence exists, to handle refunds and re-downloads. When you delete your account we delete the rest of the order record (your e-mail address, receipt link and licence key) and keep only those fields.',
+          'Paid orders: Lemon Squeezy, the merchant of record, keeps the invoices under its own policy. We keep the order ID, product, status, order date and a hashed e-mail address for as long as the licence exists, to handle refunds and re-downloads and to show how long your updates run. When you delete your account we delete the rest of the order record (your e-mail address, receipt link and licence key) and keep only those fields.',
           'Problem reports: 12 months after we mark them resolved or move them to our archive, then they are deleted automatically. A report that is not resolved yet is kept until it is.',
           'Tester applications and tester reports: until the tester programme ends, and for 12 months after that, or until you delete your account, whichever comes first.',
           'Forum topics and replies: until you delete them or delete your account; then they are removed.',
@@ -180,9 +180,10 @@ export const TERMS = {
       id: 'paid',
       h: 'Paid products',
       blocks: [
-        'Paid plugins and bundles are sold through Lemon Squeezy, which is the merchant of record. Lemon Squeezy takes your payment, charges and handles tax, issues the invoice or receipt, and processes refunds, under its own checkout terms and refund policy, which apply to your purchase. We never see your card details. Prices are shown in US dollars on the product pages.',
+        'Paid plugins and the plugin family are sold through Lemon Squeezy, which is the merchant of record. Lemon Squeezy takes your payment, charges and handles tax, issues the invoice or receipt, and processes refunds, under its own checkout terms and refund policy, which apply to your purchase. We never see your card details. Prices are shown in US dollars on the product pages.',
         'A paid licence is for one person, to use on that person\'s own computers, for personal and commercial music production, and the restrictions on redistribution and reverse engineering in the section above apply to it as well. If an order is refunded, the licence ends.',
-        'Formats and systems are listed on each plugin page: VST3 and AU on macOS (Apple Silicon and Intel), and VST3 on Windows; MIHENK is also a standalone app. Check your DAW and system before buying.',
+        'Every paid licence includes 2 years of updates, counted from the purchase date. The version you have keeps working forever, also after the 2 years; later updates are included only within them. Each plugin can be bought on its own or in the plugin family.',
+        'Formats and systems are listed on each plugin page: VST3 and AU on macOS (Apple Silicon and Intel), and VST3 on Windows; MIHENK is also a standalone app on both. Check your DAW and system before buying.',
       ],
     },
     {

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 
 // The one reader of GET /api/launch/codes?launch=<id> → {total, claimed}.
 // Returns the counter, or null while loading and whenever it cannot be read
-// (non-OK answer, {available:false}, network error): callers keep the free
-// wording on null, so no price is ever shown on a guess.
+// (non-OK answer, {available:false}, network error). Launch-1 callers treat
+// null as "free quota gone" (useLaunch1Full below).
 export function useLaunchCounter(launchId = 'launch') {
   const [codes, setCodes] = useState(null);
   useEffect(() => {
@@ -18,8 +18,10 @@ export function useLaunchCounter(launchId = 'launch') {
   return known ? codes : null;
 }
 
-// True only when the counter was read and the free 1,000 of launch 1 are gone.
+// The free 1,000 of launch 1 are gone (1,000 / 1,000 on 2026-10-04, and a claimed
+// seat is never given back). True when the counter says so AND while it cannot be
+// read: no page may lead with "free" on a failed or slow request.
 export function useLaunch1Full() {
   const codes = useLaunchCounter('launch');
-  return !!codes && codes.claimed >= codes.total;
+  return !codes || codes.claimed >= codes.total;
 }

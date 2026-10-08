@@ -1,0 +1,114 @@
+# Tool credits: API contract for the tool services
+
+Code: `credits.js` (logic), `server.js` (routes, webhook), tests `scripts/test-credits.js`.
+
+Rule: every paid $1 on a plugin order = 100 credits (1 US cent = 1 credit, from the order's price WITHOUT tax: `total_usd - tax_usd`).
+The online tools keep their daily free use; a tool service asks for credits only after the user's free use is used up.
+
+| Tool | Cost per use |
+|---|---|
+| `splitter` | 50 |
+| `visualizer` | 50 |
+| `mixcheck` | 100 |
+
+Costs are fixed in `credits.js` (`CREDIT_COSTS`); any amount in a request is ignored. Sensei stays free (no call). Arrangement GPS: later.
+
+## Calling convention (server to server only)
+
+Both routes need `Authorization: Bearer <Google OIDC identity token>` of the calling Cloud Run service's service account,
+audience = this site (`https://subverselab.com`, or `CREDITS_AUDIENCE`). The service account e-mail must be listed in
+`CREDITS_ALLOWED_CALLERS`. A browser cannot call these routes: it has no such token.
+
+Body is JSON (`Content-Type: application/json`), max 8 KB.
+
+### POST /api/credits/spend
+Body: `{"tool": "splitter", "jobId": "<unique per job>", "userIdToken": "<the user's Firebase ID token>"}`
+`jobId`: 1-128 characters of `A-Za-z0-9 _ . : -`. A new job needs a new jobId.
+
+| Status | Body | Meaning |
+|---|---|---|
+| 200 | `{ok:true, balance, cost}` | debited; run the job |
+| 200 | `{ok:true, balance, cost, duplicate:true}` | this (tool, jobId) was already charged; NOT charged again |
+| 402 | `{ok:false, reason:'insufficient', balance, cost}` | not enough credits, nothing debited |
+| 409 | `{ok:false, reason:'released'}` | that job was already released; use a new jobId |
+| 409 | `{ok:false, reason:'job-conflict'}` | the jobId belongs to another account |
+| 400 | `{ok:false, error}` | unknown tool or bad jobId |
+| 401 | `{ok:false, reason:'bad-user-token'}` / caller token errors | user token or caller token not accepted |
+| 403 | `{ok:false, error:'Caller not allowed'}` | service account not in the allow-list |
+| 503 | | API disabled (`CREDITS_ALLOWED_CALLERS` empty) or Google/Firestore unreachable |
+
+### POST /api/credits/release
+Body: `{"tool": "splitter", "jobId": "<same jobId>"}`. Call it when a job that was charged fails. Refunds that spend exactly once.
+
+| Status | Body |
+|---|---|
+| 200 | `{ok:true, released:true, balance}` first call |
+| 200 | `{ok:true, released:false, duplicate:true, balance}` repeat call, nothing refunded |
+| 404 | `{ok:false, reason:'no-such-spend'}` that (tool, jobId) was never charged |
+| 400/401/403/503 | as above |
+
+Recommended flow in a tool: use the free daily use first; if used up, `spend`; if `402` show "Not enough credits"
+(link to https://subverselab.com/plugins); run the job; if it fails, `release`. Retry `spend`/`release` on network errors with the same jobId: both are idempotent.
+
+## Getting the OIDC token on Cloud Run
+
+Metadata server: `http://metadata/computeMetadata/v1/instance/service-accounts/default/identity?audience=https://subverselab.com`
+with header `Metadata-Flavor: Google`. The response body is the token (valid ~1 hour; cache it for a few minutes).
+The service must run as the service account that is listed in `CREDITS_ALLOWED_CALLERS`.
+
+Python:
+```python
+import requests
+
+AUDIENCE = "https://subverselab.com"
+META = "http://metadata/computeMetadata/v1/instance/service-accounts/default/identity"
+
+def caller_token():
+    r = requests.get(META, params={"audience": AUDIENCE}, headers={"Metadata-Flavor": "Google"}, timeout=3)
+    r.raise_for_status()
+    return r.text
+
+def spend(tool, job_id, user_id_token):
+    r = requests.post(f"{AUDIENCE}/api/credits/spend",
+                      headers={"Authorization": f"Bearer {caller_token()}"},
+                      json={"tool": tool, "jobId": job_id, "userIdToken": user_id_token}, timeout=10)
+    return r.status_code, r.json()   # 200 ok / 402 insufficient
+```
+
+Node 18+:
+```js
+const AUDIENCE = 'https://subverselab.com';
+async function callerToken() {
+  const r = await fetch(`http://metadata/computeMetadata/v1/instance/service-accounts/default/identity?audience=${encodeURIComponent(AUDIENCE)}`,
+    { headers: { 'Metadata-Flavor': 'Google' } });
+  if (!r.ok) throw new Error(`metadata ${r.status}`);
+  return r.text();
+}
+async function spend(tool, jobId, userIdToken) {
+  const r = await fetch(`${AUDIENCE}/api/credits/spend`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await callerToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tool, jobId, userIdToken }),
+  });
+  return { status: r.status, body: await r.json() };   // 200 ok / 402 insufficient
+}
+```
+(Locally, `gcloud auth print-identity-token --impersonate-service-account=<sa> --audiences=https://subverselab.com` gives a test token.)
+
+## Env vars on the subverselab-site Cloud Run service
+
+| Name | Value |
+|---|---|
+| `CREDITS_ALLOWED_CALLERS` | comma list of the tool services' service-account e-mails (Splitter, Visualizer, Mix Check runtime SAs). Empty or unset = API off (503). |
+| `CREDITS_AUDIENCE` | optional; default `https://subverselab.com`. Must equal the `audience` the tools put in the metadata request. |
+
+No secrets. The tool services need no extra role to fetch an identity token for their own service account.
+
+## Data (Firestore, Admin SDK only; `firestore.rules`)
+
+- `credits/{uid}` `{balance, granted, spent, updatedAt}`; a signed-in user may read only their own document.
+- `credit_ledger/{id}` `{uid, delta, reason: purchase|refund|spend|release|admin, orderId?, tool?, jobId?, shortfall?, at}`; ids are deterministic
+  (`purchase_{orderId}`, `refund_{orderId}_{n}`, `spend_{tool}_{jobId}`, `release_{tool}_{jobId}`) so a repeat can never write twice. Needs the composite index (uid ASC, at DESC) in `firestore.indexes.json` (without it the balance route falls back to an unindexed read).
+- `pending_credits/{email}`: paid orders that carried no account id; claimed by a verified (or Google) account with that e-mail on `/api/credits/balance` or `/api/purchases/status`.
+- Order amounts: `plugin_licenses/{email}.orders[orderId]` gets `amount_usd_cents` (= `total_usd - tax_usd`, or `total - tax` when the currency is USD), `currency`, `total`; family orders also `launch2_purchases/{email}.amountUsdCents/currency/total`.
+- Refund (`order_refunded`): the order's credits are removed (balance never below 0; the part that was already spent is recorded as `shortfall`, the refund is never blocked). A partial refund removes the same share.

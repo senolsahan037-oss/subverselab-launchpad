@@ -10,8 +10,9 @@ import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
-import { ownedLaunch1Slugs, LAUNCH1_SLUGS } from './entitlements.js';
+import { ownedLaunch1Slugs, ownedOrderSlugs, purchasedByOrders, addYears, ALL_SLUGS, FREE_SLUGS, PLUGIN_SLUGS, UPDATE_YEARS, ADMIN_EMAILS, ADMIN_PREVIEW_KEY, isAdminPreview } from './entitlements.js';
 import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
+import { createCreditsService, orderAmount, CREDIT_COSTS } from './credits.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, 'dist');
@@ -101,9 +102,15 @@ app.use((req, res, next) => {
    licences (launchLicence.js).
    Env names only; values live in Cloud Run:
      LEMONSQUEEZY_WEBHOOK_SECRET   the webhook's signing secret
-     LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID     the $19.99 plugin-family bundle, six products (either one matches)
+     LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID     the $19.99 plugin-family bundle, seven products (either one matches)
      LS_BUNDLE4_PRODUCT_ID / LS_BUNDLE4_VARIANT_ID   old names of the same two settings, still accepted
-     LS_PRODUCT_SLUGS (optional)   "productId:slug,…" e.g. "111:kubbe,222:kaset,333:bundle"
+     LS_PRODUCT_SLUGS   "productId:slug,…": which Lemon Squeezy product opens which plugin. A paid single order opens
+                        exactly the plugin named here. Slugs: kubbe, kaset, koro, yanki, hava, mihenk, tutkal (singles), taban and alev (free, $0 products),
+                        bundle (the old $15 KUBBE + KASET order: opens both), family (the $19.99 family, informational:
+                        its access comes from LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID). Example:
+                        "1402269:kubbe,1402277:kaset,1402289:bundle,1414121:family,AAA:koro,BBB:yanki,CCC:hava,DDD:tutkal,EEE:mihenk"
+                        A product missing here falls back to its product NAME (contains the plugin name), so name each
+                        Lemon Squeezy product after its plugin; the explicit id list is still the safe way.
    Field names checked against https://docs.lemonsqueezy.com/api on 2026-09-26.
    ============================================================ */
 
@@ -140,6 +147,7 @@ app.set('trust proxy', 1);
 const launch = createLaunchService({ getAdmin: adminFirestore });
 const launch2 = createLaunchService({ getAdmin: adminFirestore, launchId: 'launch2', product: 'bundle4', productId: 9015 });
 const launches = { launch, launch2 };
+const credits = createCreditsService({ getAdmin: adminFirestore });
 const validLaunchId = (value) => value === 'launch2' ? 'launch2' : value === 'launch' ? 'launch' : null;
 const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
 
@@ -180,7 +188,7 @@ app.get('/api/download/manifest', async (req, res) => {
   try {
     const manifest = await withTimeout(downloadManifest(), 8000);
     const out = {};
-    for (const slug of ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk']) {
+    for (const slug of PLUGIN_SLUGS) {
       const entry = manifest?.[slug] || {};
       out[slug] = { version: entry.version || null, files: {} };
       for (const [platform, f] of Object.entries(entry.files || {})) {
@@ -203,9 +211,11 @@ const downloadLimit = tokenBucket({ perMinute: 30 });
      refund / over-cap on the purchase applies to the uid too. A bound uid needs no verified e-mail.
    launch2/counter                       {claimed, downloads}  claimed = paid seats
    The webhook is the only writer; the ticket route only reads. */
-const LAUNCH2_CAP = 1000;
+// Owner 2026-10-05: no person cap on the family; the launch price ends on a date (src/data/plugins.js FAMILY_OFFER_ENDS_AT).
+// The counter still counts paid seats. LAUNCH2_CAP env can re-impose a cap (tests use it).
+const LAUNCH2_CAP = Number(process.env.LAUNCH2_CAP) || Infinity;
 const launch2Email = (value) => { const e = String(value || '').trim().toLowerCase(); return e && !e.includes('/') ? e : null; };
-// The family bundle (KUBBE, KASET, KORO, YANKI, HAVA, MIHENK). The LS_FAMILY_* names are
+// The family bundle (KUBBE, KASET, KORO, YANKI, HAVA, MIHENK, TUTKAL). The LS_FAMILY_* names are
 // the current ones; LS_BUNDLE4_* (the old four-product bundle) keep working.
 function isFamilyOrder(item) {
   const products = [process.env.LS_FAMILY_PRODUCT_ID, process.env.LS_BUNDLE4_PRODUCT_ID].filter(Boolean).map(String);
@@ -247,6 +257,7 @@ async function launch2UidStanding(admin, uid) {
 //  3. an unverified account with no uid-bound paid order gets 'unverified'.
 // A refunded / oversold uid-bound order is reported as such, never as 'unverified'.
 async function launch2Access(admin, decoded) {
+  if (isAdminPreview(decoded)) return 'paid'; // admin preview: behaves like a family buyer, nothing is stored
   const uidStanding = await launch2UidStanding(admin, decoded.uid);
   if (uidStanding === 'paid') return uidStanding;
   const verified = !emailVerificationRequired(decoded) || decoded.email_verified === true;
@@ -266,7 +277,7 @@ const launch2Denied = (standing) => standing === 'unverified'
   : { error: 'Purchase required' };
 const launch2DeniedStatus = (standing) => standing === 'unverified' ? 403 : 402;
 
-async function recordLaunch2Order(admin, { email, uid, orderId, paidAt }) {
+async function recordLaunch2Order(admin, { email, uid, orderId, paidAt, amount = null }) {
   const { db } = admin;
   return db.runTransaction(async (tx) => {
     const purchaseRef = db.collection('launch2_purchases').doc(email);
@@ -305,7 +316,7 @@ async function recordLaunch2Order(admin, { email, uid, orderId, paidAt }) {
         tx.set(counterRef, { claimed: claimed + 1 }, { merge: true });
       }
     }
-    tx.set(purchaseRef, { email, orderId, paidAt, refunded: false, overCap, seat, ...(bindUid ? { uid: launch2Uid(uid) } : {}) }, { merge: true });
+    tx.set(purchaseRef, { email, orderId, paidAt, refunded: false, overCap, seat, ...(amount ? { amountUsdCents: amount.amount_usd_cents, currency: amount.currency, total: amount.total } : {}), ...(bindUid ? { uid: launch2Uid(uid) } : {}) }, { merge: true });
     if (bindUid) tx.set(uidRef, { email, orderId, at: paidAt });
     return { result: overCap ? 'over-cap' : 'recorded' };
   });
@@ -340,12 +351,14 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   let admin, decoded;
   try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Download service unavailable' : 'Your sign-in has expired — sign in again' }); }
   const { slug, platform } = req.body || {};
-  const launchId = validLaunchId(req.body?.launchId) || 'launch';
+  // 'free' (download ticket only): the free plugins (FREE_SLUGS). Only an order for that plugin, a $0 one included,
+  // opens them; no seat, no counter claim. The other launch routes do not know 'free'.
+  const launchId = req.body?.launchId === 'free' ? 'free' : validLaunchId(req.body?.launchId) || 'launch';
   // launch2: the verification rule lives in launch2Access (a uid-bound paid order needs none).
   // An e-mail/password account must have verified its address before anything is handed out (before any claim or entitlement logic).
   if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
   const launchService = launches[launchId];
-  const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk'] : ['kubbe', 'kaset'];
+  const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk', 'tutkal'] : launchId === 'free' ? FREE_SLUGS : ['kubbe', 'kaset'];
   if (!launchSlugs.includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
   try {
     // Launch 2 is paid: the seat was claimed by the payment webhook, so here
@@ -353,12 +366,22 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
     // has been approved as a tester.
     if (launchId === 'launch2') {
       const standing = await launch2Access(admin, decoded);
-      if (!launch2Open(standing)) return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
+      if (!launch2Open(standing)) {
+        // Not a family buyer or tester: a paid single order for exactly this plugin still opens it.
+        const singles = await withTimeout(ownedOrderSlugs(admin, decoded.email), 8000);
+        if (!singles.includes(slug)) return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
+      }
+    }
+    // A free plugin opens for the e-mail that placed a $0 order for it (Lemon Squeezy, no card). Nothing else opens it.
+    if (launchId === 'free') {
+      const owned = await withTimeout(ownedOrderSlugs(admin, decoded.email), 8000);
+      if (!owned.includes(slug)) return res.status(402).json({ error: 'Get it free first: the checkout takes an e-mail address, no card.' });
     }
     const manifest = await withTimeout(downloadManifest(), 8000);
     const file = manifest?.[slug]?.files?.[platform];
     if (!file?.name) return res.status(404).json({ error: 'This download is not available yet' });
-    if (launchId !== 'launch2') {
+    const preview = isAdminPreview(decoded); // admin preview: no seat claim, no counters, no downloads doc
+    if (launchId === 'launch' && !preview) {
       // While the free 1,000 last, the first download claims a seat. Once they
       // are gone the room is a shop: only a paid, non-refunded order for this
       // plugin (or the bundle) opens it — an earlier free download does not.
@@ -374,7 +397,7 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
       }
     }
     const now = new Date().toISOString();
-    await admin.db.runTransaction(async (tx) => {
+    if (!preview) await admin.db.runTransaction(async (tx) => {
       const counter = admin.db.collection(launchId).doc('counter');
       const downloads = admin.db.collection('downloads').doc(decoded.uid);
       const [snap, downloadSnap] = await Promise.all([tx.get(counter), tx.get(downloads)]);
@@ -417,10 +440,14 @@ function serviceDown(err) {
 // Firebase already verifies the address for federated providers such as
 // Google. Requiring the password-provider flag for those accounts blocked the
 // launch download room after the payment-gate work. Password/email accounts
-// still need the normal verification link.
+// still need the normal verification link. So does a 'custom' sign-in: the
+// tool iframes sign in with a custom token from tool-auth-bridge whatever the
+// account's provider, and the token's email_verified (copied from the user
+// record) is the only proof of the address there. Without this an unverified
+// account opened a tool and claimed credits parked under its e-mail.
 function emailVerificationRequired(decoded) {
   const provider = decoded?.firebase?.sign_in_provider;
-  return provider === 'password' || provider === 'email' || !provider;
+  return provider === 'password' || provider === 'email' || provider === 'custom' || !provider;
 }
 
 // GET /api/launch2/status   Authorization: Bearer <Firebase ID token>
@@ -443,9 +470,45 @@ app.get('/api/launch2/status', async (req, res) => {
   }
 });
 
+// Everything this signed-in account may download, and since when:
+//   owned      slugs: single orders (and the old bundle) + the whole family when a family order is paid
+//              + the tester plugins for a hand-picked tester
+//   purchased  {slug: 'YYYY-MM-DD'} latest purchase date of a paid order covering it (testers have none)
+//   updatesUntil {slug: 'YYYY-MM-DD'} purchase date + UPDATE_YEARS years (shown only; downloads are not gated by it yet)
+async function launch2PurchaseFor(admin, decoded) {
+  const id = launch2Uid(decoded.uid);
+  if (id) {
+    const bound = await admin.db.collection('launch2_uids').doc(id).get();
+    if (bound.exists) {
+      const p = await launch2Purchase(admin, bound.data().email);
+      if (p && p.orderId === bound.data().orderId) return p;
+    }
+  }
+  return launch2Purchase(admin, decoded.email);
+}
+async function accountEntitlements(admin, decoded) {
+  const [bought, standing] = await Promise.all([purchasedByOrders(admin, decoded.email), launch2Access(admin, decoded)]);
+  const purchased = { ...bought };
+  const owned = new Set(Object.keys(bought));
+  if (standing === 'paid') {
+    const day = isAdminPreview(decoded) ? new Date().toISOString().slice(0, 10) : addYears((await launch2PurchaseFor(admin, decoded))?.paidAt, 0);
+    for (const slug of ALL_SLUGS) {
+      owned.add(slug);
+      if (day && (!purchased[slug] || day > purchased[slug])) purchased[slug] = day;
+      else if (!(slug in purchased)) purchased[slug] = null;
+    }
+  } else if (standing === 'tester') {
+    TESTER_PLUGINS.forEach((slug) => owned.add(slug));
+  }
+  const updatesUntil = {};
+  // Free plugins get every update; no end date is shown for them.
+  for (const [slug, day] of Object.entries(purchased)) if (day && !FREE_SLUGS.includes(slug)) updatesUntil[slug] = addYears(day, UPDATE_YEARS);
+  return { owned: PLUGIN_SLUGS.filter((s) => owned.has(s)), standing, purchased, updatesUntil };
+}
+
 // GET /api/purchases/status   Authorization: Bearer <Firebase ID token>
-// → {full, owned:[slugs]}. After the free 1,000 the page shows the download
-// buttons only for the plugins this e-mail has paid for.
+// → {full, owned:[slugs], standing, purchased, updatesUntil}. The page shows download
+// buttons only for the plugins this account has paid for (or tests).
 app.get('/api/purchases/status', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
@@ -456,19 +519,21 @@ app.get('/api/purchases/status', async (req, res) => {
     const decoded = await admin.auth.verifyIdToken(token);
     if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
     const { claimed, total } = await withTimeout(launch.readCounter(), 8000);
-    let owned = await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000);
-    // A paid family bundle opens Kubbe and Kaset as well.
-    if (owned.length < LAUNCH1_SLUGS.length && await withTimeout(launch2Access(admin, decoded), 8000) === 'paid') owned = [...LAUNCH1_SLUGS];
-    return res.json({ full: claimed >= total, owned });
+    const ent = await withTimeout(accountEntitlements(admin, decoded), 8000);
+    // Credits bought without an account id are parked under the checkout e-mail; this account owns that e-mail (verified above).
+    await withTimeout(credits.claimPending({ uid: decoded.uid, email: decoded.email }), 8000).catch((err) => console.error('credits claim:', err.message));
+    return res.json({ full: claimed >= total, owned: ent.owned, standing: ent.standing, purchased: ent.purchased, updatesUntil: ent.updatesUntil });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
   }
 });
 
 // GET /api/purchases/licenses   Authorization: Bearer <Firebase ID token>
-// → {licenses:[{id, product, productName, key, keyShort, status, disabled, activationLimit, instancesCount, orderId, created}]}
+// → {licenses:[{id, product, productName, key, keyShort, status, activationLimit, instancesCount, orderId, created, purchased, updatesUntil}]}
 // The signed-in caller's own licence keys from plugin_licenses/{their e-mail}.licenses
-// (written by the Lemon Squeezy webhook). Keys are returned to that caller only and are never logged.
+// (written by the Lemon Squeezy webhook: license_key_created / license_key_updated). When the family order was
+// paid under another checkout e-mail but bound to this account's uid (launch2_uids), that e-mail's record is read too.
+// Keys are returned to that caller only and are never logged. purchased / updatesUntil are 'YYYY-MM-DD' (order date, +2 years).
 app.get('/api/purchases/licenses', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
@@ -480,15 +545,30 @@ app.get('/api/purchases/licenses', async (req, res) => {
     if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
     const mail = String(decoded.email).trim().toLowerCase();
     if (mail.includes('/')) return res.json({ licenses: [] });
-    const snap = await withTimeout(admin.db.collection('plugin_licenses').doc(mail).get(), 8000);
-    const data = snap.exists ? snap.data() : {};
-    const orders = data.orders || {};
-    const licenses = Object.values(data.licenses || {})
+    // Admin preview: one family entry shaped like a real family key, plainly fake, never stored.
+    const previewLicence = isAdminPreview(decoded) ? [{
+      id: 'admin-preview', product: 'family', productName: 'SubverseLab plugin family', purchased: purchaseDay(new Date().toISOString()),
+      updatesUntil: addYears(new Date().toISOString(), UPDATE_YEARS), key: ADMIN_PREVIEW_KEY, keyShort: null, status: 'active',
+      activationLimit: 5, instancesCount: 0, orderId: null, created: null, preview: true,
+    }] : [];
+    const docs = [(await withTimeout(admin.db.collection('plugin_licenses').doc(mail).get(), 8000)).data() || {}];
+    const bound = launch2Uid(decoded.uid) ? await withTimeout(admin.db.collection('launch2_uids').doc(launch2Uid(decoded.uid)).get(), 8000) : null;
+    const boundMail = bound?.exists ? launch2Email(bound.data().email) : null;
+    if (boundMail && boundMail !== mail) {
+      const other = await withTimeout(admin.db.collection('plugin_licenses').doc(boundMail).get(), 8000);
+      const od = other.exists ? other.data() : {};
+      // Only the keys of the order that this uid is bound to.
+      docs.push({ orders: od.orders || {}, licenses: Object.fromEntries(Object.entries(od.licenses || {}).filter(([, l]) => String(l?.order_id) === String(bound.data().orderId))) });
+    }
+    const orders = Object.assign({}, ...docs.map((d) => d.orders || {}));
+    const licenses = docs.flatMap((d) => Object.values(d.licenses || {}))
       .filter((l) => l && l.key && !l.disabled)
       .map((l) => ({
         id: String(l.license_id || ''),
         product: l.product || orders[l.order_id]?.product || null,
         productName: orders[l.order_id]?.product_name || null,
+        purchased: purchaseDay(orders[l.order_id]?.created || l.created),
+        updatesUntil: addYears(orders[l.order_id]?.created || l.created, UPDATE_YEARS),
         key: l.key,
         keyShort: l.key_short || null,
         status: l.status || null,
@@ -498,11 +578,13 @@ app.get('/api/purchases/licenses', async (req, res) => {
         created: l.created || null,
       }))
       .sort((x, y) => String(y.created || '').localeCompare(String(x.created || '')));
-    return res.json({ licenses });
+    return res.json({ licenses: [...previewLicence, ...licenses] });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
   }
 });
+
+const purchaseDay = (iso) => (Number.isNaN(Date.parse(iso || '')) ? null : addYears(iso, 0));
 
 const CODES_CACHE_MS = 30_000;
 const codesCache = new Map();
@@ -608,7 +690,6 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
 // with the per-account download counts from `downloads`. Admin only, and only
 // for a *verified* admin address: sign-up no longer requires verification, so
 // an unverified account holding an admin address must not get in.
-const ADMIN_EMAILS = ['info@subverselab.com', 'senolsahan037@gmail.com'];
 const adminLimit = tokenBucket({ perMinute: 20 });
 app.get('/api/admin/members', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
@@ -639,7 +720,7 @@ app.get('/api/admin/members', async (req, res) => {
       const m = byUid.get(d.id);
       if (!m) continue;
       const v = d.data() || {};
-      for (const slug of ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk']) for (const platform of ['mac', 'win']) m.downloads += Number(v?.[slug]?.[platform]?.count) || 0;
+      for (const slug of PLUGIN_SLUGS) for (const platform of ['mac', 'win']) m.downloads += Number(v?.[slug]?.[platform]?.count) || 0;
     }
     const counter = await admin.db.collection('launch').doc('counter').get();
     return res.json({ members, launch: counter.exists ? counter.data() : null });
@@ -663,7 +744,8 @@ const TESTER_REPORT_CAP = 50;
 const TESTER_OS = ['macOS Apple Silicon', 'macOS Intel', 'Windows 11', 'Windows 10'];
 const TESTER_DAWS = ['Ableton Live', 'FL Studio', 'Logic Pro', 'Cubase', 'Studio One', 'Reaper', 'Pro Tools', 'Bitwig Studio', 'Other'];
 const TESTER_FORMATS = ['VST3', 'AU'];
-const TESTER_PLUGINS = ['koro', 'yanki', 'hava', 'mihenk'];
+// TUTKAL joined the testers' list on 2026-10-05 (owner decision).
+const TESTER_PLUGINS = ['koro', 'yanki', 'hava', 'mihenk', 'tutkal'];
 const TESTER_KINDS = ['bug', 'sound', 'ui', 'works'];
 const testerBody = express.json({ limit: '16kb' });
 const testerLimit = tokenBucket({ perMinute: 20 });
@@ -935,6 +1017,74 @@ app.post('/api/account/delete', smallBody, async (req, res) => {
   }
 });
 
+// Tool credits (credits.js, CREDITS.md). Costs are fixed here, never taken from a request.
+// GET /api/credits/balance   Authorization: Bearer <Firebase ID token>
+// → {balance, costs, recent:[{delta, reason, tool, at}]}. A verified (or Google) e-mail also claims credits that
+// were bought without an account id.
+// Limited per account, not per IP: the tool services call this for their users from shared egress addresses.
+const creditsBalanceLimit = tokenBucket({ perMinute: 30 });
+app.get('/api/credits/balance', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  let decoded;
+  try { decoded = await (await adminFirestore()).auth.verifyIdToken(token); } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+  if (!creditsBalanceLimit(`uid:${decoded.uid}`)) return res.status(429).json({ error: 'Too many requests' });
+  try {
+    if (decoded.email && (!emailVerificationRequired(decoded) || decoded.email_verified === true)) {
+      await withTimeout(credits.claimPending({ uid: decoded.uid, email: decoded.email }), 8000);
+    }
+    const { balance, recent } = await withTimeout(credits.readBalance(decoded.uid), 8000);
+    return res.json({ balance, costs: CREDIT_COSTS, recent });
+  } catch (err) {
+    console.error('credits balance:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Service unavailable' });
+  }
+});
+
+// Server-to-server, called by the tool services (Cloud Run) with a Google OIDC identity token.
+// POST /api/credits/spend    {tool, jobId, userIdToken}  → 200 {ok:true, balance, cost} | 402 {ok:false, reason:'insufficient', balance, cost}
+// POST /api/credits/release  {tool, jobId}               → 200 {ok:true, released, balance}  (refunds that job's spend once)
+const creditsBody = [express.json({ limit: '8kb' })];
+async function creditsCaller(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const caller = await credits.authenticateCaller(req.get('Authorization'));
+  if (!caller.ok) { res.status(caller.status).json({ ok: false, error: caller.error }); return null; }
+  return caller;
+}
+app.post('/api/credits/spend', creditsBody, async (req, res) => {
+  if (!(await creditsCaller(req, res))) return;
+  const { tool, jobId, userIdToken } = req.body || {};
+  if (typeof tool !== 'string' || !Object.hasOwn(CREDIT_COSTS, tool) || typeof jobId !== 'string' || !/^[A-Za-z0-9_.:-]{1,128}$/.test(jobId)) {
+    return res.status(400).json({ ok: false, error: 'tool and jobId are required' });
+  }
+  if (typeof userIdToken !== 'string' || !userIdToken) return res.status(401).json({ ok: false, reason: 'no-user', error: 'userIdToken is required' });
+  let decoded;
+  try { decoded = await (await adminFirestore()).auth.verifyIdToken(userIdToken); } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ ok: false, reason: serviceDown(err) ? 'unavailable' : 'bad-user-token', error: 'User token not accepted' });
+  }
+  try {
+    const { status, ...body } = await withTimeout(credits.spend({ uid: decoded.uid, tool, jobId }), 10000);
+    return res.status(status).json(body);
+  } catch (err) {
+    console.error('credits spend:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ ok: false, error: 'Credits unavailable' });
+  }
+});
+app.post('/api/credits/release', creditsBody, async (req, res) => {
+  if (!(await creditsCaller(req, res))) return;
+  const { tool, jobId } = req.body || {};
+  try {
+    const { status, ...body } = await withTimeout(credits.release({ tool, jobId }), 10000);
+    return res.status(status).json(body);
+  } catch (err) {
+    console.error('credits release:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ ok: false, error: 'Credits unavailable' });
+  }
+});
+
 // Licence API for the plugins, in Lemon Squeezy's License API shapes.
 // When the service itself is down the answer is deliberately NOT JSON: the
 // plugin treats a non-object body as "could not ask" and keeps its activation,
@@ -975,11 +1125,12 @@ function productSlugFor(productId, productName = '') {
       .filter(([id, slug]) => id && slug),
   );
   if (map[String(productId)]) return map[String(productId)];
-  const n = productName.toLowerCase();
+  if (isFamilyOrder({ product_id: productId })) return 'family';
+  // Fallback by product name. The family is checked first: its name may list the plugins.
+  const n = String(productName || '').toLowerCase();
+  if (/\bfamily\b/.test(n)) return 'family';
   if (n.includes('bundle') || (n.includes('kubbe') && n.includes('kaset'))) return 'bundle';
-  if (n.includes('kubbe')) return 'kubbe';
-  if (n.includes('kaset')) return 'kaset';
-  return null;
+  return PLUGIN_SLUGS.find((slug) => new RegExp(`\\b${slug}\\b`).test(n)) || null;
 }
 
 // POST /api/lemonsqueezy/webhook
@@ -1017,8 +1168,11 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
   const email = String(a.user_email || '').trim().toLowerCase();
   if (!email || !data.id) return res.json({ ok: true, ignored: 'no e-mail' });
 
-  // Launch 2 (plugin family bundle, six products): order_created (paid) records the purchase and
+  // Launch 2 (plugin family bundle, seven products): order_created (paid) records the purchase and
   // claims a seat; order_refunded flags it. Handled here and nowhere else.
+  // The order is then ALSO written to plugin_licenses.orders below (product 'family': purchase date,
+  // receipt, and the name shown next to the licence key); that record never grants access by itself.
+  let launch2Result = null;
   if ((event === 'order_created' || event === 'order_refunded') && isFamilyOrder(a.first_order_item)) {
     const orderId = String(data.id);
     try {
@@ -1028,13 +1182,14 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
       if (event === 'order_refunded') {
         const out = await refundLaunch2Order(admin, { email: mail, orderId, at: new Date().toISOString() });
         console.warn(`launch2 refund: order ${orderId} ${out.result}; seat not released — owner decides`);
-        return res.json({ ok: true, launch2: out.result });
+        launch2Result = out.result;
+      } else {
+        if (a.status !== 'paid') return res.json({ ok: true, ignored: `status ${a.status || 'unknown'}` });
+        const out = await recordLaunch2Order(admin, { email: mail, uid: payload?.meta?.custom_data?.uid, orderId, paidAt: a.created_at || new Date().toISOString(), amount: orderAmount(a) });
+        if (out.result === 'over-cap') console.warn(`launch2 OVER CAP: order ${orderId} paid but all ${LAUNCH2_CAP} seats are taken — refund it`);
+        if (out.result === 'extra-order') console.warn(`launch2 extra order ${orderId} from an e-mail that already paid — refund it`);
+        launch2Result = out.result;
       }
-      if (a.status !== 'paid') return res.json({ ok: true, ignored: `status ${a.status || 'unknown'}` });
-      const out = await recordLaunch2Order(admin, { email: mail, uid: payload?.meta?.custom_data?.uid, orderId, paidAt: a.created_at || new Date().toISOString() });
-      if (out.result === 'over-cap') console.warn(`launch2 OVER CAP: order ${orderId} paid but all ${LAUNCH2_CAP} seats are taken — refund it`);
-      if (out.result === 'extra-order') console.warn(`launch2 extra order ${orderId} from an e-mail that already paid — refund it`);
-      return res.json({ ok: true, launch2: out.result });
     } catch (err) {
       console.error('launch2 webhook:', err.message);
       return res.status(500).json({ error: 'write failed' });
@@ -1050,11 +1205,15 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
       const erasedSnap = await erasedRef.get();
       if (erasedSnap.exists && erasedSnap.data().orders?.[String(data.id)]) {
         await erasedRef.set({ orders: { [String(data.id)]: { status: a.status || null, refunded: Boolean(a.refunded) } } }, { merge: true });
-        return res.json({ ok: true, erased: true });
+        return res.json({ ok: true, erased: true, ...(launch2Result ? { launch2: launch2Result } : {}) });
       }
     }
     const ref = db.collection('plugin_licenses').doc(email);
     const update = { email, updated: FieldValue.serverTimestamp() };
+    // The account that clicked Buy (checkout[custom][uid] comes back as meta.custom_data.uid); kept next to the order and the
+    // key so a purchase is traceable to the account it was bound to. Never used to grant access by itself.
+    const boundUid = launch2Uid(payload?.meta?.custom_data?.uid);
+    const amount = orderAmount(a);
 
     if (event === 'order_created' || event === 'order_refunded') {
       const item = a.first_order_item || {};
@@ -1067,7 +1226,11 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
           product_id: item.product_id ?? null,
           product_name: item.product_name || null,
           variant_name: item.variant_name || null,
-          product: productSlugFor(item.product_id, item.product_name),
+          product: isFamilyOrder(item) ? 'family' : productSlugFor(item.product_id, item.product_name),
+          ...(boundUid ? { uid: boundUid } : {}),
+          amount_usd_cents: amount.amount_usd_cents,
+          currency: amount.currency,
+          total: amount.total,
           receipt_url: a.urls?.receipt || null,
           created: a.created_at || null,
         },
@@ -1088,6 +1251,7 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
           activation_limit: a.activation_limit ?? null,
           instances_count: a.instances_count ?? 0,
           order_id: a.order_id != null ? String(a.order_id) : null,
+          ...(boundUid ? { uid: boundUid } : {}),
           expires_at: a.expires_at || null,
           created: a.created_at || null,
         },
@@ -1095,7 +1259,25 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
     }
     // merge: true merges nested maps, so each order and key is its own entry.
     await ref.set(update, { merge: true });
-    res.json({ ok: true });
+    // Tool credits: 100 per paid dollar (credits.js). Idempotent per order, so a Lemon Squeezy retry after a failure is safe.
+    let creditsResult = null;
+    if (event === 'order_created' && a.status === 'paid') {
+      if (amount.credits > 0) {
+        creditsResult = (await credits.grantOrder({ email, uid: boundUid, orderId: data.id, credits: amount.credits })).result;
+      } else if (Number(a.total_usd) === 0 || Number(a.total) === 0) {
+        creditsResult = 'free-order';   // a $0 order (a free plugin): nothing to grant, nothing to warn about
+      } else {
+        creditsResult = 'no-amount';
+        console.warn(`credits: order ${data.id} has no usable USD amount (total_usd=${a.total_usd ?? 'missing'}, total=${a.total ?? 'missing'}, currency=${a.currency ?? 'missing'}); no credits granted`);
+      }
+    } else if (event === 'order_refunded') {
+      const full = a.status !== 'partial_refund' || a.refunded === true;
+      const out = await credits.refundOrder({ email, orderId: data.id, full, refundedUsdCents: Number(a.refunded_amount_usd), totalUsdCents: Number(a.total_usd) });
+      creditsResult = out.result;
+      if (out.shortfall) console.warn(`credits refund: order ${data.id} short by ${out.shortfall} credits (already spent); refund not blocked`);
+      if (out.result === 'partial-unknown') console.warn(`credits refund: order ${data.id} partial refund without refunded_amount_usd/total_usd; credits unchanged`);
+    }
+    res.json({ ok: true, ...(launch2Result ? { launch2: launch2Result } : {}), ...(creditsResult ? { credits: creditsResult } : {}) });
   } catch (err) {
     // A 5xx makes Lemon Squeezy retry (up to three more times).
     console.error('lemonsqueezy webhook:', err.message);

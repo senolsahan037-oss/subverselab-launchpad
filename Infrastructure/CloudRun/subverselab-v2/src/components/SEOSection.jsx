@@ -237,7 +237,7 @@ export default function SEOSection() {
                   fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: '800',
                   color: 'var(--color-text)', margin: 0,
                 }}>
-                  AI Music Production Guides
+                  Music Production Guides
                 </h2>
               </div>
               <Link to="/learn" style={{

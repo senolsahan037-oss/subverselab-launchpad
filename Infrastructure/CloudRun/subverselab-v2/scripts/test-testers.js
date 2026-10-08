@@ -78,6 +78,7 @@ function fakeStorage() {
     ['plugins/yanki/1.0.0/Yanki-mac.zip', { name: 'Yanki-mac.zip', body: 'YANKI-MAC' }],
     ['plugins/hava/1.0.0/Hava-mac.zip', { name: 'Hava-mac.zip', body: 'HAVA-MAC' }],
     ['plugins/mihenk/1.0.0/Mihenk-mac.zip', { name: 'Mihenk-mac.zip', body: 'MIHENK-MAC' }],
+    ['plugins/tutkal/1.0.0/Tutkal-mac.zip', { name: 'Tutkal-mac.zip', body: 'TUTKAL-MAC' }],
   ]);
   return {
     bucket: () => ({ file: (object) => ({
@@ -100,6 +101,7 @@ function fakeStorage() {
         yanki: { version: '1.0.0', files: { mac: { name: 'Yanki-mac.zip', size: 10, object: 'plugins/yanki/1.0.0/Yanki-mac.zip' } } },
         hava: { version: '1.0.0', files: { mac: { name: 'Hava-mac.zip', size: 9, object: 'plugins/hava/1.0.0/Hava-mac.zip' } } },
         mihenk: { version: '1.0.0', files: { mac: { name: 'Mihenk-mac.zip', size: 10, object: 'plugins/mihenk/1.0.0/Mihenk-mac.zip' } } },
+        tutkal: { version: '1.0.0', files: { mac: { name: 'Tutkal-mac.zip', size: 10, object: 'plugins/tutkal/1.0.0/Tutkal-mac.zip' } } },
       }))],
     }) }),
   };
@@ -126,8 +128,9 @@ const transformed = serverSource
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
   .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(root)};`)
   .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${launchUrl}';`)
-  .replace("import { ownedLaunch1Slugs } from './entitlements.js';", `import { ownedLaunch1Slugs } from '${entitlementsUrl}';`)
+  .replace("from './entitlements.js';", `from '${entitlementsUrl}';`)
   .replace("import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';", `import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from '${accountUrl}';`)
+  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__testersTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__testersTestAdminFirestore)')
@@ -253,12 +256,17 @@ await test('approve opens the launch-2 ticket without a purchase; a non-tester s
   assert.equal((await ticket('erin')).response.status, 402);
   assert.equal((await approve('erin')).response.status, 200);
   assert.equal((await as('erin', 'GET', '/api/testers/me')).body.status, 'approved');
-  for (const slug of ['koro', 'yanki', 'hava', 'mihenk']) {
+  for (const slug of ['koro', 'yanki', 'hava', 'mihenk', 'tutkal']) {
     const t = await ticket('erin', slug);
     assert.equal(t.response.status, 200, slug);
     assert.ok(t.body.url);
   }
+  // Owner decision 2026-10-05: TUTKAL is open to testers too, and the account sees all five as its own.
+  const mine = await as('erin', 'GET', '/api/purchases/status');
+  assert.deepEqual(mine.body.owned, ['koro', 'yanki', 'hava', 'mihenk', 'tutkal']);
+  assert.equal((await ticket('erin', 'kubbe')).response.status, 400, 'launch 2 ticket never hands out Kubbe');
   assert.equal((await ticket('frank')).response.status, 402, 'someone who neither paid nor was approved');
+  assert.equal((await ticket('frank', 'tutkal')).response.status, 402, 'TUTKAL stays closed for a non-tester');
   assert.equal((await apply('gina')).response.status, 200);
   assert.equal((await ticket('gina')).response.status, 402, 'a pending application opens nothing');
   const doc = state.db.docs.get('launch2_testers/erin@example.com');
@@ -414,11 +422,13 @@ await test('reports are validated, stored, listed newest first and capped at 50 
   assert.equal(stored.email, 'sam@example.com');
   assert.ok(stored.at);
   await new Promise((r) => setTimeout(r, 5));
+  assert.equal((await report('sam', { plugin: 'tutkal', kind: 'sound', text: 'GLUE at 2:1 is the right amount on my drum bus.' })).response.status, 200);
+  await new Promise((r) => setTimeout(r, 5));
   assert.equal((await report('sam', { plugin: 'koro', kind: 'works', text: 'Runs fine in Live 12 on the M2 mini.' })).response.status, 200);
   const list = await as('owner', 'GET', '/api/admin/testers/reports');
   assert.equal(list.response.status, 200);
-  assert.deepEqual(list.body.reports.map((r) => r.plugin), ['koro', 'hava']);
-  for (let i = 2; i < 50; i++) assert.equal((await report('sam')).response.status, 200, `report ${i + 1}`);
+  assert.deepEqual(list.body.reports.map((r) => r.plugin), ['koro', 'tutkal', 'hava']);
+  for (let i = 3; i < 50; i++) assert.equal((await report('sam')).response.status, 200, `report ${i + 1}`);
   const over = await report('sam');
   assert.equal(over.response.status, 429);
   assert.equal([...state.db.docs.keys()].filter((k) => k.startsWith('tester_reports/')).length, 50);

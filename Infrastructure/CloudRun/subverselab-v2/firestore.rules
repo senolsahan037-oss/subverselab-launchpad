@@ -71,6 +71,18 @@ service cloud.firestore {
     match /erased_emails/{document=**} {
       allow read, write: if false;
     }
+    // Tool credits (server.js -> credits.js, Admin SDK only). A signed-in user may read only their own
+    // balance document; the ledger and the e-mail-parked credits are never readable. No client writes.
+    match /credits/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /credit_ledger/{document=**} {
+      allow read, write: if false;
+    }
+    match /pending_credits/{document=**} {
+      allow read, write: if false;
+    }
     match /reports_archive/{document=**} {
       allow read, write: if false;
     }

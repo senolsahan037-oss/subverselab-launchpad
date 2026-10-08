@@ -12,9 +12,12 @@
 //             (launchLicence.js claim() reads it). No counter is touched, so
 //             the public "claimed" number never goes down.
 //   orders    {orderId: {order_id, product, status, refunded, created}}  paid
-//             Lemon Squeezy orders, reduced to what refunds and re-downloads
-//             need (entitlements.js and the webhook read it).
+//             Lemon Squeezy orders (single plugins, the old bundle, the family),
+//             reduced to what refunds, re-downloads and the "updates until"
+//             date need (entitlements.js and the webhook read it; `created` is
+//             the purchase date, the licence key is NOT kept).
 //   purchase / seat   the launch-2 purchase and its seat, reduced the same way.
+// Tool credits (credits/{uid}, credit_ledger, pending_credits) are deleted outright, nothing is kept.
 // No e-mail address, name, receipt link or licence key is kept. The privacy
 // text (src/data/legalContent.js, "How long we keep it") describes this; change
 // both together.
@@ -133,6 +136,24 @@ export function createAccountDeleter({ getAdmin, now = () => new Date().toISOStr
     const uidBindRef = db.collection('launch2_uids').doc(uid);
     const uidBind = await uidBindRef.get();
     if (uidBind.exists) planDelete(uidBindRef, 'launch2_uids');
+    // A family order paid under another checkout e-mail than the account's own: its order record and
+    // licence key sit in plugin_licenses/{that e-mail}. Only that one order and its keys are this
+    // account's; they shrink to the same hashed marker as in step 2, the rest of the document stays.
+    const boundMail = uidBind.exists ? normMail(uidBind.data().email) : null;
+    if (boundMail && boundMail !== mail) {
+      const boundOrder = String(uidBind.data().orderId);
+      const otherRef = db.collection('plugin_licenses').doc(boundMail);
+      const other = await otherRef.get();
+      const od = other.exists ? other.data() || {} : {};
+      if (od.orders?.[boundOrder]) {
+        markerFor(boundMail).orders = { ...(markerFor(boundMail).orders || {}), [boundOrder]: keptOrder(od.orders[boundOrder]) };
+        const orders = { ...od.orders };
+        delete orders[boundOrder];
+        const licences = Object.fromEntries(Object.entries(od.licenses || {}).filter(([, l]) => String(l?.order_id) !== boundOrder));
+        if (!Object.keys(orders).length && !Object.keys(licences).length) planDelete(otherRef, 'plugin_licenses');
+        else await otherRef.set({ ...od, orders, licenses: licences });
+      }
+    }
     const purchaseMails = new Set();
     if (mail) purchaseMails.add(mail);
     if (uidBind.exists && normMail(uidBind.data().email)) purchaseMails.add(normMail(uidBind.data().email));
@@ -197,6 +218,15 @@ export function createAccountDeleter({ getAdmin, now = () => new Date().toISOStr
           for (const r of (await replies.where('authorId', '==', uid).get()).docs) planDelete(r.ref, 'forum_replies');
         }
       }
+    }
+
+    // 8. Tool credits: the balance, every ledger line of this account, and credits parked under its (verified) e-mail.
+    const creditRef = db.collection('credits').doc(uid);
+    if ((await creditRef.get()).exists) planDelete(creditRef, 'credits');
+    for (const d of (await db.collection('credit_ledger').where('uid', '==', uid).get()).docs) planDelete(d.ref, 'credit_ledger');
+    if (mail && emailOwned) {
+      const pendingRef = db.collection('pending_credits').doc(mail);
+      if ((await pendingRef.get()).exists) planDelete(pendingRef, 'pending_credits');
     }
 
     // Markers first, then the deletions.

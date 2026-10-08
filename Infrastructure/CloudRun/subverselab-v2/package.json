@@ -14,7 +14,8 @@
     "lint": "eslint src",
     "test:licence": "node scripts/test-launch-licence.js",
     "test:testers": "node scripts/test-testers.js",
-    "test:account": "node scripts/test-account-delete.js"
+    "test:account": "node scripts/test-account-delete.js",
+    "test:credits": "node scripts/test-credits.js"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +25,7 @@
     "express": "^5.2.1",
     "firebase": "^12.17.0",
     "firebase-admin": "^13.10.0",
+    "google-auth-library": "^10.9.1",
     "@google-cloud/storage": "^7.22.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
