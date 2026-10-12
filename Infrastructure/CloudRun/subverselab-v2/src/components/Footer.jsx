@@ -37,7 +37,7 @@ export default function Footer() {
             SubverseLab
           </div>
           <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)', maxWidth: '360px', lineHeight: '1.6', margin: '0 0 24px' }}>
-            Free browser-based tools for music producers — arranging, generating, measuring, mixing and stem separation.
+            Plugins for macOS and Windows, and browser tools for music producers — arranging, measuring, mixing and stem separation.
           </p>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', opacity: 0.7 }}>
             © {new Date().getFullYear()} SubverseLab. All rights reserved.
@@ -76,12 +76,20 @@ export default function Footer() {
               Plugins
             </Link>
             <Link
-              to="/launch"
+              to="/sample-packs"
               style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
             >
-              Launch
+              Sample packs
+            </Link>
+            <Link
+              to="/launch2"
+              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
+            >
+              Plugin family
             </Link>
             <Link
               to="/loom"
@@ -124,9 +132,6 @@ export default function Footer() {
             >
               Cookie settings
             </button>
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', opacity: 0.7 }}>
-            Created for subverselab.com
           </div>
         </div>
       </div>

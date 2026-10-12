@@ -63,6 +63,12 @@ const PATHS = {
       <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.8H4.5Z" />
+      <path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
+    </>
+  ),
   close: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
 };
 

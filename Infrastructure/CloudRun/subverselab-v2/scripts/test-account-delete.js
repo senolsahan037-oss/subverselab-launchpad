@@ -89,6 +89,8 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
   .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
   .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
   .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
+  .replace("from './inbox.js';", `from '${url('inbox.js')}';`)
+  .replace("from './stats.js';", `from '${url('stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__acctTestApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__acctTestFirestore)')
@@ -155,6 +157,8 @@ function seed() {
   D.set('downloads/alice', { kubbe: { mac: { count: 2 } } });
   D.set('users/alice', { name: 'Alice' });
   D.set('launch2_uids/alice', { email: 'alice@example.com', orderId: '2002' });
+  D.set('orders_by_uid/alice', { orders: { 1003: { product: 'koro', status: 'paid', refunded: false, created: '2026-10-03T09:00:00Z', email: 'alice@example.com' } } });
+  D.set('orders_by_uid/bob', { orders: { 1500: { product: 'taban', status: 'paid', refunded: false, created: '2026-10-08T09:00:00Z', email: 'bob@example.com' } } });
   D.set('launch2_purchases/alice@example.com', { email: 'alice@example.com', orderId: '2002', paidAt: '2026-10-02', refunded: false, overCap: false, seat: true, uid: 'alice' });
   D.set('launch2_seats/alice@example.com', { orderId: '2002', at: '2026-10-02' });
   D.set('tester_applications/alice@example.com', { email: 'alice@example.com', uid: 'alice', answer: 'Alice answer', status: 'approved' });
@@ -177,6 +181,9 @@ function seed() {
   D.set('credits/bob', { balance: 5, granted: 5, spent: 0 });
   D.set('credit_ledger/purchase_9', { uid: 'bob', delta: 5, reason: 'purchase', orderId: '9' });
   D.set('pending_credits/bob@example.com', { email: 'bob@example.com', orders: {} });
+  D.set('inbox/alice/messages/welcome', { title: 'Welcome to SubverseLab', body: 'Account, downloads and licence keys.', link: '/account', kind: 'welcome', createdAt: '2026-10-05T10:00:00Z', read: false });
+  D.set('inbox/alice/messages/order-1003', { title: 'Your KORO is ready', body: 'Find the download under Account.', link: '/account#koro', kind: 'order', createdAt: '2026-10-05T11:00:00Z', read: true });
+  D.set('inbox/bob/messages/welcome', { title: 'Welcome to SubverseLab', body: 'Account, downloads and licence keys.', link: '/account', kind: 'welcome', createdAt: '2026-10-05T10:00:00Z', read: false });
   // bob: must survive untouched
   D.set('launch_claims/uid:bob', { key: 'SVL-BBBB', email: 'bob@example.com' });
   D.set('launch_claims/email:bob@example.com', { key: 'SVL-BBBB', uid: 'bob' });
@@ -230,9 +237,10 @@ await test('deletion removes every personal document, keeps only hashed markers,
   assert.equal(out.status, 200, JSON.stringify(out.body));
   for (const gone of [
     'launch_claims/uid:alice', 'launch_claims/email:alice@example.com', 'launch_keys/SVL-AAAA', 'plugin_licenses/alice@example.com',
-    'downloads/alice', 'users/alice', 'launch2_uids/alice', 'launch2_purchases/alice@example.com', 'launch2_seats/alice@example.com',
+    'downloads/alice', 'users/alice', 'orders_by_uid/alice', 'launch2_uids/alice', 'launch2_purchases/alice@example.com', 'launch2_seats/alice@example.com',
     'tester_applications/alice@example.com', 'launch2_testers/alice@example.com', 'tester_reports/r1', 'reports/rp1', 'reports/rp2', 'reports_archive/ar1', 'reports_archive/ar2', 'forum_topics_archive/ft1',
     'forum_topics/t1', 'forum_topics/t1/replies/x1', 'forum_topics/t2/replies/y1',
+    'inbox/alice/messages/welcome', 'inbox/alice/messages/order-1003',
   ]) assert.ok(!D.has(gone), `${gone} should be gone`);
   assert.deepEqual(clone([D.get('launch/counter'), D.get('launch2/counter'), D.get('launch2/testers')]), counters);
   erasedHash = emailMarker('alice@example.com');
@@ -247,6 +255,8 @@ await test('deletion removes every personal document, keeps only hashed markers,
   assert.equal(kept.seat.orderId, '2002');
   assert.ok(!dump().toLowerCase().includes('alice'), 'no trace of the name or address is left anywhere');
   assert.ok(state.deletedUsers.has('alice'));
+  assert.ok(D.has('inbox/bob/messages/welcome'), "another account's inbox stays");
+  assert.ok(D.has('orders_by_uid/bob'), "another account's order index stays");
   assert.deepEqual(clone([...D.entries()].filter(([p]) => /bob/i.test(p) || p === 'forum_topics/t2' || p === 'forum_topics/t2/replies/y2')), bobBefore, 'other people keep their data');
 });
 

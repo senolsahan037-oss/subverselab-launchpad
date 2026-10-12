@@ -35,6 +35,7 @@ function fakeFirestore() {
     get: async () => snap(path),
     set: async (data, options) => docs.set(path, options?.merge ? merge(docs.get(path), data) : clone(data)),
     delete: async () => docs.delete(path),
+    collection: (sub) => collection(`${path}/${sub}`),
   });
   const query = (name, order, max) => ({
     orderBy: (field, dir) => query(name, { field, dir }, max),
@@ -46,10 +47,11 @@ function fakeFirestore() {
       return { docs: paths.map(snap) };
     },
   });
+  const collection = (name) => ({ doc: (id = `auto${++autoId}`) => ref(`${name}/${id}`), ...query(name) });
   let queue = Promise.resolve();
   return {
     docs,
-    collection: (name) => ({ doc: (id = `auto${++autoId}`) => ref(`${name}/${id}`), ...query(name) }),
+    collection,
     runTransaction(callback) {
       const run = queue.then(async () => {
         const writes = [];
@@ -111,7 +113,7 @@ const state = { db: fakeFirestore(), storage: fakeStorage() };
 state.auth = { verifyIdToken: async (token) => {
   if (!token.startsWith('valid-')) throw new Error('invalid token');
   const uid = token.slice(6);
-  return { uid, email: uid === 'owner' ? 'info@subverselab.com' : `${uid}@Example.com`, email_verified: !uid.startsWith('unv-') };
+  return { uid, email: uid === 'owner' ? 'info@subverselab.com' : uid.includes('nomx') ? `${uid}@nomx.invalid` : `${uid}@Example.com`, email_verified: !uid.startsWith('unv-') };
 } };
 state.FieldValue = { serverTimestamp: () => '<server-time>' };
 globalThis.__testersTestAdminApp = { initializeApp() {}, applicationDefault() {}, getApps: () => [] };
@@ -131,6 +133,8 @@ const transformed = serverSource
   .replace("from './entitlements.js';", `from '${entitlementsUrl}';`)
   .replace("import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';", `import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from '${accountUrl}';`)
   .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
+  .replace("from './inbox.js';", `from '${pathToFileURL(resolve(root, 'inbox.js')).href}';`)
+  .replace("from './stats.js';", `from '${pathToFileURL(resolve(root, 'stats.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__testersTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__testersTestAdminFirestore)')
@@ -138,6 +142,12 @@ const transformed = serverSource
   .replace("import('@google-cloud/storage')", 'Promise.resolve(globalThis.__testersTestStorage)')
   .replace(/const PORT = process\.env\.PORT \|\| 8080;[\s\S]*?\n\);\s*$/, '');
 const server = await import(`data:text/javascript;base64,${Buffer.from(transformed).toString('base64')}`);
+// No test touches DNS: every domain has a mail server unless it is nomx.invalid.
+const entitlements = await import(entitlementsUrl);
+entitlements.setMxResolver(async (domain) => {
+  if (domain === 'nomx.invalid') throw Object.assign(new Error('queryMx ENODATA'), { code: 'ENODATA' });
+  return [{ exchange: `mx.${domain}`, priority: 10 }];
+});
 process.env.DOWNLOAD_TICKET_SECRET = SECRET;
 const WH_SECRET = 'local-webhook-secret';
 process.env.LEMONSQUEEZY_WEBHOOK_SECRET = WH_SECRET;
@@ -206,7 +216,7 @@ const ticket = (uid, slug = 'koro') => as(uid, 'POST', '/api/download/ticket', {
 const approve = async (uid) => { await apply(uid); return decide('owner', `${uid}@example.com`, 'approve'); };
 const claimed = () => state.db.docs.get('launch2/counter').claimed;
 
-await test('apply validation: bad OS, short answer, unverified e-mail, bad DAW/format/link/years', async () => {
+await test('apply validation: bad OS, short answer, bad DAW/format/link/years; no proof of the e-mail needed, but it must be able to receive mail', async () => {
   resetDb();
   assert.equal((await apply('a1', { os: 'Linux' })).response.status, 400);
   assert.equal((await apply('a2', { answer: 'too short' })).response.status, 400);
@@ -218,10 +228,27 @@ await test('apply validation: bad OS, short answer, unverified e-mail, bad DAW/f
   assert.equal((await apply('a8', { link: 'javascript:alert(1)' })).response.status, 400);
   assert.equal((await apply('a9', { years: 'lots' })).response.status, 400);
   assert.equal((await apply('a10', { osVersion: '   ' })).response.status, 400);
-  assert.equal((await apply('unv-bob')).response.status, 403);
+  // No verification mail any more (owner 9 Oct): an unproven password account may apply; an address without a mail server may not.
+  assert.equal((await apply('unv-bob')).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/unv-bob@example.com').status, 'pending');
+  const nomx = await apply('unv-nomx');
+  assert.equal(nomx.response.status, 403); assert.match(nomx.body.error, /cannot receive mail/);
+  state.db.docs.set('bounced_emails/bounced-c@example.com', { at: '2026-10-05T00:00:00Z' });
+  assert.equal((await apply('bounced-c')).response.status, 403);
+  assert.equal(state.db.docs.has('tester_applications/unv-nomx@nomx.invalid'), false);
+  assert.equal(state.db.docs.has('tester_applications/bounced-c@example.com'), false);
   assert.equal((await apply(undefined)).response.status, 401);
-  assert.equal(state.db.docs.has('tester_applications/unv-bob@example.com'), false);
   assert.equal(state.db.docs.has('tester_applications/a1@example.com'), false);
+});
+
+await test('apply stores the optional "heard" line, clamped to 120 characters', async () => {
+  resetDb();
+  assert.equal((await apply('h1', { heard: 'From a friend' })).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/h1@example.com').heard, 'From a friend');
+  assert.equal((await apply('h2', { heard: 'z'.repeat(500) })).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/h2@example.com').heard.length, 120);
+  assert.equal((await apply('h3')).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/h3@example.com').heard, '');
 });
 
 await test('apply clamps: answer capped at 1200, years at 60, link optional, e-mail stored lower-case', async () => {

@@ -4,17 +4,20 @@ import ToolsStrip from './ToolsStrip';
 import PageMeta from './PageMeta';
 import BuyButton from './BuyButton';
 import DownloadButtons from './DownloadButtons';
-import { FORMATS } from '../data/plugins';
+import PluginDemos from './PluginDemos';
+import FamilyOffer from './FamilyOffer';
+import { FORMATS, TRUST_LINE_FREE, ACTIVATION_LINE_FREE } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 
 /*  A free plugin's page (/plugins/taban), driven by its entry in FREE_PLUGINS (src/data/plugins.js).
  *
- *  Same look as PluginPage, without the launch, price and family logic: the plugin is free forever.
+ *  Same look as PluginPage, without the launch and price logic: the plugin is free forever.
+ *  The paid family block (FamilyOffer) sits below the download section, never in the hero.
  *  "Get it free" opens a $0 Lemon Squeezy checkout (an e-mail address, no card). That order is what
  *  opens the download: the buttons below use the 'free' ticket route (server.js), and the same
  *  download sits on /account.
  */
-export const FREE_NOTE = 'Free, forever. The checkout asks for an e-mail address, no card. The download then appears here and on your account page.';
+export const FREE_NOTE = 'Free, forever. Sign in first, so the order lands on your account; the checkout asks only for an e-mail address, no card. The download then appears here and on your Account page.';
 
 export default function FreePluginPage({ plugin }) {
   const [modeKey, setModeKey] = useState(plugin.defaultMode);
@@ -80,6 +83,8 @@ export default function FreePluginPage({ plugin }) {
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <p className="plugin-lead">{plugin.intro}</p>
 
+        <PluginDemos plugin={plugin} />
+
         {plugin.sections.map((s) => (
           <section key={s.heading} className="plugin-section">
             <h2>{s.heading}</h2>
@@ -100,21 +105,34 @@ export default function FreePluginPage({ plugin }) {
           {plugin.controlsNote && <p style={{ marginTop: '16px' }}>{plugin.controlsNote}</p>}
         </section>
 
+        {plugin.notYet.length > 0 && (
+          <section className="plugin-section">
+            <h2>Not done yet</h2>
+            <ul>
+              {plugin.notYet.map((t) => <li key={t}>{t}</li>)}
+            </ul>
+          </section>
+        )}
+
         <section className="plugin-section">
           <h2>Get it free</h2>
           <p>{FREE_NOTE}</p>
           <div className="plugin-buy-row">
             <BuyButton slug={plugin.slug} label={getLabel} />
           </div>
+          <p className="plugin-trust">{TRUST_LINE_FREE}</p>
         </section>
 
         <section className="plugin-section">
           <h2>Download</h2>
           <p>
-            Got it free already? Sign in with the e-mail you used at the checkout and download. Installation steps are in the manual.
+            Got it free already? Sign in and download. Used another e-mail at the checkout? Claim the order on your Account page with the order number from the receipt. {ACTIVATION_LINE_FREE} Installation steps are in the manual.
           </p>
           <DownloadButtons slug={plugin.slug} launchId="free" paid />
         </section>
+
+        {/* The paid family, shown after the free download so the free plugin stays the page's one offer up top. */}
+        <FamilyOffer style={{ marginTop: '8px', marginBottom: '8px' }} />
 
         {plugin.manual && (
           <section className="plugin-section">

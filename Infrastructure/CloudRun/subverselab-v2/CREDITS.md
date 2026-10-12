@@ -10,8 +10,9 @@ The online tools keep their daily free use; a tool service asks for credits only
 | `splitter` | 50 |
 | `visualizer` | 50 |
 | `mixcheck` | 100 |
+| `arrangement-gps` | 25 |
 
-Costs are fixed in `credits.js` (`CREDIT_COSTS`); any amount in a request is ignored. Sensei stays free (no call). Arrangement GPS: later.
+Costs are fixed in `credits.js` (`CREDIT_COSTS`); any amount in a request is ignored. Sensei stays free (no call). Arrangement GPS spends only (no `release`): the arrangement is built in the browser after the spend, so nothing can fail afterwards.
 
 ## Calling convention (server to server only)
 
@@ -99,7 +100,7 @@ async function spend(tool, jobId, userIdToken) {
 
 | Name | Value |
 |---|---|
-| `CREDITS_ALLOWED_CALLERS` | comma list of the tool services' service-account e-mails (Splitter, Visualizer, Mix Check runtime SAs). Empty or unset = API off (503). |
+| `CREDITS_ALLOWED_CALLERS` | comma list of the tool services' service-account e-mails (Splitter, Visualizer, Mix Check, Arrangement GPS runtime SAs). Empty or unset = API off (503). |
 | `CREDITS_AUDIENCE` | optional; default `https://subverselab.com`. Must equal the `audience` the tools put in the metadata request. |
 
 No secrets. The tool services need no extra role to fetch an identity token for their own service account.

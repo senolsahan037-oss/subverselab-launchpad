@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import BuyButton from './BuyButton';
+import LaunchPrice from './LaunchPrice';
 import {
-  ALL_PLUGINS, PRICES, HERO_IMG, SHOWCASE_SLUGS, FAMILY_NAME, FAMILY_PRICE, FAMILY_REGULAR_PRICE, FAMILY_PLUGINS, familyOfferEndLabel,
+  ALL_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, PRICES, HERO_IMG, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_REGULAR_PRICE, FAMILY_PLUGINS, familyOfferEndLabel, line2AvailableLine,
+  launchPriceActive, launchEndLabel, currentPrice,
 } from '../data/plugins';
 import { useFamilyLive } from '../hooks/useFamilyLive';
 
@@ -13,7 +16,11 @@ export default function PluginShowcase() {
   const familyLive = useFamilyLive();
   const slides = [
     ...(familyLive ? [{ key: 'family', family: true }] : []),
+    // ELEK right behind the family offer (owner, 12 Oct), then the seven, the free two and the coming ones
+    ...SHOWCASE_SOLO_SLUGS.map((slug) => ({ key: slug, solo: true, plugin: SOLO_PLUGINS.find((p) => p.slug === slug) })),
     ...SHOWCASE_SLUGS.map((slug) => ({ key: slug, plugin: ALL_PLUGINS.find((p) => p.slug === slug) })),
+    ...SHOWCASE_FREE_SLUGS.map((slug) => ({ key: slug, free: true, plugin: FREE_PLUGINS.find((p) => p.slug === slug) })),
+    ...SHOWCASE_SOON_SLUGS.map((slug) => ({ key: slug, soon: true, plugin: LINE2_PLUGINS.find((p) => p.slug === slug) })),
   ];
   const count = slides.length;
   const [index, setIndex] = useState(0);
@@ -62,7 +69,7 @@ export default function PluginShowcase() {
       onKeyDown={onKeyDown} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
     >
       <div className="showcase-inner">
-        <p className="showcase-eyebrow">Out now &middot; seven plugins</p>
+        <p className="showcase-eyebrow">Out now &middot; seven plugins, two free ones and a stem separation app &middot; two more coming soon</p>
         <div className="showcase-stage">
           {slides.map((sl, i) => {
             const slug = sl.family ? 'family' : sl.plugin.slug;
@@ -85,22 +92,51 @@ export default function PluginShowcase() {
                         <Link to="/plugins" className="btn btn-outline showcase-see">See all plugins</Link>
                       </div>
                     </>
+                  ) : sl.solo ? (
+                    <>
+                      <h2 className="showcase-name">{sl.plugin.displayName}</h2>
+                      <p className="showcase-kind">{sl.plugin.kind}</p>
+                      <p className="showcase-line">{sl.plugin.tagline}</p>
+                      {/* as the family slide: struck regular price and the launch price, the end date on its own line */}
+                      <p className="showcase-price"><LaunchPrice slug={slug} note={false} /></p>
+                      {launchPriceActive(slug) && <p className="showcase-note">Launch price until {launchEndLabel(slug)}</p>}
+                      <div className="showcase-actions">
+                        <Link to={sl.plugin.path} className="btn btn-outline showcase-see">See {sl.plugin.displayName}</Link>
+                        <BuyButton slug={slug} label={`Buy \u2014 $${currentPrice(slug)}`} className="btn btn-primary showcase-buy" />
+                      </div>
+                    </>
+                  ) : sl.soon ? (
+                    <>
+                      <h2 className="showcase-name">{sl.plugin.displayName}</h2>
+                      <p className="showcase-kind">{sl.plugin.kind}</p>
+                      <p className="showcase-line">{sl.plugin.tagline}</p>
+                      <p className="showcase-price">{line2AvailableLine(sl.plugin)}</p>
+                      <div className="showcase-actions">
+                        <Link to={sl.plugin.path} className="btn btn-outline showcase-see">See {sl.plugin.displayName}</Link>
+                      </div>
+                    </>
                   ) : (
                     <>
                       <h2 className="showcase-name">{sl.plugin.displayName}</h2>
                       <p className="showcase-kind">{sl.plugin.kind}</p>
                       <p className="showcase-line">{sl.plugin.tagline}</p>
-                      <p className="showcase-price">${PRICES[slug]}</p>
-                      <div className="showcase-actions">
-                        <Link to={sl.plugin.path} className="btn btn-outline showcase-see">See {sl.plugin.displayName}</Link>
-                        <BuyButton slug={slug} label={`Buy \u2014 $${PRICES[slug]}`} className="btn btn-primary showcase-buy" />
-                      </div>
+                      <p className="showcase-price">{sl.free ? 'Free' : `$${PRICES[slug]}`}</p>
+                      {sl.free ? (
+                        <div className="showcase-actions">
+                          <Link to={sl.plugin.path} className="btn btn-primary showcase-buy">Get {sl.plugin.displayName} free</Link>
+                        </div>
+                      ) : (
+                        <div className="showcase-actions">
+                          <Link to={sl.plugin.path} className="btn btn-outline showcase-see">See {sl.plugin.displayName}</Link>
+                          <BuyButton slug={slug} label={`Buy \u2014 $${PRICES[slug]}`} className="btn btn-primary showcase-buy" />
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
                 <div className="showcase-media">
                   <img src={src} width={w} height={h} alt={sl.family ? 'The seven SubverseLab plugins' : `${sl.plugin.displayName} front panel`}
-                       loading={i === 0 ? 'eager' : 'lazy'} decoding="async" {...(i === 0 ? { fetchpriority: 'high' } : {})} draggable="false" />
+                       loading={i === 0 ? 'eager' : 'lazy'} decoding="async" {...(i === 0 ? { fetchPriority: 'high' } : {})} draggable="false" />
                 </div>
               </div>
             );

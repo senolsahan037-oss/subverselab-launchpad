@@ -190,6 +190,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
           description={product.description}
           path={`/tools/${product.slug || product.id}`}
           image={product.coverImage}
+          robots="noindex,follow"
         />
         <Link to="/" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>← Back to Tools</Link>
         <h1 style={{ fontSize: '2.2rem', fontWeight: '800', margin: '20px 0 8px' }}>{product.title}</h1>
@@ -207,7 +208,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
           {hasGuide && <Link to={`/learn/${product.id}`} className="btn btn-outline">Read the guide</Link>}
         </div>
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '16px' }}>
-          Free account — no payment, no card.
+          Free account — no payment, no card. Where a tool has a daily limit, credits from any plugin purchase pay for more.
         </p>
       </div>
     );
@@ -220,6 +221,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
           title={`${product.title} | SubverseLab`}
           description={product.description}
           path={`/tools/${product.slug || product.id}`}
+          robots="noindex,follow"
         />
         <h2 style={{ marginBottom: '12px' }}>{product.title}</h2>
         <p style={{ color: 'var(--color-text-muted)', marginBottom: '32px' }}>
@@ -239,6 +241,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
         description={product.description}
         path={`/tools/${product.slug || product.id}`}
         image={product.coverImage}
+        robots="noindex,follow"
       />
       <div style={{
         padding: '12px 24px', borderBottom: '1px solid var(--color-border)',

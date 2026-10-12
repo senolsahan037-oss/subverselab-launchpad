@@ -210,7 +210,7 @@ export default function ForumPage({ user, onLoginClick }) {
 
   return (
     <div className="container forum-page">
-      <PageMeta title="SubverseLab Forum" description="Ask questions, share production knowledge, and get support for SubverseLab tools." path="/forum" />
+      <PageMeta title="Forum | SubverseLab" description="Questions and answers about SubverseLab plugins and browser tools, from producers and from us." path="/forum" />
       <div className="forum-heading"><span className="forum-category">COMMUNITY Q&amp;A</span><h1>SubverseLab Forum</h1><p>Ask a clear question, share what you tried, and add an answer when you know one.</p></div>
       <div className="forum-tabs" aria-label="Forum views"><button className={view === 'all' ? 'active' : ''} onClick={() => setView('all')}>General forum</button>{user && <button className={view === 'mine' ? 'active' : ''} onClick={() => setView('mine')}>My topics</button>}</div>
       {loadError && <div className="forum-error" role="alert">{loadError} <button className="link-button" onClick={loadTopics}>Retry</button></div>}

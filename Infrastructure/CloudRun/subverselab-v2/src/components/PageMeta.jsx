@@ -9,7 +9,7 @@ import { SITE_URL } from '../data/siteMeta';
 // last page set — which is why navigating from a guide back to the storefront
 // left "Arrangement GPS | SubverseLab" in the tab until a full reload. The
 // prerendered HTML was always correct; only client-side navigation drifted.
-export default function PageMeta({ title, description, path, image, noIndex = false }) {
+export default function PageMeta({ title, description, path, image, noIndex = false, robots }) {
   const canonical = path ? `${SITE_URL}${path}` : undefined;
   return (
     <Helmet>
@@ -24,6 +24,10 @@ export default function PageMeta({ title, description, path, image, noIndex = fa
           indexing; robots.txt disallows them too, but a crawler that reaches
           them by another route should be told plainly. */}
       {noIndex && <meta name="robots" content="noindex, nofollow" />}
+      {/* Public pages kept out of search results whose links may still be followed
+          (Tool Room, matching scripts/prerender.js). main.jsx removes the
+          prerendered tag on boot, so the live page must set it again. */}
+      {!noIndex && robots && <meta name="robots" content={robots} />}
     </Helmet>
   );
 }

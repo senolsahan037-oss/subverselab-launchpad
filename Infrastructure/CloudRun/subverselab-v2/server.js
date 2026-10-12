@@ -10,9 +10,11 @@ import { dirname, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
-import { ownedLaunch1Slugs, ownedOrderSlugs, purchasedByOrders, addYears, ALL_SLUGS, FREE_SLUGS, PLUGIN_SLUGS, UPDATE_YEARS, ADMIN_EMAILS, ADMIN_PREVIEW_KEY, isAdminPreview } from './entitlements.js';
+import { holdsLaunch1Claim, holdsLaunch1UidClaim, addressExists, addressProblem, LAUNCH1_SLUGS, ownedOrderSlugs, purchasedByOrders, purchasedByUidOrders, ownedUidOrderSlugs, uidHadOrderFor, uidOrderEntry, ownedFromOrders, ORDERS_BY_UID, readUidOrders, addYears, ALL_SLUGS, FREE_SLUGS, SOLO_SLUGS, PLUGIN_SLUGS, UPDATE_YEARS, ADMIN_EMAILS, ADMIN_PREVIEW_KEY, isAdminPreview } from './entitlements.js';
 import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
+import { addMessage, listMessages, markRead, welcomeMessage, orderMessage } from './inbox.js';
 import { createCreditsService, orderAmount, CREDIT_COSTS } from './credits.js';
+import { createHitCounter, computeStats } from './stats.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = join(__dirname, 'dist');
@@ -105,7 +107,7 @@ app.use((req, res, next) => {
      LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID     the $19.99 plugin-family bundle, seven products (either one matches)
      LS_BUNDLE4_PRODUCT_ID / LS_BUNDLE4_VARIANT_ID   old names of the same two settings, still accepted
      LS_PRODUCT_SLUGS   "productId:slug,…": which Lemon Squeezy product opens which plugin. A paid single order opens
-                        exactly the plugin named here. Slugs: kubbe, kaset, koro, yanki, hava, mihenk, tutkal (singles), taban and alev (free, $0 products),
+                        exactly the plugin named here. Slugs: kubbe, kaset, koro, yanki, hava, mihenk, tutkal (singles), elek (sold on its own, outside the family), taban and alev (free, $0 products),
                         bundle (the old $15 KUBBE + KASET order: opens both), family (the $19.99 family, informational:
                         its access comes from LS_FAMILY_PRODUCT_ID / LS_FAMILY_VARIANT_ID). Example:
                         "1402269:kubbe,1402277:kaset,1402289:bundle,1414121:family,AAA:koro,BBB:yanki,CCC:hava,DDD:tutkal,EEE:mihenk"
@@ -252,16 +254,13 @@ async function launch2UidStanding(admin, uid) {
 // `decoded` is the verified ID token. Rules:
 //  1. a paid order bound to this uid opens it, verified e-mail or not (the
 //     account that paid is the account that clicked Buy);
-//  2. otherwise the e-mail-matched purchase / tester entry counts only when the
-//     e-mail is verified (or a federated sign-in such as Google);
-//  3. an unverified account with no uid-bound paid order gets 'unverified'.
-// A refunded / oversold uid-bound order is reported as such, never as 'unverified'.
-async function launch2Access(admin, decoded) {
+//  2. otherwise the e-mail-matched purchase / tester entry counts, but ONLY for a proven e-mail (Google sign-in or
+//     email_verified): nobody can prove a password address any more, so for the rest an order must be bound to the
+//     uid (or claimed with its order number). `proven` is passed explicitly only to ask "would the e-mail alone open it?".
+async function launch2Access(admin, decoded, proven = emailProven(decoded)) {
   if (isAdminPreview(decoded)) return 'paid'; // admin preview: behaves like a family buyer, nothing is stored
   const uidStanding = await launch2UidStanding(admin, decoded.uid);
-  if (uidStanding === 'paid') return uidStanding;
-  const verified = !emailVerificationRequired(decoded) || decoded.email_verified === true;
-  if (!verified) return uidStanding === 'none' ? 'unverified' : uidStanding;
+  if (uidStanding === 'paid' || !proven) return uidStanding;
   const standing = launch2Standing(await launch2Purchase(admin, decoded.email));
   if (standing === 'paid') return standing;
   const mail = launch2Email(decoded.email);
@@ -270,12 +269,10 @@ async function launch2Access(admin, decoded) {
   return standing === 'none' ? uidStanding : standing;
 }
 const launch2Open = (standing) => standing === 'paid' || standing === 'tester';
-const launch2Denied = (standing) => standing === 'unverified'
-  ? { error: 'Verify your e-mail address first' }
-  : standing === 'oversold'
+const launch2Denied = (standing) => standing === 'oversold'
   ? { error: 'The 1,000 seats were already taken when your payment arrived — your order will be refunded' }
   : { error: 'Purchase required' };
-const launch2DeniedStatus = (standing) => standing === 'unverified' ? 403 : 402;
+const launch2DeniedStatus = () => 402;
 
 async function recordLaunch2Order(admin, { email, uid, orderId, paidAt, amount = null }) {
   const { db } = admin;
@@ -353,12 +350,13 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   const { slug, platform } = req.body || {};
   // 'free' (download ticket only): the free plugins (FREE_SLUGS). Only an order for that plugin, a $0 one included,
   // opens them; no seat, no counter claim. The other launch routes do not know 'free'.
-  const launchId = req.body?.launchId === 'free' ? 'free' : validLaunchId(req.body?.launchId) || 'launch';
-  // launch2: the verification rule lives in launch2Access (a uid-bound paid order needs none).
-  // An e-mail/password account must have verified its address before anything is handed out (before any claim or entitlement logic).
-  if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+  // 'solo' (download ticket only): products sold on their own outside the family (SOLO_SLUGS, ELEK). Only a paid, non-refunded
+  // order for that exact product opens it; the family, a tester seat and the admin preview do not.
+  const launchId = req.body?.launchId === 'free' ? 'free' : req.body?.launchId === 'solo' ? 'solo' : validLaunchId(req.body?.launchId) || 'launch';
+  // No e-mail verification (owner 9 Oct): the only e-mail rule is addressExists (not bounced, domain has a mail server).
+  try { if (!(await requireDeliverable(admin, decoded, res))) return; } catch (err) { return res.status(503).json({ error: 'Download service unavailable' }); }
   const launchService = launches[launchId];
-  const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk', 'tutkal'] : launchId === 'free' ? FREE_SLUGS : ['kubbe', 'kaset'];
+  const launchSlugs = launchId === 'launch2' ? ['koro', 'yanki', 'hava', 'mihenk', 'tutkal'] : launchId === 'free' ? FREE_SLUGS : launchId === 'solo' ? SOLO_SLUGS : ['kubbe', 'kaset'];
   if (!launchSlugs.includes(slug) || !['mac', 'win'].includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
   try {
     // Launch 2 is paid: the seat was claimed by the payment webhook, so here
@@ -368,14 +366,25 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
       const standing = await launch2Access(admin, decoded);
       if (!launch2Open(standing)) {
         // Not a family buyer or tester: a paid single order for exactly this plugin still opens it.
-        const singles = await withTimeout(ownedOrderSlugs(admin, decoded.email), 8000);
-        if (!singles.includes(slug)) return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
+        const singles = await withTimeout(ownedSlugsFor(admin, decoded), 8000);
+        if (!singles.includes(slug)) {
+          if (await withTimeout(emailOnlyOpens(admin, decoded, slug, launchId), 8000)) return res.status(403).json({ error: CLAIM_HINT });
+          return res.status(launch2DeniedStatus(standing)).json(launch2Denied(standing));
+        }
       }
     }
     // A free plugin opens for the e-mail that placed a $0 order for it (Lemon Squeezy, no card). Nothing else opens it.
     if (launchId === 'free') {
-      const owned = await withTimeout(ownedOrderSlugs(admin, decoded.email), 8000);
+      const owned = await withTimeout(ownedSlugsFor(admin, decoded), 8000);
+      if (!owned.includes(slug) && await withTimeout(emailOnlyOpens(admin, decoded, slug, launchId), 8000)) return res.status(403).json({ error: CLAIM_HINT });
       if (!owned.includes(slug)) return res.status(402).json({ error: 'Get it free first: the checkout takes an e-mail address, no card.' });
+    }
+    if (launchId === 'solo') {
+      const owned = await withTimeout(ownedSlugsFor(admin, decoded), 8000);
+      if (!owned.includes(slug)) {
+        if (await withTimeout(emailOnlyOpens(admin, decoded, slug, launchId), 8000)) return res.status(403).json({ error: CLAIM_HINT });
+        return res.status(402).json({ error: 'Buy this app to download it.' });
+      }
     }
     const manifest = await withTimeout(downloadManifest(), 8000);
     const file = manifest?.[slug]?.files?.[platform];
@@ -386,10 +395,16 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
       // are gone the room is a shop: only a paid, non-refunded order for this
       // plugin (or the bundle) opens it — an earlier free download does not.
       const { claimed, total } = await withTimeout(launchService.readCounter(), 8000);
-      if (claimed >= total) {
-        const owned = await withTimeout(ownedLaunch1Slugs(admin, decoded.email), 8000);
-        // The family bundle (paid, not refunded) also opens Kubbe and Kaset.
-        if (!owned.includes(slug) && !(await withTimeout(launch2Access(admin, decoded), 8000) === 'paid')) return res.status(402).json({ error: 'The free 1,000 are gone. Buy this plugin to download it.' });
+      // A free seat is minted only for a proven e-mail (an e-mail claim record could otherwise be taken for someone else's
+      // address); a non-proven account keeps what its uid already holds, like a gone-1,000 shop.
+      if (claimed >= total || !emailProven(decoded)) {
+        const owned = (await withTimeout(ownedSlugsFor(admin, decoded), 8000)).filter((s) => LAUNCH1_SLUGS.includes(s));
+        // The family bundle (paid, not refunded) also opens Kubbe and Kaset, and so does a claim among the first 1,000.
+        if (!owned.includes(slug) && !(await withTimeout(launch1ClaimFor(admin, decoded), 8000))
+          && !(await withTimeout(launch2Access(admin, decoded), 8000) === 'paid')) {
+          if (await withTimeout(emailOnlyOpens(admin, decoded, slug, launchId), 8000)) return res.status(403).json({ error: CLAIM_HINT });
+          return res.status(402).json({ error: claimed >= total ? 'The free 1,000 are gone. Buy this plugin to download it.' : 'Sign in with Google to take a free launch seat, or buy this plugin.' });
+        }
       } else {
         const claim = await withTimeout(launchService.claim({ uid: decoded.uid, email: decoded.email }), 15000);
         if (claim.status === 410) return res.status(410).json(claim.body);
@@ -437,17 +452,61 @@ function serviceDown(err) {
     || [4, 7, 10, 14, 16].includes(err?.code);
 }
 
-// Firebase already verifies the address for federated providers such as
-// Google. Requiring the password-provider flag for those accounts blocked the
-// launch download room after the payment-gate work. Password/email accounts
-// still need the normal verification link. So does a 'custom' sign-in: the
-// tool iframes sign in with a custom token from tool-auth-bridge whatever the
-// account's provider, and the token's email_verified (copied from the user
-// record) is the only proof of the address there. Without this an unverified
-// account opened a tool and claimed credits parked under its e-mail.
+// The one e-mail rule (owner 9 Oct, replaces e-mail verification): the address must be able to receive mail
+// (not in bounced_emails, domain has an MX record). Answers 403 and returns false when it cannot.
+const NO_MAIL_ERROR = 'This e-mail address cannot receive mail. Sign in with a working address.';
+async function requireDeliverable(admin, decoded, res) {
+  if (decoded.email && await addressExists(admin, decoded.email)) return true;
+  res.status(403).json({ error: NO_MAIL_ERROR });
+  return false;
+}
+
+// GET /api/email/check?email=  → 200 {ok:true} | 200 {ok:false, reason, error}. The sign-up form asks before it creates the
+// account, so a mistyped or non-existent address is refused with the reason shown inline. Same rule as requireDeliverable.
+// Public and rate-limited per IP. A failed lookup is a 503 and the form lets the sign-up go on.
+const emailCheckLimit = tokenBucket({ perMinute: 20 });
+const EMAIL_PROBLEMS = {
+  syntax: 'This does not look like an e-mail address.',
+  bounced: NO_MAIL_ERROR,
+  'no-mx': 'The domain of this e-mail address cannot receive mail. Check the spelling after the @.',
+};
+app.get('/api/email/check', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!emailCheckLimit(req.ip)) return res.status(429).json({ error: 'Too many requests — try again in a minute' });
+  try {
+    const reason = await withTimeout(addressProblem(await adminFirestore(), req.query.email), 8000);
+    return res.json(reason ? { ok: false, reason, error: EMAIL_PROBLEMS[reason] } : { ok: true });
+  } catch (err) {
+    return res.status(503).json({ error: 'E-mail check unavailable' });
+  }
+});
+
+// Proof of ownership is NOT the same as an address that exists. A Google sign-in is verified by the provider; a password
+// account needs email_verified (no mail is sent any more, so only old accounts have it); a 'custom' sign-in (the tool iframes,
+// custom token from tool-auth-bridge, 00200 rule) carries email_verified copied from the user record and is the only proof there.
+// emailProven() below is the one question the entitlement code asks.
 function emailVerificationRequired(decoded) {
   const provider = decoded?.firebase?.sign_in_provider;
   return provider === 'password' || provider === 'email' || provider === 'custom' || !provider;
+}
+// "Proven" e-mail (owner 9 Oct): a Google sign-in, or email_verified true (accounts that verified before the mail was dropped).
+// Nobody becomes proven any other way. A proven e-mail may also use what is matched ONLY by e-mail (orders, keys, tester entry,
+// parked credits, admin preview, tool custom-token sign-in); every other password account is limited to what is bound to its uid.
+function emailProven(decoded) {
+  return !emailVerificationRequired(decoded) || decoded.email_verified === true;
+}
+const CLAIM_HINT = 'This order is under your e-mail address but not on your account yet. Claim it with the order number from your receipt.';
+// Slugs of the orders this account may use: by e-mail AND uid when proven, by uid alone when not.
+const ownedSlugsFor = (admin, decoded) => emailProven(decoded) ? ownedOrderSlugs(admin, decoded.email, decoded.uid) : ownedUidOrderSlugs(admin, decoded.uid);
+const launch1ClaimFor = (admin, decoded) => emailProven(decoded) ? holdsLaunch1Claim(admin, decoded.uid, decoded.email) : holdsLaunch1UidClaim(admin, decoded.uid);
+// A non-proven account was refused: would its e-mail alone have opened this plugin? Then the answer is "claim it", not "buy it".
+async function emailOnlyOpens(admin, decoded, slug, launchId) {
+  if (emailProven(decoded)) return false;
+  if ((await ownedOrderSlugs(admin, decoded.email, decoded.uid)).includes(slug)) return true;
+  if (launchId === 'free' || launchId === 'solo') return false;
+  const standing = await launch2Access(admin, decoded, true);
+  if (standing === 'paid' || (standing === 'tester' && TESTER_PLUGINS.includes(slug))) return true;
+  return launchId === 'launch' && holdsLaunch1Claim(admin, decoded.uid, decoded.email);
 }
 
 // GET /api/launch2/status   Authorization: Bearer <Firebase ID token>
@@ -461,9 +520,8 @@ app.get('/api/launch2/status', async (req, res) => {
   try {
     const admin = await adminFirestore();
     const decoded = await admin.auth.verifyIdToken(token);
-    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    if (!(await requireDeliverable(admin, decoded, res))) return;
     const standing = await launch2Access(admin, decoded);
-    if (standing === 'unverified') return res.status(403).json(launch2Denied(standing));
     return res.json({ paid: standing === 'paid', tester: standing === 'tester', standing });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
@@ -486,10 +544,19 @@ async function launch2PurchaseFor(admin, decoded) {
   }
   return launch2Purchase(admin, decoded.email);
 }
+// A non-proven account (see emailProven) counts only what is bound to its uid (orders_by_uid, launch2_uids) plus its own
+// first-1,000 uid claim; what is matched only by e-mail waits for a claim with the order number.
 async function accountEntitlements(admin, decoded) {
-  const [bought, standing] = await Promise.all([purchasedByOrders(admin, decoded.email), launch2Access(admin, decoded)]);
+  const proven = emailProven(decoded);
+  const [bought, standing, launch1] = await Promise.all([
+    proven ? purchasedByOrders(admin, decoded.email, decoded.uid) : purchasedByUidOrders(admin, decoded.uid),
+    launch2Access(admin, decoded),
+    launch1ClaimFor(admin, decoded),
+  ]);
   const purchased = { ...bought };
   const owned = new Set(Object.keys(bought));
+  // One of the first 1,000: KUBBE + KASET stay on the account (no purchase date, so no updates line).
+  if (launch1) for (const slug of ['kubbe', 'kaset']) owned.add(slug);
   if (standing === 'paid') {
     const day = isAdminPreview(decoded) ? new Date().toISOString().slice(0, 10) : addYears((await launch2PurchaseFor(admin, decoded))?.paidAt, 0);
     for (const slug of ALL_SLUGS) {
@@ -517,12 +584,53 @@ app.get('/api/purchases/status', async (req, res) => {
   try {
     const admin = await adminFirestore();
     const decoded = await admin.auth.verifyIdToken(token);
-    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    if (!(await requireDeliverable(admin, decoded, res))) return;
+    const proven = emailProven(decoded);
     const { claimed, total } = await withTimeout(launch.readCounter(), 8000);
     const ent = await withTimeout(accountEntitlements(admin, decoded), 8000);
-    // Credits bought without an account id are parked under the checkout e-mail; this account owns that e-mail (verified above).
-    await withTimeout(credits.claimPending({ uid: decoded.uid, email: decoded.email }), 8000).catch((err) => console.error('credits claim:', err.message));
-    return res.json({ full: claimed >= total, owned: ent.owned, standing: ent.standing, purchased: ent.purchased, updatesUntil: ent.updatesUntil });
+    // Credits bought without an account id are parked under the checkout e-mail; only a proven e-mail may collect them.
+    if (proven) await withTimeout(credits.claimPending({ uid: decoded.uid, email: decoded.email }), 8000).catch((err) => console.error('credits claim:', err.message));
+    await sendWelcome(admin, decoded.uid);
+    return res.json({ full: claimed >= total, owned: ent.owned, standing: ent.standing, purchased: ent.purchased, updatesUntil: ent.updatesUntil, unverified: !proven });
+  } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+});
+
+// ---- Inbox: messages from the platform (inbox.js). Only the server writes them. ------------------------------------
+// The welcome message goes out the first time /api/purchases/status succeeds for an account. An inbox failure
+// never fails the request it rides on.
+async function sendWelcome(admin, uid) {
+  try { await withTimeout(addMessage(admin.db, uid, 'welcome', welcomeMessage), 5000); } catch (err) { console.error('inbox welcome:', err.message); }
+}
+
+// GET /api/inbox   Authorization: Bearer <Firebase ID token>  → {messages:[{id,title,body,link,kind,createdAt,read}], unread}
+// Latest 50, newest first. An unverified password account may read its inbox (it holds no licence key).
+app.get('/api/inbox', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  try {
+    const admin = await adminFirestore();
+    const decoded = await admin.auth.verifyIdToken(token);
+    return res.json(await withTimeout(listMessages(admin.db, decoded.uid), 8000));
+  } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+});
+
+// POST /api/inbox/read   {ids:[…]} or {all:true}   → {changed}
+app.post('/api/inbox/read', smallBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  try {
+    const admin = await adminFirestore();
+    const decoded = await admin.auth.verifyIdToken(token);
+    const changed = await withTimeout(markRead(admin.db, decoded.uid, { ids: req.body?.ids, all: req.body?.all === true }), 8000);
+    return res.json({ changed });
   } catch (err) {
     return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
   }
@@ -542,7 +650,9 @@ app.get('/api/purchases/licenses', async (req, res) => {
   try {
     const admin = await adminFirestore();
     const decoded = await admin.auth.verifyIdToken(token);
-    if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) return res.status(403).json({ error: 'Verify your e-mail address first' });
+    if (!(await requireDeliverable(admin, decoded, res))) return;
+    // A non-proven password account sees only the keys of orders bound to its uid (owner 9 Oct); nothing found by e-mail.
+    const unverified = !emailProven(decoded);
     const mail = String(decoded.email).trim().toLowerCase();
     if (mail.includes('/')) return res.json({ licenses: [] });
     // Admin preview: one family entry shaped like a real family key, plainly fake, never stored.
@@ -551,24 +661,38 @@ app.get('/api/purchases/licenses', async (req, res) => {
       updatesUntil: addYears(new Date().toISOString(), UPDATE_YEARS), key: ADMIN_PREVIEW_KEY, keyShort: null, status: 'active',
       activationLimit: 5, instancesCount: 0, orderId: null, created: null, preview: true,
     }] : [];
-    const docs = [(await withTimeout(admin.db.collection('plugin_licenses').doc(mail).get(), 8000)).data() || {}];
+    const docs = unverified ? [] : [(await withTimeout(admin.db.collection('plugin_licenses').doc(mail).get(), 8000)).data() || {}];
     const bound = launch2Uid(decoded.uid) ? await withTimeout(admin.db.collection('launch2_uids').doc(launch2Uid(decoded.uid)).get(), 8000) : null;
     const boundMail = bound?.exists ? launch2Email(bound.data().email) : null;
-    if (boundMail && boundMail !== mail) {
+    const familyBound = Boolean(boundMail) && (!unverified || await withTimeout(launch2UidStanding(admin, decoded.uid), 8000) === 'paid');
+    if (familyBound && (boundMail !== mail || unverified)) {
       const other = await withTimeout(admin.db.collection('plugin_licenses').doc(boundMail).get(), 8000);
       const od = other.exists ? other.data() : {};
       // Only the keys of the order that this uid is bound to.
       docs.push({ orders: od.orders || {}, licenses: Object.fromEntries(Object.entries(od.licenses || {}).filter(([, l]) => String(l?.order_id) === String(bound.data().orderId))) });
     }
+    // Orders bound to this uid (orders_by_uid), paid under any checkout e-mail: that e-mail's record is read for exactly those
+    // orders' keys. An unverified account gets only the live ones (paid, not refunded).
+    const uidOrders = Object.entries(await withTimeout(readUidOrders(admin, decoded.uid), 8000)).filter(([, o]) => o && o.email && !String(o.email).includes('/') && (!unverified || (o.status === 'paid' && !o.refunded)));
+    const fetched = new Map();
+    for (const [orderId, o] of uidOrders) {
+      if (!fetched.has(o.email)) fetched.set(o.email, (await withTimeout(admin.db.collection('plugin_licenses').doc(o.email).get(), 8000)).data() || {});
+      const od = fetched.get(o.email);
+      docs.push({ orders: od.orders || {}, licenses: Object.fromEntries(Object.entries(od.licenses || {}).filter(([, l]) => String(l?.order_id) === String(orderId))) });
+    }
     const orders = Object.assign({}, ...docs.map((d) => d.orders || {}));
-    const licenses = docs.flatMap((d) => Object.values(d.licenses || {}))
+    const seenKey = new Set();
+    const licenses = docs.flatMap((d) => Object.entries(d.licenses || {}).map(([id, l]) => ({ id, l })))
+      .filter(({ id, l }) => { const k = String(l?.license_id || id); if (seenKey.has(k)) return false; seenKey.add(k); return true; })
+      .map(({ l }) => l)
       .filter((l) => l && l.key && !l.disabled)
       .map((l) => ({
         id: String(l.license_id || ''),
         product: l.product || orders[l.order_id]?.product || null,
         productName: orders[l.order_id]?.product_name || null,
         purchased: purchaseDay(orders[l.order_id]?.created || l.created),
-        updatesUntil: addYears(orders[l.order_id]?.created || l.created, UPDATE_YEARS),
+        // Free plugins (FREE_SLUGS) get every update and show no end date: null, so the page renders no line.
+        updatesUntil: FREE_SLUGS.includes(l.product || orders[l.order_id]?.product) ? null : addYears(orders[l.order_id]?.created || l.created, UPDATE_YEARS),
         key: l.key,
         keyShort: l.key_short || null,
         status: l.status || null,
@@ -586,6 +710,95 @@ app.get('/api/purchases/licenses', async (req, res) => {
 
 const purchaseDay = (iso) => (Number.isNaN(Date.parse(iso || '')) ? null : addYears(iso, 0));
 
+// POST /api/orders/claim   Authorization: Bearer <Firebase ID token>   {orderNumber, email}  → 200 {slugs}
+// For an order placed without signing in (no uid on it, or a checkout e-mail that is not this account's). The order number is
+// printed only on the receipt sent to the checkout e-mail, so number + e-mail together are the proof. Binds the order and its
+// keys to the caller's uid, writes orders_by_uid/{uid} and, for the family, launch2_uids/{uid} (the webhook's binding rule).
+// Unverified password accounts may claim: what they get is exactly what a uid-bound order opens for them.
+// 404 not found (also a wrong e-mail), 402 refunded / not paid, 409 bound to another account, 429 after 5 tries per hour per uid.
+const CLAIMS_PER_HOUR = 5;
+const claimTries = new Map(); // uid -> timestamps (ms) of the attempts in the last hour
+function claimAllowed(uid, now = Date.now()) {
+  const recent = (claimTries.get(uid) || []).filter((t) => now - t < 3_600_000);
+  if (recent.length >= CLAIMS_PER_HOUR) { claimTries.set(uid, recent); return false; }
+  recent.push(now);
+  claimTries.set(uid, recent);
+  if (claimTries.size > 10_000) for (const [k, v] of claimTries) if (!v.some((t) => now - t < 3_600_000)) claimTries.delete(k);
+  return true;
+}
+async function claimOrder(admin, { uid, mail, number }) {
+  const { db } = admin;
+  return db.runTransaction(async (tx) => {
+    const licRef = db.collection('plugin_licenses').doc(mail);
+    const data = (await tx.get(licRef)).data() || {};
+    const found = Object.entries(data.orders || {}).find(([, o]) => o && String(o.order_number) === number);
+    if (!found) return { status: 404, error: 'No order with this number and e-mail was found. Use the order number and the e-mail address from your receipt.' };
+    const [orderId, order] = found;
+    if (order.refunded || order.status === 'refunded') return { status: 402, error: 'This order was refunded, so it cannot be claimed.' };
+    if (order.status !== 'paid') return { status: 402, error: 'This order is not paid yet.' };
+    if (order.uid && order.uid !== uid) return { status: 409, error: 'This order is already claimed by another account.' };
+    const family = order.product === 'family';
+    let purchaseRef = null, purchase = null, uidRef = null, bindFamily = false;
+    if (family) {
+      purchaseRef = db.collection('launch2_purchases').doc(mail);
+      uidRef = db.collection('launch2_uids').doc(uid);
+      const [purchaseSnap, uidSnap] = await Promise.all([tx.get(purchaseRef), tx.get(uidRef)]);
+      purchase = purchaseSnap.exists ? purchaseSnap.data() : null;
+      if (purchase && purchase.orderId === orderId) {
+        if (purchase.refunded) return { status: 402, error: 'This order was refunded, so it cannot be claimed.' };
+        if (purchase.uid && purchase.uid !== uid) return { status: 409, error: 'This order is already claimed by another account.' };
+        bindFamily = true;
+        // Same rule as recordLaunch2Order: a uid that already holds another live family order keeps it.
+        if (uidSnap.exists) {
+          const bound = uidSnap.data();
+          if (bound.orderId !== orderId && bound.email !== mail) {
+            const other = (await tx.get(db.collection('launch2_purchases').doc(bound.email))).data();
+            if (other && other.orderId === bound.orderId && !other.refunded) return { status: 409, error: 'This account already holds another family order.' };
+          }
+        }
+      }
+    }
+    tx.set(licRef, {
+      orders: { [orderId]: { uid } },
+      licenses: Object.fromEntries(Object.entries(data.licenses || {}).filter(([, l]) => l && String(l.order_id) === orderId).map(([id]) => [id, { uid }])),
+    }, { merge: true });
+    tx.set(db.collection(ORDERS_BY_UID).doc(uid), { orders: { [orderId]: uidOrderEntry(order, mail) } }, { merge: true });
+    if (bindFamily) {
+      tx.set(purchaseRef, { uid }, { merge: true });
+      tx.set(uidRef, { email: mail, orderId, at: purchase.paidAt });
+    }
+    return { status: 200, orderId, order, slugs: bindFamily ? [...ALL_SLUGS] : ownedFromOrders({ [orderId]: { ...order, uid } }) };
+  });
+}
+app.post('/api/orders/claim', smallBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!downloadLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first' });
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) { return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' }); }
+  const uid = launch2Uid(decoded.uid);
+  if (!uid) return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
+  if (!claimAllowed(uid)) return res.status(429).json({ error: 'Too many tries. Wait an hour and try again, or use “Report a problem” on this page.' });
+  const number = String(req.body?.orderNumber ?? '').trim().replace(/^#/, '');
+  const mail = launch2Email(req.body?.email);
+  if (!/^\d{1,12}$/.test(number)) return res.status(400).json({ error: 'Enter the order number from your receipt (digits only).' });
+  if (!mail || mail.length > 254 || !/^[^@\s]+@[^@\s]+$/.test(mail)) return res.status(400).json({ error: 'Enter the e-mail address you used at checkout.' });
+  try {
+    const out = await withTimeout(claimOrder(admin, { uid, mail, number }), 10000);
+    if (out.status !== 200) return res.status(out.status).json({ error: out.error });
+    // The same message the webhook writes (same id), so a claim after a bound webhook adds nothing twice.
+    try {
+      const o = out.order;
+      await withTimeout(addMessage(admin.db, uid, `order-${out.orderId}`, orderMessage(o.product, { orderNumber: o.order_number, created: o.created, free: o.amount_usd_cents === 0 || o.total === 0 })), 5000);
+    } catch (err) { console.error('inbox claim message:', err.message); }
+    return res.json({ slugs: out.slugs });
+  } catch (err) {
+    console.error('order claim:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'Service unavailable. Try again in a minute.' });
+  }
+});
+
 const CODES_CACHE_MS = 30_000;
 const codesCache = new Map();
 
@@ -596,6 +809,8 @@ const codesCache = new Map();
 app.get('/api/launch/codes', async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=30');
   const launchId = validLaunchId(req.query.launch) || 'launch';
+  // Owner 2026-10-10: the paid family seat count (launch2) is never published, not even as JSON.
+  if (launchId !== 'launch') return res.json({ available: false });
   const launchService = launches[launchId];
   const cached = codesCache.get(launchId);
   if (cached?.body && Date.now() - cached.at < CODES_CACHE_MS) return res.json(cached.body);
@@ -655,10 +870,8 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
     }
     return res.status(401).json({ error: 'Your sign-in has expired — sign in again' });
   }
-  // Verified e-mail first (Google sign-in is verified by the provider), before any claim or entitlement logic.
-  if (!decoded.email || (emailVerificationRequired(decoded) && decoded.email_verified !== true)) {
-    return res.status(403).json({ error: 'Verify your e-mail address first' });
-  }
+  // The address must be able to receive mail (no verification any more), before any claim or entitlement logic.
+  try { if (!(await requireDeliverable(admin, decoded, res))) return; } catch (err) { return res.status(503).json({ error: 'The licence service is not available right now' }); }
 
   // Launch 2 seats are sold, not given (testers are let in, not counted): nothing is minted here.
   if (launchId === 'launch2') {
@@ -673,6 +886,10 @@ app.post('/api/launch/claim', smallBody, async (req, res) => {
   }
 
   try {
+    // A non-proven account may read the seat its uid already holds, not mint a new one (see the ticket route).
+    if (launchId === 'launch' && !emailProven(decoded) && !(await withTimeout(holdsLaunch1UidClaim(admin, decoded.uid), 8000))) {
+      return res.status(403).json({ error: 'Sign in with Google to take a free launch seat.' });
+    }
     const { status, body } = await withTimeout(launchService.claim({ uid: decoded.uid, email: decoded.email }), 15000);
     if (status === 200 || status === 410) codesCache.set(launchId, { at: Date.now(), body: { total: body.total, claimed: body.claimed } });
     res.status(status).json(body);
@@ -730,11 +947,136 @@ app.get('/api/admin/members', async (req, res) => {
   }
 });
 
+/* ---- Own traffic numbers (stats.js) -----------------------------------------
+   POST /api/hit {path, ref, landing}: a cookieless page-view counter. The page address is mapped to a known route, the
+   referrer to its host; nothing identifying is stored (no IP, no user agent, no uid). The IP only feeds the in-memory
+   rate limit, the user agent only decides "bot or not". Counted in memory, flushed to site_stats/{day} about every minute
+   and on SIGTERM. Always answers 204: a counter must never break a page. */
+const hits = createHitCounter({ getAdmin: adminFirestore });
+const hitLimit = tokenBucket({ perMinute: 120 });
+const hitJson = express.json({ limit: '1kb' });
+// The flush timer and the SIGTERM flush are armed by the first hit, so an instance that never counts anything has neither.
+let hitsArmed = false;
+function armHits() {
+  if (hitsArmed) return;
+  hitsArmed = true;
+  hits.start();
+  process.on('SIGTERM', () => {
+    Promise.race([hits.flush(), new Promise((resolve) => setTimeout(resolve, 5000))]).finally(() => process.exit(0));
+  });
+}
+app.post('/api/hit', (req, res, next) => hitJson(req, res, (err) => (err ? res.status(204).end() : next())), (req, res) => {
+  try { if (hitLimit(req.ip)) { armHits(); hits.hit(req.body, req.get('User-Agent')); } } catch { /* never reaches the visitor */ }
+  res.status(204).end();
+});
+
+// GET /api/admin/stats?days=30   Authorization: Bearer <Firebase ID token>
+// Orders, accounts, downloads and page views from our own data (no Google Analytics). Same guard as /api/admin/members.
+app.get('/api/admin/stats', async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  try {
+    return res.json(await computeStats(caller.admin, { days: req.query.days, run: withTimeout }));
+  } catch (err) {
+    console.error('admin stats:', err.message);
+    return res.status(503).json({ error: 'Stats service unavailable' });
+  }
+});
+
+/* ---- Sample-pack applications -----------------------------------------------
+   /sample-packs is an "under construction" page with a form for producers who
+   want to publish packs once the store opens. pack_applications/{lowercased e-mail}
+   {name, email, artist, country, links[], kinds[], storeUrl, message, rightsConfirmed,
+    uid|null, createdAt, updatedAt, status}. One per e-mail: sending again updates it
+   and keeps createdAt. No mail is sent (no transactional provider yet). */
+const PACK_KINDS = ['drum kits', 'loops', 'one-shots', 'melodic samples', 'vocals', 'presets', 'other'];
+const PACK_APPLY_PER_HOUR = 5;
+const packBody = express.json({ limit: '16kb' });
+// 5 per hour per IP: a sliding window of timestamps (tokenBucket cannot express a rate below one a minute).
+const packApplyHits = new Map();
+function packApplyAllowed(ip, now = Date.now()) {
+  const recent = (packApplyHits.get(ip) || []).filter((t) => now - t < 3_600_000);
+  if (recent.length >= PACK_APPLY_PER_HOUR) { packApplyHits.set(ip, recent); return false; }
+  recent.push(now);
+  packApplyHits.set(ip, recent);
+  if (packApplyHits.size > 10_000) for (const [k, v] of packApplyHits) if (!v.some((t) => now - t < 3_600_000)) packApplyHits.delete(k);
+  return true;
+}
+function httpUrl(value) {
+  const text = typeof value === 'string' ? value.trim().slice(0, 300) : '';
+  try { return /^https?:$/.test(new URL(text).protocol) ? text : null; } catch { return null; }
+}
+function readPackApplication(body) {
+  const b = body && typeof body === 'object' ? body : {};
+  const name = cleanText(b.name, 100);
+  if (!name) return { error: 'Enter your name' };
+  const email = typeof b.email === 'string' ? b.email.trim().toLowerCase().slice(0, 254) : '';
+  if (!email) return { error: 'Enter your e-mail address' };
+  const artist = cleanText(b.artist, 100);
+  if (!artist) return { error: 'Enter your artist or producer name' };
+  const rawLinks = (Array.isArray(b.links) ? b.links : []).filter((l) => typeof l === 'string' && l.trim()).slice(0, 8);
+  const links = [];
+  for (const l of rawLinks) {
+    const url = httpUrl(l);
+    if (!url) return { error: 'Every link must start with http:// or https://' };
+    if (!links.includes(url)) links.push(url);
+  }
+  if (!links.length) return { error: 'Add at least one link to your music or store' };
+  const kinds = [...new Set(Array.isArray(b.kinds) ? b.kinds.filter((k) => PACK_KINDS.includes(k)) : [])];
+  let storeUrl = '';
+  if (typeof b.storeUrl === 'string' && b.storeUrl.trim()) {
+    storeUrl = httpUrl(b.storeUrl);
+    if (!storeUrl) return { error: 'The link to your packs must start with http:// or https://' };
+  }
+  if (b.rightsConfirmed !== true) return { error: 'Confirm that you made these sounds or hold the rights to every sample in them' };
+  return { value: { name, email, artist, country: cleanText(b.country, 80), links, kinds, storeUrl, message: cleanParagraph(b.message, 1000) } };
+}
+
+// POST /api/packs/apply   public; a signed-in user only pre-fills the e-mail and adds the uid.
+app.post('/api/packs/apply', packBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!packApplyAllowed(req.ip)) return res.status(429).json({ error: 'Too many applications from this connection — try again in an hour' });
+  const { value, error } = readPackApplication(req.body);
+  if (error) return res.status(400).json({ error });
+  try {
+    const admin = await adminFirestore();
+    if (!(await withTimeout(addressExists(admin, value.email), 8000))) return res.status(403).json({ error: NO_MAIL_ERROR });
+    let uid = null;
+    const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+    if (token) { try { uid = (await admin.auth.verifyIdToken(token)).uid || null; } catch { uid = null; } }
+    const ref = admin.db.collection('pack_applications').doc(value.email);
+    const now = new Date().toISOString();
+    await admin.db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const createdAt = snap.exists && snap.data().createdAt ? snap.data().createdAt : now;
+      tx.set(ref, { ...value, rightsConfirmed: true, uid, createdAt, updatedAt: now, status: 'new' });
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('packs apply:', err.message);
+    return res.status(serviceDown(err) ? 503 : 500).json({ error: 'The application service is not available right now' });
+  }
+});
+
+// GET /api/admin/pack-applications → newest first. Same guard as the other admin routes.
+app.get('/api/admin/pack-applications', async (req, res) => {
+  const caller = await testerCaller(req, res, { adminOnly: true });
+  if (!caller) return;
+  try {
+    const snap = await withTimeout(caller.admin.db.collection('pack_applications').get(), 15000);
+    const applications = snap.docs.map((d) => ({ email: d.id, ...d.data() })).sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+    return res.json({ applications });
+  } catch (err) {
+    console.error('admin pack applications:', err.message);
+    return res.status(503).json({ error: 'Application service unavailable' });
+  }
+});
+
 /* ---- The 100 testers --------------------------------------------------------
    Launch 2 is given free to 100 hand-picked testers, chosen so that operating
    systems and DAWs are covered and the people know enough to report bugs.
    tester_applications/{lowercased e-mail} {status, os, osVersion, daws, dawOther,
-                                            formats, years, link, answer, at, decidedAt}
+                                            formats, years, link, answer, heard, at, decidedAt}
    launch2_testers/{lowercased e-mail}     {approvedAt, os, daws, reports}  the gate
    launch2/testers                         {approved}  seats taken, max TESTER_CAP
    tester_reports/{auto id}                {email, plugin, os, daw, dawVersion, kind, text, at}
@@ -768,9 +1110,12 @@ async function testerCaller(req, res, { adminOnly = false } = {}) {
   }
   if (adminOnly) {
     if (decoded.email_verified !== true || !ADMIN_EMAILS.includes(String(decoded.email || '').toLowerCase())) { res.status(403).json({ error: 'Admins only' }); return null; }
-  } else if (!decoded.email || decoded.email_verified !== true) { res.status(403).json({ error: 'Verify your e-mail address first' }); return null; }
+  } else {
+    // No proof needed (owner 9 Oct): applying and reporting only need an address that can receive mail.
+    try { if (!(await requireDeliverable(admin, decoded, res))) return null; } catch { res.status(503).json({ error: 'Tester service unavailable' }); return null; }
+  }
   const email = launch2Email(decoded.email);
-  if (!email && !adminOnly) { res.status(403).json({ error: 'Verify your e-mail address first' }); return null; }
+  if (!email && !adminOnly) { res.status(403).json({ error: NO_MAIL_ERROR }); return null; }
   return { admin, decoded, email };
 }
 
@@ -797,7 +1142,9 @@ function readApplication(body) {
   }
   const answer = cleanParagraph(b.answer, 1200);
   if (answer.length < 40) return { error: 'Describe the bug in at least 40 characters' };
-  return { value: { os, osVersion, daws, dawOther, formats, years: Math.min(60, Math.floor(years)), link, answer } };
+  // Optional, one line: where the applicant heard about SubverseLab (cheap attribution data).
+  const heard = cleanText(b.heard, 120);
+  return { value: { os, osVersion, daws, dawOther, formats, years: Math.min(60, Math.floor(years)), link, answer, heard } };
 }
 
 // GET /api/testers/seats → {total, approved}. Public: the page shows the seats left.
@@ -1006,7 +1353,7 @@ app.post('/api/account/delete', smallBody, async (req, res) => {
   if (!authTime || Date.now() / 1000 - authTime > RECENT_LOGIN_SECONDS) {
     return res.status(401).json({ error: 'Sign in again to delete your account', code: 'requires-recent-login' });
   }
-  const emailOwned = Boolean(mail) && (!emailVerificationRequired(decoded) || decoded.email_verified === true);
+  const emailOwned = Boolean(mail) && emailProven(decoded);
   try {
     const counts = await withTimeout(accountDeleter.deleteAccount({ uid: decoded.uid, email: mail, emailOwned }), 90000);
     console.log(`account delete: uid ${String(decoded.uid).slice(0, 6)}… done ${JSON.stringify(counts)}`);
@@ -1033,7 +1380,7 @@ app.get('/api/credits/balance', async (req, res) => {
   }
   if (!creditsBalanceLimit(`uid:${decoded.uid}`)) return res.status(429).json({ error: 'Too many requests' });
   try {
-    if (decoded.email && (!emailVerificationRequired(decoded) || decoded.email_verified === true)) {
+    if (decoded.email && emailProven(decoded)) {
       await withTimeout(credits.claimPending({ uid: decoded.uid, email: decoded.email }), 8000);
     }
     const { balance, recent } = await withTimeout(credits.readBalance(decoded.uid), 8000);
@@ -1258,6 +1605,18 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
       };
     }
     // merge: true merges nested maps, so each order and key is its own entry.
+    // Index by account: orders_by_uid/{uid}.orders[orderId], so ownership can be found by uid whatever e-mail the buyer typed.
+    // A refund keeps it in sync; it never re-creates the index of an account that was deleted (the doc is gone then).
+    if (event === 'order_created' || event === 'order_refunded') {
+      const orderId = String(data.id);
+      const uid = boundUid || launch2Uid((await ref.get()).data()?.orders?.[orderId]?.uid);
+      if (uid) {
+        const indexRef = db.collection(ORDERS_BY_UID).doc(uid);
+        if (event === 'order_created' || (await indexRef.get()).exists) {
+          await indexRef.set({ orders: { [orderId]: uidOrderEntry(update.orders[orderId], email) } }, { merge: true });
+        }
+      }
+    }
     await ref.set(update, { merge: true });
     // Tool credits: 100 per paid dollar (credits.js). Idempotent per order, so a Lemon Squeezy retry after a failure is safe.
     let creditsResult = null;
@@ -1277,7 +1636,21 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
       if (out.shortfall) console.warn(`credits refund: order ${data.id} short by ${out.shortfall} credits (already spent); refund not blocked`);
       if (out.result === 'partial-unknown') console.warn(`credits refund: order ${data.id} partial refund without refunded_amount_usd/total_usd; credits unchanged`);
     }
-    res.json({ ok: true, ...(launch2Result ? { launch2: launch2Result } : {}), ...(creditsResult ? { credits: creditsResult } : {}) });
+    // Inbox: "your order is ready" for the account that placed a paid order ($0 included). Never fails the webhook.
+    let inboxResult = null;
+    if (event === 'order_created' && a.status === 'paid') {
+      try {
+        const admin = await adminFirestore();
+        let uid = boundUid;
+        if (!uid) uid = (await admin.auth.getUserByEmail(email).catch(() => null))?.uid || null;
+        if (uid) {
+          const item = a.first_order_item || {};
+          const slug = isFamilyOrder(item) ? 'family' : productSlugFor(item.product_id, item.product_name);
+          inboxResult = await addMessage(admin.db, uid, `order-${data.id}`, orderMessage(slug, { orderNumber: a.order_number, created: a.created_at, free: amount.amount_usd_cents === 0 || amount.total === 0 }));
+        } else inboxResult = 'no-account';
+      } catch (err) { console.error('inbox order message:', err.message); inboxResult = 'error'; }
+    }
+    res.json({ ok: true, ...(launch2Result ? { launch2: launch2Result } : {}), ...(creditsResult ? { credits: creditsResult } : {}), ...(inboxResult ? { inbox: inboxResult } : {}) });
   } catch (err) {
     // A 5xx makes Lemon Squeezy retry (up to three more times).
     console.error('lemonsqueezy webhook:', err.message);
@@ -1338,10 +1711,16 @@ const LOOKS_LIKE_A_FILE = /\.[a-z0-9]{2,5}$/i;
 // prerendered file is a genuine unknown URL and must 404 — otherwise the shell
 // goes back under a 200, which is the "soft 404" Google penalises and which
 // hides broken links from the logs.
+// /account, /admin and /forum now have a small prerendered document of their own (scripts/prerender.js: right
+// title, noindex on the private two, no homepage canonical); they stay listed so a build without them still answers 200.
 const CLIENT_ONLY_ROUTES = new Set(['/account', '/admin', '/forum']);
 function isKnownClientRoute(path) {
   return CLIENT_ONLY_ROUTES.has(path) || path.startsWith('/forum/');
 }
+
+// The bare /tools has no page (404 before); it sends visitors to the tools on the homepage. /tools/<slug> is a real
+// page and is not touched.
+app.get('/tools', (req, res) => res.redirect(301, '/#online-tools'));
 
 app.use((req, res) => {
   // A request for a file that isn't there must 404, not hand back the SPA
@@ -1371,7 +1750,10 @@ app.use((req, res) => {
   // Anything else is an unknown URL. The SPA shell is still sent so the
   // in-app 404 page renders for a visitor, but under a real 404 status so
   // crawlers — and the access logs — see it for what it is.
-  res.status(404).sendFile(join(DIST_DIR, 'index.html'));
+  // dist/404.html (scripts/prerender.js) carries its own title, noindex and no canonical, so link previews and
+  // crawlers do not read the homepage's; the same app shell boots in the browser and paints the in-app 404 page.
+  const notFoundPage = join(DIST_DIR, '404.html');
+  res.status(404).sendFile(existsSync(notFoundPage) ? notFoundPage : join(DIST_DIR, 'index.html'));
 });
 
 const PORT = process.env.PORT || 8080;

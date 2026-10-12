@@ -2,103 +2,118 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://subverselab.com/</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://subverselab.com/learn</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/help</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://subverselab.com/loom</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/forum</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/kubbe</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/kaset</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/kubbe/manual</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/kaset/manual</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://subverselab.com/launch</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/koro</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/yanki</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/hava</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/mihenk</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/tutkal</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/taban</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/plugins/alev</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins/adalet</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins/seda</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://subverselab.com/plugins/elek</loc>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://subverselab.com/launch2</loc>
-    <lastmod>2026-10-08</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://subverselab.com/testers</loc>
-    <lastmod>2026-10-08</lastmod>
-    <priority>0.6</priority>
+    <loc>https://subverselab.com/sample-packs</loc>
+    <lastmod>2026-10-12</lastmod>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://subverselab.com/privacy</loc>
@@ -113,11 +128,6 @@
   <url>
     <loc>https://subverselab.com/learn/arrangement-gps</loc>
     <lastmod>2026-08-25</lastmod>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/learn/sensei</loc>
-    <lastmod>2026-08-24</lastmod>
     <priority>0.7</priority>
   </url>
   <url>
@@ -144,40 +154,5 @@
     <loc>https://subverselab.com/learn/time-frequency-sync</loc>
     <lastmod>2026-08-25</lastmod>
     <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/arrangement-gps</loc>
-    <lastmod>2026-08-25</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/sensei</loc>
-    <lastmod>2026-08-25</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/subverse-mix-check</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/subverse-splitter</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/subverse-visualizer</loc>
-    <lastmod>2026-09-18</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/synthpulse</loc>
-    <lastmod>2026-08-25</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://subverselab.com/tools/time-frequency-sync</loc>
-    <lastmod>2026-08-25</lastmod>
-    <priority>0.6</priority>
   </url>
 </urlset>

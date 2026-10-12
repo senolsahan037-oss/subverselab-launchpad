@@ -19,13 +19,13 @@ export const FORUM_SEED_TOPICS = [
     title: 'Why does stem separation take minutes rather than seconds?',
     body: "The model reads the track in fixed 7.8-second windows and those windows overlap by a quarter, so a four-minute track is about 41 passes rather than 31. The overlap is not decoration: without it the windows are butt-joined and every seam leaves a click — measured at 35 times the surrounding signal on real music, worst in the vocal. With the cross-fade it drops to 2.4, which is indistinguishable from ordinary signal. So a separation that finishes quickly is one that left the ticks in.",
     replies: [
-      "If you only need the tempo and the key, use Key & BPM instead — that reads the whole file in well under a second and does not touch your daily separation.",
+      "If you only need the tempo and the key, use Key & BPM instead — that reads the whole file in well under a second and is always free.",
     ],
   },
   {
     category: 'Product support',
     title: 'How does the daily limit on Subverse Splitter work?',
-    body: "Key & BPM analysis is unlimited. Vocal removal and stem separation share one run per day, counted per account and per network address. The run is reserved when the job starts and only marked used when it finishes, so a failed separation gives it back rather than charging you for audio you never received. People behind one office or campus address share that address's run between them — worth knowing before you plan around it.",
+    body: "Key & BPM analysis is always free. Vocal removal and stem separation share one free run per day, and after that a run costs 50 credits (credits come with any plugin purchase: every dollar is 100 credits), counted per account and per network address. The run is reserved when the job starts and only marked used when it finishes, so a failed separation gives it back rather than charging you for audio you never received. People behind one office or campus address share that address's run between them — worth knowing before you plan around it.",
     replies: [],
   },
   {
@@ -51,7 +51,7 @@ export const FORUM_SEED_TOPICS = [
   {
     category: 'General',
     title: 'What is Loom, and is it ready to use?',
-    body: "Loom is the production system behind SubverseLab's own records: a local MCP server that reads your own Ableton projects and library, answers with counts instead of guesses, and writes MIDI, device chains, automation and markers into a running Live session — verifying every write by reading it back. It is 45 tools across seven engines. It is in beta and open while it is being built, the source is public, and it is listed in the MCP Registry. macOS only, and it needs Live 12.4 beta for the extension. Details at subverselab.com/loom.",
+    body: "Loom is the production system behind SubverseLab's own records: a local MCP server that reads your own Ableton projects and library, answers with counts instead of guesses, and writes MIDI, device chains, automation and markers into a running Live session — verifying every write by reading it back. It is 59 tools across seven engines. It is in beta and open while it is being built, the source is public, and it is listed in the MCP Registry. macOS only, and it needs Live 12.4 beta for the extension. Details at subverselab.com/loom.",
     replies: [
       "One command connects it: python3 install.py registers it with Claude Desktop, Claude Code and Antigravity. Live's own step is adding the extension package and restarting.",
     ],

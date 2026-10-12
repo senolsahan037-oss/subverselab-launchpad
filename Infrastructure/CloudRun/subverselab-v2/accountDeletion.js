@@ -17,7 +17,7 @@
 //             date need (entitlements.js and the webhook read it; `created` is
 //             the purchase date, the licence key is NOT kept).
 //   purchase / seat   the launch-2 purchase and its seat, reduced the same way.
-// Tool credits (credits/{uid}, credit_ledger, pending_credits) are deleted outright, nothing is kept.
+// Tool credits (credits/{uid}, credit_ledger, pending_credits) and the inbox (inbox/{uid}/messages) are deleted outright, nothing is kept.
 // No e-mail address, name, receipt link or licence key is kept. The privacy
 // text (src/data/legalContent.js, "How long we keep it") describes this; change
 // both together.
@@ -25,6 +25,8 @@
 import { createHmac } from 'crypto';
 
 export const ERASED_COLLECTION = 'erased_emails';
+// orders_by_uid/{uid}.orders: the index of orders bound to an account (webhook writes it, entitlements.js reads it); it goes with the account.
+export const ORDERS_BY_UID = 'orders_by_uid';
 export const LAUNCH_IDS = ['launch', 'launch2'];
 export const REPORT_RETENTION_MONTHS = 12;
 // The owner moved old reports and forum topics into *_archive collections (Admin SDK only, no client access).
@@ -189,7 +191,7 @@ export function createAccountDeleter({ getAdmin, now = () => new Date().toISOStr
     }
 
     // 5. Download counters per account and the old profile document.
-    for (const [collection, key] of [['downloads', 'downloads'], ['users', 'users']]) {
+    for (const [collection, key] of [['downloads', 'downloads'], ['users', 'users'], [ORDERS_BY_UID, ORDERS_BY_UID]]) {
       const ref = db.collection(collection).doc(uid);
       if ((await ref.get()).exists) planDelete(ref, key);
     }
@@ -228,6 +230,9 @@ export function createAccountDeleter({ getAdmin, now = () => new Date().toISOStr
       const pendingRef = db.collection('pending_credits').doc(mail);
       if ((await pendingRef.get()).exists) planDelete(pendingRef, 'pending_credits');
     }
+
+    // 9. Inbox: the platform's messages to this account (inbox/{uid}/messages, written by server.js only).
+    for (const d of (await db.collection('inbox').doc(uid).collection('messages').get()).docs) planDelete(d.ref, 'inbox');
 
     // Markers first, then the deletions.
     for (const [hash, patch] of markers) await db.collection(ERASED_COLLECTION).doc(hash).set(patch, { merge: true });

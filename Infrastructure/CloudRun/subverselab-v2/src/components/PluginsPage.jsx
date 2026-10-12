@@ -2,14 +2,14 @@ import React from 'react';
 import ToolsStrip from './ToolsStrip';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
-import LaunchCountdown from './LaunchCountdown';
 import FamilyOffer from './FamilyOffer';
 import BuyButton from './BuyButton';
+import LaunchPrice from './LaunchPrice';
 import { useFamilyLive } from '../hooks/useFamilyLive';
 import { useLaunch1Full } from '../hooks/useLaunchCounter';
 import {
-  PLUGINS_INDEX, PLUGINS, FAMILY_ONLY_PLUGINS, FREE_PLUGINS, PRICES, FORMATS, LAUNCH, LAUNCH2, RELEASE_LABEL, RELEASE2_LABEL, RELEASE2_AT,
-  FAMILY_VALUE_LINE, FAMILY_PRICE, FAMILY_UNTIL, UPDATES_LINE,
+  PLUGINS_INDEX, PLUGINS, FAMILY_ONLY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, LAUNCH2, RELEASE2_LABEL, RELEASE3_LABEL,
+  FAMILY_PRICE, UPDATES_LINE, TRUST_LINE, launchPriceActive, launchNote,
 } from '../data/plugins';
 
 // The Plugins tab: software that runs inside the visitor's own DAW, as opposed
@@ -23,7 +23,7 @@ function CardBuy({ slug, full, familyLive }) {
     <div className="plugin-card-buy">
       {familyLive && <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />}
       <BuyButton slug={slug} full={full} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn btn-primary'} />
-      <span className="plugin-card-buy-note">{familyLive ? `${FAMILY_UNTIL}, all seven. ` : ''}{UPDATES_LINE}</span>
+      <span className="plugin-card-buy-note">{UPDATES_LINE}</span>
     </div>
   );
 }
@@ -43,17 +43,6 @@ export default function PluginsPage() {
         </p>
       </header>
 
-      <Link to={LAUNCH.path} className="plugin-strip" style={{ marginBottom: '24px' }}>
-        <span className="plugin-strip-tag">Launch</span>
-        <span className="plugin-strip-text">
-          {full
-            ? <>Out now. <b>The free 1,000 are gone — Kubbe and Kaset are ${PRICES.kubbe} each</b> — see the launch page.</>
-            : <>Both out {RELEASE_LABEL}. <b>{LAUNCH.offer}</b> — enter the Download Room.</>}
-        </span>
-        <LaunchCountdown compact />
-        <span className="plugin-strip-go">{full ? 'Buy →' : 'How it works →'}</span>
-      </Link>
-
       <div className="plugin-card-list">
         {PLUGINS.map((p) => (
           <div key={p.slug} className="plugin-card-item">
@@ -64,8 +53,7 @@ export default function PluginsPage() {
             </div>
             <div className="plugin-card-body">
               <div className="plugin-card-top">
-                <span className="plugin-card-badge">${PRICES[p.slug]} · out now</span>
-                <LaunchCountdown compact />
+                <span className="plugin-card-badge">${PRICES[p.slug]} · or in the family</span>
               </div>
               <h2 className="plugin-card-title">{p.name} <span>{p.kind} · Model {p.model}</span></h2>
               <p className="plugin-card-text">{p.description}</p>
@@ -80,10 +68,9 @@ export default function PluginsPage() {
       <Link to={LAUNCH2.path} className="plugin-strip" style={{ margin: '40px 0 24px' }}>
         <span className="plugin-strip-tag">Next</span>
         <span className="plugin-strip-text">
-          {familyLive ? 'Five more' : 'Four more'} out {RELEASE2_LABEL}. <b>{familyLive ? LAUNCH2.offerNow : LAUNCH2.offerBefore}</b>{familyLive ? <> — {FAMILY_VALUE_LINE}.</> : '.'}
+          {familyLive ? <>All seven are out. <b>{LAUNCH2.offerNow}</b></> : <>Four more out {RELEASE2_LABEL}. <b>{LAUNCH2.offerBefore}</b>.</>}
         </span>
-        <LaunchCountdown compact target={RELEASE2_AT} />
-        <span className="plugin-strip-go">{familyLive ? 'How it works →' : 'See the four →'}</span>
+        <span className="plugin-strip-go">{familyLive ? 'How the family works →' : 'See the four →'}</span>
       </Link>
 
       <div className="plugin-card-list">
@@ -96,8 +83,7 @@ export default function PluginsPage() {
             </div>
             <div className="plugin-card-body">
               <div className="plugin-card-top">
-                <span className="plugin-card-badge">${PRICES[p.slug]}{familyLive ? ' · or in the family' : ''} · Out {RELEASE2_LABEL}</span>
-                <LaunchCountdown compact target={RELEASE2_AT} />
+                <span className="plugin-card-badge">${PRICES[p.slug]}{familyLive ? ' · or in the family' : ` · Out ${RELEASE2_LABEL}`}</span>
               </div>
               <h2 className="plugin-card-title">{p.name} <span>{p.kind} · Model {p.model}</span></h2>
               <p className="plugin-card-text">{p.description}</p>
@@ -105,6 +91,67 @@ export default function PluginsPage() {
             </div>
           </Link>
           <CardBuy slug={p.slug} familyLive={familyLive} />
+          </div>
+        ))}
+      </div>
+
+      {/* The family offer right under the seven, then ELEK (sold on its own) under it, then the coming ones (owner, 12 Oct) */}
+      <FamilyOffer style={{ marginTop: '24px' }} />
+
+      {SOLO_PLUGINS.length > 0 && (
+        <>
+          <div className="plugin-strip" style={{ margin: '40px 0 24px' }}>
+            <span className="plugin-strip-tag">New</span>
+            <span className="plugin-strip-text"><b>Out now, sold on its own.</b> {SOLO_PLUGINS.map((p) => p.displayName).join(', ')}: stems, vocal removal, key and tempo, on your Mac.</span>
+          </div>
+          <div className="plugin-card-list">
+        {SOLO_PLUGINS.map((p) => (
+          <div key={p.slug} className="plugin-card-item">
+          <Link to={p.path} className="plugin-card">
+            <div className="plugin-card-media">
+              <img src={p.cardImage} alt={`${p.displayName}'s window`} width={p.imageSize[0]}
+                   height={p.imageSize[1]} loading="lazy" />
+            </div>
+            <div className="plugin-card-body">
+              <div className="plugin-card-top">
+                <span className="plugin-card-badge"><LaunchPrice slug={p.slug} note={false} />{launchPriceActive(p.slug) ? ' · launch price' : ''}</span>
+              </div>
+              <h2 className="plugin-card-title">{p.displayName} <span>{p.kind} · Model {p.model}</span></h2>
+              <p className="plugin-card-text">{p.description}</p>
+              <span className="plugin-card-link">See {p.displayName} →</span>
+            </div>
+          </Link>
+          <div className="plugin-card-buy">
+            <BuyButton slug={p.slug} className="btn btn-outline plugin-buy-single" />
+            <span className="plugin-card-buy-note">{launchPriceActive(p.slug) ? `${launchNote(p.slug)[0].toUpperCase()}${launchNote(p.slug).slice(1)}. ` : ''}{UPDATES_LINE}</span>
+          </div>
+          </div>
+        ))}
+          </div>
+        </>
+      )}
+
+      <div className="plugin-strip" style={{ margin: '40px 0 24px' }}>
+        <span className="plugin-strip-tag">Soon</span>
+        <span className="plugin-strip-text"><b>Two more, {RELEASE3_LABEL ? `out ${RELEASE3_LABEL}` : 'coming soon'}.</b> Sold on their own.</span>
+      </div>
+      <div className="plugin-card-list">
+        {LINE2_PLUGINS.map((p) => (
+          <div key={p.slug} className="plugin-card-item">
+          <Link to={p.path} className="plugin-card">
+            <div className="plugin-card-media">
+              <img src={p.cardImage} alt={`${p.displayName}'s front panel`} width={p.imageSize[0]}
+                   height={p.imageSize[1]} loading="lazy" />
+            </div>
+            <div className="plugin-card-body">
+              <div className="plugin-card-top">
+                <span className="plugin-card-badge">{line2AvailableLine(p)}</span>
+              </div>
+              <h2 className="plugin-card-title">{p.displayName} <span>{p.kind} · Model {p.model}</span></h2>
+              <p className="plugin-card-text">{p.description}</p>
+              <span className="plugin-card-link">See {p.displayName} →</span>
+            </div>
+          </Link>
           </div>
         ))}
       </div>
@@ -141,7 +188,7 @@ export default function PluginsPage() {
         </>
       )}
 
-      <FamilyOffer style={{ marginTop: '24px' }} />
+      <p className="plugin-trust">{TRUST_LINE}</p>
       <ToolsStrip />
     </div>
   );

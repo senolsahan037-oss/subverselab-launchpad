@@ -5,7 +5,8 @@ import DownloadButtons from './DownloadButtons';
 import { FAMILY_ONLY_PLUGINS as TESTER_PLUGINS, TESTERS } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 
-/* /testers — the 100 tester seats for KORO, YANKI, HAVA, MIHENK and TUTKAL.
+/* /testers — the 100 tester seats. The public part names no plugin (owner 12 Oct); an approved tester sees
+ * the plugins under test (TESTER_PLUGINS) with their downloads.
  * Application: POST /api/testers/apply. State: GET /api/testers/me. Once
  * approved the page shows the same launch-2 download buttons as /launch2 (the
  * server lets an approved tester through the ticket gate) and a report form
@@ -14,7 +15,9 @@ import { SITE_URL } from '../data/siteMeta';
 const OS_LIST = ['macOS Apple Silicon', 'macOS Intel', 'Windows 11', 'Windows 10'];
 const DAWS = ['Ableton Live', 'FL Studio', 'Logic Pro', 'Cubase', 'Studio One', 'Reaper', 'Pro Tools', 'Bitwig Studio', 'Other'];
 const KINDS = [['bug', 'Something breaks'], ['sound', 'Something sounds wrong'], ['ui', 'Interface problem'], ['works', 'Works fine here']];
-const EMPTY = { os: '', osVersion: '', daws: [], dawOther: '', formats: [], years: '', link: '', answer: '' };
+// The seat counter comes back once this many seats are approved (decisions 2026-10-10); until then it would only show an empty room.
+const TESTER_COUNTER_MIN = 25;
+const EMPTY = { os: '', osVersion: '', daws: [], dawOther: '', formats: [], years: '', link: '', answer: '', heard: '' };
 
 function useSeats() {
   const [seats, setSeats] = useState(null);
@@ -109,6 +112,9 @@ function ApplicationForm({ user, onSent, replacing }) {
       <Field id="tp-answer" label="Describe a bug you found in a plugin or DAW and how you reported it" hint={`${f.answer.trim().length} / 1200 — at least 40 characters.`}>
         <textarea id="tp-answer" className="input-field" rows={6} value={f.answer} minLength={40} maxLength={1200} required onChange={(e) => set({ answer: e.target.value })} />
       </Field>
+      <Field id="tp-heard" label="Where did you hear about SubverseLab? (optional)">
+        <input id="tp-heard" className="input-field" value={f.heard} maxLength={120} onChange={(e) => set({ heard: e.target.value })} />
+      </Field>
       {error && <p role="alert">{error}</p>}
       <button type="submit" className="btn btn-primary" disabled={sending || !f.os || !f.daws.length || !f.formats.length}>{sending ? 'Sending…' : 'Send application'}</button>
     </form>
@@ -186,18 +192,18 @@ export default function TestersPage({ user, onLoginClick }) {
 
   return (
     <div className="plugin-page">
-      <PageMeta title={TESTERS.title} description={TESTERS.description} path={TESTERS.path}
+      <PageMeta title={TESTERS.title} description={TESTERS.description} path={TESTERS.path} robots="noindex,follow"
                 image={`${SITE_URL}${TESTER_PLUGINS[0].og}`} />
 
       <section className="plugin-hero">
         <div className="container plugin-hero-inner">
           <Link to="/plugins" className="plugin-back">← Plugins</Link>
           <p className="plugin-kicker">SubverseLab · 100 tester seats</p>
-          <h1 className="plugin-title launch-title">Test KORO · YANKI · HAVA · MIHENK · TUTKAL</h1>
+          <h1 className="plugin-title launch-title">Become a SubverseLab tester</h1>
           <p className="plugin-tagline">
-            100 producers get all five free — chosen so that every operating system and DAW is covered.
+            100 producers test our plugins free — chosen so that every operating system and DAW is covered. Applications are read by hand; you hear back by e-mail.
           </p>
-          {left !== null && (
+          {left !== null && seats.approved >= TESTER_COUNTER_MIN && (
             <div className="launch-codes" role="status">
               <span className="launch-codes-num">{left} / {seats.total}</span>
               <span className="launch-codes-label">tester seats left<small>Live count</small></span>
@@ -209,7 +215,7 @@ export default function TestersPage({ user, onLoginClick }) {
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <section className="plugin-section">
           <h2>What you get</h2>
-          <p>KORO, YANKI, HAVA, MIHENK and TUTKAL for macOS and Windows, free, from the Download Room on this page. No key or activation is needed.</p>
+          <p>The plugins under test, for macOS and Windows, free, from the Download Room on this page, for as long as you test. Testers get the same builds buyers get. Which plugins they are comes with your seat.</p>
         </section>
 
         <section className="plugin-section">
@@ -218,6 +224,7 @@ export default function TestersPage({ user, onLoginClick }) {
             <li>Install the plugins.</li>
             <li>Use them in real sessions, not only to open and close them.</li>
             <li>Report what breaks — and on which operating system and DAW it happened.</li>
+            <li>Tell us where you heard about SubverseLab.</li>
           </ul>
           <p>We choose testers by the systems and DAWs they use and by how well they describe a problem, so the application asks about both.</p>
         </section>
@@ -226,7 +233,7 @@ export default function TestersPage({ user, onLoginClick }) {
           <h2>{status === 'approved' ? 'Your tester seat' : 'Apply'}</h2>
           {!user && (
             <>
-              <p>Sign in with a verified e-mail address to apply.</p>
+              <p>Sign in with your account to apply.</p>
               <p><button type="button" className="btn plugin-btn" onClick={onLoginClick}>Sign in to apply</button></p>
             </>
           )}
@@ -246,7 +253,7 @@ export default function TestersPage({ user, onLoginClick }) {
           {user && status === 'declined' && <p role="status">We could not offer you a seat this time. Thank you for applying.</p>}
           {user && status === 'approved' && (
             <>
-              <p role="status">You are a tester. Download all five, use them in your sessions, and send a report for anything that breaks.</p>
+              <p role="status">You are a tester. Download the plugins below, use them in your sessions, and send a report for anything that breaks.</p>
               {TESTER_PLUGINS.map((p) => (
                 <div key={p.slug} className="launch-download">
                   <h3>{p.name}</h3>

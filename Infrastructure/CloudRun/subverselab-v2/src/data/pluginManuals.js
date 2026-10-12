@@ -15,7 +15,7 @@
 // Block types: { p }, { list }, { steps }, { table: { head, rows } },
 // { note }, { recipes: [{ name, settings, text }] }, { h3 }.
 
-import { KUBBE, KASET } from './plugins.js';
+import { KUBBE, KASET, ACTIVATION_LINE } from './plugins.js';
 
 const installation = (name, { standalone = false } = {}) => [
   {
@@ -45,9 +45,9 @@ const installation = (name, { standalone = false } = {}) => [
 ];
 
 const downloadRoom = () => [
-  { p: 'Sign in on subverselab.com/launch and download. No key or activation is needed.' },
+  { p: `Sign in on subverselab.com/launch and download. ${ACTIVATION_LINE}` },
   { h3: 'Getting the plugin' },
-  { steps: ['Enter the Download Room with your verified e-mail.', 'Download the macOS package or Windows zip.', 'Install the macOS package, or copy the Windows VST3 folder to `C:\\Program Files\\Common Files\\VST3\\`.', 'Open the plugin in your DAW.'] },
+  { steps: ['Enter the Download Room with your account.', 'Download the macOS package or Windows zip.', 'Install the macOS package, or copy the Windows VST3 folder to `C:\\Program Files\\Common Files\\VST3\\`.', 'Open the plugin in your DAW.'] },
 ];
 
 export const KUBBE_MANUAL = {

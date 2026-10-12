@@ -9,8 +9,8 @@ import DownloadRoomReport from './DownloadRoomReport';
 import DownloadButtons from './DownloadButtons';
 import {
   LAUNCH, LAUNCH2, PLUGINS, LAUNCH2_PLUGINS, FAMILY_PLUGINS, PRICES, FORMATS, INSTAGRAM_DM, RELEASE2_AT,
-  FAMILY_NAME, FAMILY_PRICE, FAMILY_VALUE_LINE, FAMILY_OFFER_TERMS, FAMILY_LATER, FAMILY_IMAGE, UPDATES_LINE, FAMILY_UNTIL,
-  FAMILY_REGULAR_PRICE, CARD_BG, familyOfferEndLabel,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_LATER, FAMILY_IMAGE, UPDATES_LINE,
+  FAMILY_REGULAR_PRICE, CARD_BG, familyOfferEndLabel, ACTIVATION_LINE, TRUST_LINE,
 } from '../data/plugins';
 import { auth } from '../firebase';
 import { SITE_URL } from '../data/siteMeta';
@@ -60,7 +60,7 @@ const POLL_MAX_MS = 3 * 60 * 1000;
 // back from checkout, or clicked Buy in this session); then the status is
 // polled until the webhook lands. Otherwise it is read once — a signed-in
 // visitor who has not bought is not told "checking your purchase".
-export function usePurchases(user, enabled, expect) {
+export function usePurchases(user, enabled, expect, refreshKey = 0) {
   const [state, setState] = useState({ owned: null, updatesUntil: {}, standing: null, polling: false, gaveUp: false });
   useEffect(() => {
     if (!enabled || !user) { setState({ owned: null, updatesUntil: {}, standing: null, polling: false, gaveUp: false }); return undefined; }
@@ -69,13 +69,13 @@ export function usePurchases(user, enabled, expect) {
     const startedAt = Date.now();
     const check = async () => {
       let owned = null;
-      let extra = { updatesUntil: {}, standing: null };
+      let extra = { updatesUntil: {}, standing: null, unverified: false };
       try {
         const token = await user.getIdToken();
         const r = await fetch('/api/purchases/status', { headers: { Authorization: `Bearer ${token}` } });
         const body = await r.json().catch(() => ({}));
         owned = r.ok && Array.isArray(body.owned) ? body.owned : null;
-        if (owned) extra = { updatesUntil: body.updatesUntil || {}, standing: body.standing || null };
+        if (owned) extra = { updatesUntil: body.updatesUntil || {}, standing: body.standing || null, unverified: body.unverified === true };
       } catch { owned = null; }
       if (!alive) return;
       if (owned && owned.length > 0) { setState({ owned, ...extra, polling: false, gaveUp: false }); return; }
@@ -86,7 +86,7 @@ export function usePurchases(user, enabled, expect) {
     };
     check();
     return () => { alive = false; clearTimeout(timer); };
-  }, [user, enabled, expect]);
+  }, [user, enabled, expect, refreshKey]);
   return state;
 }
 
@@ -112,7 +112,9 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
   const products = second ? (familyLive ? FAMILY_PLUGINS : LAUNCH2_PLUGINS) : PLUGINS;
   const noun = second ? 'people' : 'producers';
   const names = products.map((p) => p.displayName);
-  const codes = useLaunchCounter(launchId);
+  const codes = useLaunchCounter(second ? null : launchId);
+  // Owner 2026-10-10: /launch2 shows no count of any kind (no paid-seat counter, no replacement number).
+  const showCounter = !second;
   // The free quota is gone (1,000 / 1,000, and it cannot reopen): /launch is the paid page, also while
   // the counter is loading or unreadable. It never leads with "free".
   const full = !second && (!codes || codes.claimed >= codes.total);
@@ -127,7 +129,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
   const buyUid = user?.uid || auth.currentUser?.uid || undefined;
 
   const steps = second
-    ? (familyLive ? LAUNCH2.steps : [['Out October 5', 'KORO, YANKI, HAVA and MIHENK open on October 5.'], ['Sign in', 'Sign in on this page with Google or with an e-mail address.'], ['Download', 'Download for macOS or Windows from this page.'], ['Install', 'Install the plugins or the MIHENK standalone app. No key or activation is needed.']])
+    ? (familyLive ? LAUNCH2.steps : [['Out October 5', 'KORO, YANKI, HAVA and MIHENK open on October 5.'], ['Sign in', 'Sign in on this page with Google or with an e-mail address.'], ['Download', 'Download for macOS or Windows from this page.'], ['Install', 'Install the plugins or the MIHENK standalone app. Your licence key is on your Account page.']])
     : [['Sign in', 'Sign in on this page.'], ['Download', 'Download both plugins for macOS or Windows.'], ['Install', 'Install the macOS package or Windows zip to Common Files\\VST3.'], ['Open in your DAW', 'Open Kubbe or Kaset in your DAW.']];
 
   return (
@@ -144,16 +146,16 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
           </h1>
           <p className="plugin-tagline">
             {second
-              ? (familyLive ? `${names.join(', ')} — ${FAMILY_VALUE_LINE}` : 'Four new products — out October 5')
+              ? (familyLive ? names.join(', ') : 'Four new products — out October 5')
               : full
-                ? `The free 1,000 are gone — thank you. Kubbe and Kaset are now $${PRICES.kubbe} each`
+                ? `Kubbe and Kaset are now $${PRICES.kubbe} each`
                 : 'Free for the first 1,000 producers — sign in and download both plugins'}
           </p>
 
           <div className="plugin-offer">
             <div>
               <p className="plugin-offer-head">{full ? 'The free 1,000 have been claimed — thank you' : second && !familyLive ? 'KORO, YANKI, HAVA and MIHENK — out October 5' : launch.offer}</p>
-              <p className="plugin-offer-sub">{second ? (familyLive ? `${launch.terms}. ${FAMILY_LATER}` : 'Price and checkout open with the release.') : full ? `Already downloaded? Your copy stays yours. Now: $${PRICES.kubbe} each. ${UPDATES_LINE}` : `${launch.askHow}.`}</p>
+              <p className="plugin-offer-sub">{second ? (familyLive ? `Launch price until ${familyOfferEndLabel()} · regular $${FAMILY_REGULAR_PRICE}. ${UPDATES_LINE}` : 'Price and checkout open with the release.') : full ? `Already downloaded? Your copy stays yours. Now: $${PRICES.kubbe} each. ${UPDATES_LINE}` : `${launch.askHow}.`}</p>
             </div>
             {second ? <LaunchCountdown target={RELEASE2_AT} /> : <LaunchCountdown />}
           </div>
@@ -163,16 +165,16 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
               <p className="launch-claim-head">Download Room</p>
               {full ? (
                 <>
-                  <p>Free downloads are closed. Kubbe and Kaset are available to buy below, and the next four products arrive October 5.</p>
+                  <p>Free downloads are closed. Kubbe and Kaset are available to buy below, and KORO, YANKI, HAVA, MIHENK and TUTKAL are out now.</p>
                   <p><Link to="/launch2" className="btn plugin-btn">{familyLive ? `See the ${FAMILY_NAME} — $${FAMILY_PRICE}` : 'See the four new products — out October 5'}</Link></p>
                 </>
               ) : (
-              <p>{second ? (familyLive ? `Buy the family (${FAMILY_UNTIL}) or any plugin on its own, then sign in with the same e-mail to download. ${UPDATES_LINE}` : 'KORO, YANKI, HAVA and MIHENK open on October 5. Come back then to buy and download.') : <>Sign in to download Kubbe and Kaset. Your downloads are counted automatically.</>}</p>
+              <p>{second ? (familyLive ? 'Buy the family or any plugin on its own, then sign in with the same e-mail to download.' : 'KORO, YANKI, HAVA and MIHENK open on October 5. Come back then to buy and download.') : <>Sign in to download Kubbe and Kaset. Your downloads are counted automatically.</>}</p>
               )}
               {!full && !user && !(second && !familyLive) && <button type="button" className="btn plugin-btn" onClick={onLoginClick}>Sign in to download</button>}
               {full && !user && <button type="button" className="btn plugin-btn" onClick={onLoginClick}>Sign in to download</button>}
             </div>
-            {!(second && !familyLive) && <Counter codes={codes} noun={noun} showTotal={!second} />}
+            {showCounter && !(second && !familyLive) && <Counter codes={codes} noun={noun} showTotal={!second} />}
           </div>
           {!second && !full && (
             <p className="launch-insta">
@@ -205,7 +207,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
               </li>
             ))}
           </ol>
-          {!(second && !familyLive) && <p>Counter: {codes ? (second ? `${codes.claimed} ${noun}` : `${codes.claimed} / ${codes.total} ${noun}`) : 'available when the service responds'}.</p>}
+          {showCounter && !(second && !familyLive) && <p>Counter: {codes ? (second ? `${codes.claimed} ${noun}` : `${codes.claimed} / ${codes.total} ${noun}`) : 'available when the service responds'}.</p>}
         </section>
 
         <section className="plugin-section">
@@ -233,6 +235,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
               </div>
             )}
           </div>
+          <p className="plugin-trust">{TRUST_LINE}</p>
           {second && familyLive && (
             <p>Every plugin is sold on its own at the price shown, or all seven in the family. {UPDATES_LINE} {FAMILY_LATER}</p>
           )}
@@ -244,7 +247,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
         <section className="plugin-section" id="download">
           <h2>{second ? 'Download' : 'Download and manuals'}</h2>
           <p>
-            {second ? (familyLive ? 'Downloads unlock once your purchase (the family or a single plugin) is confirmed. Your licence key then shows on your Account page.' : 'Downloads open on October 5. No key or activation is needed.') : full ? 'Downloads unlock once your purchase is confirmed. Sign in with the e-mail you paid with.' : 'Sign in to enter the Download Room. No key or activation is needed.'}
+            {second ? (familyLive ? 'Downloads unlock once your purchase (the family or a single plugin) is confirmed. Your licence key then shows on your Account page.' : 'Downloads open on October 5. Your licence key then shows on your Account page.') : full ? 'Downloads unlock once your purchase is confirmed. Sign in with the e-mail you paid with.' : `Sign in to enter the Download Room. ${ACTIVATION_LINE}`}
           </p>
           {((second && familyLive) || full) && !user && <p><button type="button" className="btn btn-outline" onClick={onLoginClick}>Sign in to download</button></p>}
           {second && familyLive && user && !(owned && owned.length > 0) && (
@@ -289,7 +292,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
 
         <section className="plugin-section">
           <h2>{second ? (familyLive ? 'Getting the family' : 'Getting the products') : 'Getting the plugins'}</h2>
-          <p>{second ? (familyLive ? 'Buy the family or a plugin on its own, then sign in' : 'From October 5, sign in') : 'Sign in'} on <Link to={launch.path}>subverselab.com{launch.path}</Link> and download. No activation needed.</p>
+          <p>{second ? (familyLive ? 'Buy the family or a plugin on its own, then sign in' : 'From October 5, sign in') : 'Sign in'} on <Link to={launch.path}>subverselab.com{launch.path}</Link> and download. {ACTIVATION_LINE}</p>
         </section>
 
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>

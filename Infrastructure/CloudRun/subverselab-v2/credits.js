@@ -18,7 +18,7 @@
 // zero balance; the rest is recorded as `shortfall` on the ledger line and never blocks the refund), a
 // release lowers `spent`.
 
-export const CREDIT_COSTS = Object.freeze({ splitter: 50, visualizer: 50, mixcheck: 100 });
+export const CREDIT_COSTS = Object.freeze({ splitter: 50, visualizer: 50, mixcheck: 100, 'arrangement-gps': 25 });
 export const CREDITS_PER_USD_CENT = 1; // 100 credits per dollar
 export const LEDGER_COLLECTION = 'credit_ledger';
 export const CREDITS_COLLECTION = 'credits';

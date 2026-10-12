@@ -9,7 +9,7 @@ export const GENERAL_FAQ = [
   },
   {
     q: 'How much does everything cost?',
-    a: 'Everything currently on SubverseLab is free. Signing in with Google creates a free membership — no payment details are ever requested for any tool or pack listed today.',
+    a: 'The online tools and the guides are free, and a free account (Google or e-mail, no card) opens the member tools with their daily free use. TABAN and ALEV are free plugins. The other plugins are paid: each on its own or together as the plugin family, sold through Lemon Squeezy, with the price on every plugin page. A plugin purchase also adds credits for extra tool uses.',
   },
   {
     q: 'Why do some tools only let me generate or analyze a limited number of times per day?',
@@ -44,7 +44,7 @@ export const TOOL_FAQ = [
   },
   {
     q: 'Does Subverse Mix Check upload my track anywhere permanently?',
-    a: 'No. Your WAV or MP3 is analyzed from temporary storage and deleted after processing; only the measurement result is returned. The tool reports direct loudness, level, spectrum, and supported mono fold-down evidence. It does not invent a quality score, key, BPM, or AI recommendation.',
+    a: 'No. Your WAV or MP3 is analyzed from temporary storage and deleted after processing; only the measurement result is returned. The tool reports direct loudness, level, spectrum, and supported mono fold-down evidence. It does not invent a quality score, a key, a BPM or advice.',
   },
   {
     q: 'How does the Subverse Mix Check daily limit work?',
@@ -86,7 +86,7 @@ export const LOOM_FAQ = [
   },
   {
     q: 'What can Loom actually do?',
-    a: '45 tools across seven engines: MIDI variation from a locked dataset, project plans from a prompt, .als inspection and gain staging, device chains and a sample palette measured from your own projects, genre evidence measured from real records, audio measurement and profile comparison, and a YouTube-to-sample-pack path. It also says what it cannot do \u2014 rendering needs Live\u2019s audio engine, clip envelopes are out of reach, and section-level tempo and key cannot be written because there is no API for them.',
+    a: '59 tools across seven engines: MIDI variation from a locked dataset, project plans from a prompt, .als inspection and gain staging, device chains and a sample palette measured from your own projects, genre evidence measured from real records, audio measurement and profile comparison, and a YouTube-to-sample-pack path. It also says what it cannot do \u2014 rendering needs Live\u2019s audio engine, clip envelopes are out of reach, and section-level tempo and key cannot be written because there is no API for them.',
   },
   {
     q: 'How do I connect Loom to Claude?',

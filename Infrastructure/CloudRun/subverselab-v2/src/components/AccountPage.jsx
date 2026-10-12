@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   GoogleAuthProvider, EmailAuthProvider, reauthenticateWithPopup, reauthenticateWithCredential,
 } from 'firebase/auth';
@@ -8,9 +8,11 @@ import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
 import DownloadRoomReport from './DownloadRoomReport';
 import BuyButton from './BuyButton';
+import InboxList from './InboxList';
+import useInbox from '../hooks/useInbox';
 import { usePurchases } from './LaunchPage';
 import {
-  ALL_PLUGINS, FREE_PLUGINS, FAMILY_PRICE, FAMILY_UNTIL, PRICES, UPDATES_LINE, formatDay,
+  ALL_PLUGINS, FREE_PLUGINS, SOLO_PLUGINS, FAMILY_PRICE, FAMILY_UNTIL, PRICES, UPDATES_LINE, formatDay,
 } from '../data/plugins';
 
 // The account page: the signed-in producer's Download Room.
@@ -34,7 +36,7 @@ import {
 // computers have activated it and when its 2 years of updates end. They show up
 // by themselves after a purchase (the Lemon Squeezy webhook writes them, which
 // can take a minute); `expectKeys` is true when this account owns something paid.
-function LicenceKeys({ user, expectKeys }) {
+function LicenceKeys({ user, expectKeys, onCount, refreshKey = 0 }) {
   const [licenses, setLicenses] = useState(null);
   const [copied, setCopied] = useState('');
   useEffect(() => {
@@ -44,40 +46,40 @@ function LicenceKeys({ user, expectKeys }) {
         const token = await user.getIdToken();
         const r = await fetch('/api/purchases/licenses', { headers: { Authorization: `Bearer ${token}` } });
         const body = await r.json().catch(() => ({}));
-        if (alive && r.ok && Array.isArray(body.licenses)) setLicenses(body.licenses);
+        if (alive && r.ok && Array.isArray(body.licenses)) { setLicenses(body.licenses); onCount?.(body.licenses.length); }
       } catch { /* no keys shown */ }
     })();
     return () => { alive = false; };
-  }, [user]);
+  }, [user, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!licenses) return null;
   if (licenses.length === 0) {
     return expectKeys
-      ? <div className="acct-help" style={{ marginBottom: '20px' }}><h4>Your licence keys</h4><p>Your licence key appears here automatically after a purchase. If you just paid, it can take a minute: reload this page.</p></div>
+      ? <div className="acct-help acct-keys"><h4>Your licence keys</h4><p>Your licence key appears here automatically after a purchase. If you just paid, it can take a minute: reload this page.</p></div>
       : null;
   }
   const copy = async (l) => {
     try { await navigator.clipboard.writeText(l.key); setCopied(l.id || l.key); setTimeout(() => setCopied(''), 2000); } catch { setCopied(''); }
   };
-  const nameOf = (l) => l.productName || [...ALL_PLUGINS, ...FREE_PLUGINS].find((p) => p.slug === l.product)?.name || (l.product === 'bundle' ? 'KUBBE + KASET' : l.product === 'family' || l.product === 'bundle4' ? 'SubverseLab plugin family' : 'Plugin');
+  const nameOf = (l) => l.productName || [...ALL_PLUGINS, ...SOLO_PLUGINS, ...FREE_PLUGINS].find((p) => p.slug === l.product)?.name || (l.product === 'bundle' ? 'KUBBE + KASET' : l.product === 'family' || l.product === 'bundle4' ? 'SubverseLab plugin family' : 'Plugin');
   return (
-    <div className="acct-help" style={{ marginBottom: '20px' }}>
+    <div className="acct-help acct-keys">
       <h4>Your licence keys</h4>
-      {licenses.map((l) => (
-        <div key={l.id || l.key} style={{ marginBottom: '12px' }}>
-          <p style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', margin: 0 }}>
-            <strong>{nameOf(l)}</strong>
-            <code style={{ wordBreak: 'break-all' }}>{l.key}</code>
+      <ul className="acct-key-list">
+        {licenses.map((l) => (
+          <li key={l.id || l.key} className="acct-key-item">
+            <strong className="acct-key-name">{nameOf(l)}</strong>
+            <code className="acct-key">{l.key}</code>
             <button type="button" className="btn btn-outline acct-small-btn" onClick={() => copy(l)}>
               {copied === (l.id || l.key) ? 'Copied' : 'Copy'}
             </button>
-          </p>
-          <p className="acct-note" style={{ margin: '4px 0 0' }}>
-            {l.activationLimit != null ? `Activations: ${l.instancesCount ?? 0} of ${l.activationLimit}` : `Activations: ${l.instancesCount ?? 0}`}
-            {l.purchased ? ` · Bought ${formatDay(l.purchased)}` : ''}
-            {l.updatesUntil ? ` · Updates until ${formatDay(l.updatesUntil)}` : ''}
-          </p>
-        </div>
-      ))}
+            <p className="acct-key-meta">
+              {l.activationLimit != null ? `Activations: ${l.instancesCount ?? 0} of ${l.activationLimit}` : `Activations: ${l.instancesCount ?? 0}`}
+              {l.purchased ? ` · Bought ${formatDay(l.purchased)}` : ''}
+              {l.updatesUntil ? ` · Updates until ${formatDay(l.updatesUntil)}` : ''}
+            </p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -85,9 +87,9 @@ function LicenceKeys({ user, expectKeys }) {
 // Tool credits: GET /api/credits/balance (credits.js). Every $1 spent on plugins adds 100 credits; the online
 // tools keep their daily free use, and credits are spent only after it is used up (the tool service asks
 // POST /api/credits/spend, server to server). Costs come from the server, never from this page.
-const TOOL_NAMES = { splitter: 'Splitter', visualizer: 'Visualizer', mixcheck: 'Mix Check' };
+const TOOL_NAMES = { splitter: 'Splitter', visualizer: 'Visualizer', mixcheck: 'Mix Check', 'arrangement-gps': 'Arrangement GPS' };
 const REASON_TEXT = { purchase: 'Plugin purchase', refund: 'Refund', spend: 'Tool use', release: 'Returned (job failed)', admin: 'Adjustment' };
-function ToolCredits({ user }) {
+function ToolCredits({ user, onBalance }) {
   const [data, setData] = useState(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -98,22 +100,22 @@ function ToolCredits({ user }) {
         const r = await fetch('/api/credits/balance', { headers: { Authorization: `Bearer ${token}` } });
         const body = await r.json().catch(() => ({}));
         if (!alive) return;
-        if (r.ok && typeof body.balance === 'number') setData(body); else setFailed(true);
+        if (r.ok && typeof body.balance === 'number') { setData(body); onBalance?.(body.balance); } else setFailed(true);
       } catch { if (alive) setFailed(true); }
     })();
     return () => { alive = false; };
-  }, [user]);
-  const unverified = !user?.emailVerified && (user?.providerData || []).some((d) => d.providerId === 'password');
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  const unproven = !user?.emailVerified && (user?.providerData || []).some((d) => d.providerId === 'password');
   return (
-    <section style={{ marginBottom: '48px' }}>
-      <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '16px' }}>Tool credits</h3>
+    <section className="acct-section">
+      <h3 className="acct-h">Tool credits</h3>
       <div className="glass-panel acct-credits">
         {!data && <p className="acct-note" style={{ marginTop: 0 }}>{failed ? 'Your credits could not be loaded right now. Reload the page in a minute.' : 'Loading your credits…'}</p>}
         {data && (
           <>
             <p className="acct-credits-balance"><strong>{data.balance.toLocaleString('en-US')}</strong> credits</p>
             <p className="acct-note" style={{ marginTop: 0 }}>Every $1 you spend on plugins adds 100 credits. Your daily free use comes first; credits are used after it.</p>
-            {unverified && <p className="acct-note">Verify your e-mail address to receive credits from purchases made without signing in.</p>}
+            {unproven && <p className="acct-note">Credits from purchases made without signing in are added when you sign in with Google.</p>}
             {data.costs && (
               <ul className="acct-credits-costs">
                 {Object.entries(data.costs).map(([tool, cost]) => <li key={tool}><span>{TOOL_NAMES[tool] || tool}</span><span>{cost} credits per use</span></li>)}
@@ -141,33 +143,89 @@ function ToolCredits({ user }) {
   );
 }
 
+// An order placed without signing in carries no account id. The order number (printed on the receipt e-mail) together with the
+// checkout e-mail address proves it is the buyer's: POST /api/orders/claim binds the order to this account.
+function ClaimOrder({ user, onClaimed }) {
+  const [orderNumber, setOrderNumber] = useState('');
+  const [email, setEmail] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true); setMsg(null);
+    try {
+      const token = await user.getIdToken();
+      const r = await fetch('/api/orders/claim', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ orderNumber, email }) });
+      const body = await r.json().catch(() => ({}));
+      if (r.ok) {
+        const names = [...ALL_PLUGINS, ...SOLO_PLUGINS, ...FREE_PLUGINS].filter((p) => (body.slugs || []).includes(p.slug)).map((p) => p.name);
+        setMsg({ ok: true, text: names.length ? `Done. ${names.join(', ')} ${names.length === 1 ? 'is' : 'are'} now on this account.` : 'Done. The order is now on this account.' });
+        setOrderNumber('');
+        onClaimed?.();
+      } else setMsg({ ok: false, text: body.error || 'This could not be claimed right now. Try again in a minute.' });
+    } catch { setMsg({ ok: false, text: 'This could not be claimed right now. Try again in a minute.' }); }
+    setBusy(false);
+  };
+  return (
+    <div className="glass-panel acct-panel acct-claim" style={{ marginTop: 24 }}>
+      <h4 style={{ margin: '0 0 6px', fontWeight: 800 }}>Bought without signing in?</h4>
+      <p className="acct-note" style={{ marginTop: 0 }}>Enter the order number from your receipt e-mail and the e-mail address you used at checkout. The order moves to this account.</p>
+      <form className="acct-claim-row" onSubmit={submit}>
+        <input className="input-field" inputMode="numeric" placeholder="Order number, e.g. 1234" aria-label="Order number" autoComplete="off"
+               value={orderNumber} onChange={(e) => setOrderNumber(e.target.value)} disabled={busy} />
+        <input className="input-field" type="email" placeholder="Checkout e-mail" aria-label="Checkout e-mail" autoComplete="off"
+               value={email} onChange={(e) => setEmail(e.target.value)} disabled={busy} />
+        <button type="submit" className="btn btn-outline acct-small-btn" disabled={busy || !orderNumber.trim() || !email.trim()}>{busy ? 'Claiming…' : 'Claim'}</button>
+      </form>
+      {msg && <p className={`acct-note acct-claim-msg${msg.ok ? '' : ' acct-claim-error'}`} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
+    </div>
+  );
+}
+
 // Only what this account has paid for (or holds as an approved tester) is listed:
 // the free launch is over, so an earlier free download shows nothing here and no
 // download button appears for it (the server refuses those tickets anyway).
-function MyPlugins({ user }) {
-  const { owned, updatesUntil, standing } = usePurchases(user, true, false);
+// The server's answer decides. A password account whose e-mail is not proven (usePurchases: unverified) lists the plugins bound
+// to its uid (paid singles, the family, $0 orders, a first-1,000 claim, orders claimed below); orders matched only by its e-mail
+// stay hidden behind the claim card.
+function MyPlugins({ user, onPlugins, onKeys, refreshKey }) {
+  const { owned, updatesUntil, standing, unverified: emailOnlyHidden } = usePurchases(user, true, false, refreshKey);
+  const { hash } = useLocation();
   // Free plugins (a $0 order) are listed with their downloads, never offered for sale below.
-  const mine = [...ALL_PLUGINS, ...FREE_PLUGINS].filter((p) => owned?.includes(p.slug));
+  const mine = [...ALL_PLUGINS, ...SOLO_PLUGINS, ...FREE_PLUGINS].filter((p) => owned?.includes(p.slug));
   const others = owned ? ALL_PLUGINS.filter((p) => !owned.includes(p.slug)) : [];
-  const unverified = !user?.emailVerified && (user?.providerData || []).some((d) => d.providerId === 'password');
-  const checking = !unverified && owned === null;
-  const hasPaid = mine.length > 0 && standing !== 'tester';
+  const checking = owned === null;
+  // Free plugins (a $0 order) carry no updates term and no licence key, so they do not count as paid here.
+  const hasPaid = mine.some((p) => !FREE_PLUGINS.includes(p)) && standing !== 'tester';
+  const mineCount = owned ? mine.length : null;
+  useEffect(() => { onPlugins?.(mineCount); }, [mineCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  // /account#kubbe (the owned Buy buttons link here): scroll to that plugin's card once the list is on the page.
+  useEffect(() => {
+    const slug = decodeURIComponent((hash || '').replace(/^#/, ''));
+    if (!slug || !owned) return;
+    const card = document.getElementById(slug);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [hash, owned]);
   return (
     <div>
-      <LicenceKeys user={user} expectKeys={hasPaid} />
+      <LicenceKeys user={user} expectKeys={hasPaid} onCount={onKeys} refreshKey={refreshKey} />
+      {emailOnlyHidden && (
+        <p className="acct-note">Have an order under this e-mail? Claim it with the order number from your receipt (the form below).</p>
+      )}
       {mine.length === 0 && (
-        <p className="acct-note">{unverified ? 'Verify your e-mail address to see your purchases — check your inbox for the link.' : checking ? 'Checking your purchases…' : <>No purchased plugins on this account yet. <Link to="/plugins">See the plugins</Link>.</>}</p>
+        <p className="acct-note">{checking ? 'Checking your purchases…' : <>No purchased plugins on this account yet. <Link to="/plugins">See the plugins</Link>.</>}</p>
       )}
       {hasPaid && <p className="acct-note">{UPDATES_LINE}</p>}
       <div className="acct-plugin-list">
         {mine.map((plugin) => (
-          <article key={plugin.slug} className="acct-plugin">
-            <img src={plugin.cardImage} alt="" width={plugin.imageSize[0]} height={plugin.imageSize[1]}
-                 className="acct-plugin-img" loading="lazy" />
+          <article key={plugin.slug} id={plugin.slug} className="acct-plugin">
+            <div className="acct-plugin-media">
+              <img src={`/plugins/${plugin.slug}/card-bg.webp`} alt="" className="acct-plugin-img" loading="lazy" />
+            </div>
             <div className="acct-plugin-body">
-              <h4>{plugin.name} <span>{plugin.kind} · Model {plugin.model}</span></h4>
-              <p className="acct-note">
-                Download access is tied to this sign-in. Purchased plugins come with a licence key, shown above.
+              <h4>{plugin.name} <span>{plugin.kind}{plugin.model ? ` · Model ${plugin.model}` : ''}</span></h4>
+              <p className="acct-note acct-plugin-note">
+                Download access is tied to this sign-in.{FREE_PLUGINS.includes(plugin) ? '' : ' Purchased plugins come with a licence key, shown above.'}
                 {updatesUntil?.[plugin.slug] ? ` Updates until ${formatDay(updatesUntil[plugin.slug])}.` : ''}
               </p>
               <DownloadButtons slug={plugin.slug} launchId={plugin.launchId || 'launch'} paid className="acct-downloads" btnExtra="acct-small-btn" />
@@ -186,7 +244,7 @@ function MyPlugins({ user }) {
           </article>
         ))}
       </div>
-      {others.length > 0 && !unverified && (
+      {others.length > 0 && (
         <div className="acct-help">
           <h4>{mine.length ? 'Get more plugins' : 'Buy a plugin'}</h4>
           <p>Each plugin on its own, or all seven in the family: {FAMILY_UNTIL}. {UPDATES_LINE}</p>
@@ -291,48 +349,65 @@ function DeleteAccount({ user, onDeleted }) {
   );
 }
 
+function signInMethod(user) {
+  const ids = (user.providerData || []).map((d) => d.providerId);
+  if (ids.includes('google.com')) return 'Google';
+  if (ids.includes('password')) return 'E-mail and password';
+  return 'Signed in';
+}
+
 export default function AccountPage({ user, packs = [], onLogout, onDeleted }) {
   const downloadable = packs.filter(
     (pack) => (pack.actions || []).some((action) => action.type === 'download'),
   );
+  const [pluginCount, setPluginCount] = useState(null);
+  const [keyCount, setKeyCount] = useState(null);
+  const [credits, setCredits] = useState(null);
+  const inbox = useInbox(user);
+  const [claimNonce, setClaimNonce] = useState(0);
+  const stat = (v) => (v == null ? '\u2014' : v.toLocaleString('en-US'));
 
   return (
-    <div style={{ paddingBottom: '80px' }}>
+    <div className="acct-page">
       <PageMeta title="Account | SubverseLab" noIndex />
       <div className="container">
-        <div style={{ padding: '60px 0 40px', borderBottom: '1px solid var(--color-border)', marginBottom: '40px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{
-                width: '56px', height: '56px', borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--color-primary), var(--color-accent))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.4rem', fontWeight: '800', color: '#000'
-              }}>
-                {user.email[0].toUpperCase()}
-              </div>
-              <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', marginBottom: '4px' }}>Account</h2>
-                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{user.email}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <Link to="/" className="btn btn-outline" style={{ fontSize: '0.85rem' }}>← Back to Store</Link>
-              <button className="btn btn-ghost" style={{ fontSize: '0.85rem' }} onClick={onLogout}>Sign Out</button>
+        <header className="acct-header">
+          <div className="acct-id">
+            <div className="acct-avatar" aria-hidden="true">{user.email[0].toUpperCase()}</div>
+            <div className="acct-id-text">
+              <h2>Account</h2>
+              <p className="acct-email">{user.email}</p>
+              <p className="acct-method">Signed in with {signInMethod(user)}</p>
             </div>
           </div>
-        </div>
+          <div className="acct-header-actions">
+            <Link to="/" className="btn btn-outline acct-small-btn">← Back to Store</Link>
+            <button className="btn btn-ghost acct-small-btn" onClick={onLogout}>Sign Out</button>
+          </div>
+        </header>
 
-        <section style={{ marginBottom: '48px' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '16px' }}>My plugins</h3>
-          <MyPlugins user={user} />
+        <dl className="acct-summary">
+          <div><dt>Plugins</dt><dd>{stat(pluginCount)}</dd></div>
+          <div><dt>Licence keys</dt><dd>{stat(keyCount)}</dd></div>
+          <div><dt>Tool credits</dt><dd>{stat(credits)}</dd></div>
+        </dl>
+
+        <section className="acct-section" id="inbox">
+          <h3 className="acct-h">Inbox</h3>
+          <div className="glass-panel acct-panel acct-inbox"><InboxList inbox={inbox} /></div>
         </section>
 
-        <ToolCredits user={user} />
+        <section className="acct-section">
+          <h3 className="acct-h">My plugins</h3>
+          <MyPlugins user={user} onPlugins={setPluginCount} onKeys={setKeyCount} refreshKey={claimNonce} />
+          <ClaimOrder user={user} onClaimed={() => { setClaimNonce((n) => n + 1); inbox.reload(); }} />
+        </section>
+
+        <ToolCredits user={user} onBalance={setCredits} />
 
         {downloadable.length > 0 && (
-          <div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '16px' }}>Your downloads</h3>
+          <div className="acct-section">
+            <h3 className="acct-h">Your downloads</h3>
             <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(min(420px, 100%), 1fr))' }}>
               {downloadable.map((pack) => (
                 <div key={pack.id} className="pack-card">

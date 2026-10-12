@@ -13,7 +13,8 @@ function remaining(target) {
   return { d: Math.floor(m / 1440), h: Math.floor((m % 1440) / 60), m: m % 60 };
 }
 
-export default function LaunchCountdown({ compact = false, target = RELEASE_AT }) {
+// hideWhenOut: render nothing once the release has passed (no "Out now" chip on product pages and cards).
+export default function LaunchCountdown({ compact = false, target = RELEASE_AT, hideWhenOut = false }) {
   const [left, setLeft] = useState(() => remaining(target));
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function LaunchCountdown({ compact = false, target = RELEASE_AT }
   }, [target]);
 
   if (!left) {
+    if (hideWhenOut) return null;
     return <span className="plugin-count plugin-count-out">Out now</span>;
   }
   if (compact) {

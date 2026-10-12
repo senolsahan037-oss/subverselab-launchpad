@@ -89,7 +89,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase',
               letterSpacing: '1px', color: 'var(--color-accent)',
             }}>
-              ◆ Free Tools for Producers
+              ◆ Plugins and Tools for Producers
             </div>
             <h1 style={{
               fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: '900',
@@ -106,7 +106,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               display: '-webkit-box', WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>
-              Browser-based tools for arranging, generating, measuring, mixing, and separating a track into stems. Nothing to install.
+              Analog-style plugins for macOS and Windows, two of them free, plus browser tools for arranging, measuring, mixing and stem separation.
             </p>
           </div>
 
@@ -182,7 +182,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
           {filteredPacks.map((pack, index) => {
             const isCurrentTrack = activeTrack && activeTrack.id === pack.id;
             const isCurrentTrackPlaying = isCurrentTrack && isPlaying;
-            const categoryClass = getCategoryClass(rawCategory(pack));
+            const categoryClass = pack.content_type === 'ai_tool' ? 'browser-tool' : getCategoryClass(rawCategory(pack));
             const displayCat = pack.content_type === 'ai_tool' ? 'Browser Tool' : toTitleCase(rawCategory(pack));
             const packPrice = pack.price || 0;
             const isFree = packPrice === 0;

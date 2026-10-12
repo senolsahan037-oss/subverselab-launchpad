@@ -1,5 +1,5 @@
 // Shared by ToolsStrip.jsx and scripts/prerender.js (plain Node), so visitors and crawlers see the same links.
-// The free browser tools, shown under the plugin pages so visitors who arrive
+// The browser tools (free to start; daily limits are in each guide), shown under the plugin pages so visitors who arrive
 // for a plugin (most of the launch traffic) find the rest of the tool system.
 // One line each, the same wording as the homepage cards.
 export const FREE_TOOLS = [

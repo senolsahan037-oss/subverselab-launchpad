@@ -3,6 +3,7 @@ import { collection, doc, getDocs, updateDoc, deleteDoc } from 'firebase/firesto
 import { db } from '../firebase';
 import ProductForm from './ProductForm';
 import SEOAdminTab from './admin/SEOAdminTab';
+import StatsTab from './admin/StatsTab';
 import PageMeta from './PageMeta';
 
 // Same normalization the Storefront uses: `category`/`displayCategory` are
@@ -15,7 +16,7 @@ const categoryLabel = (p) => {
 };
 
 export default function AdminPanel({ user, packs, packsLoading, refreshProducts }) {
-  const [activeTab, setActiveTab] = useState('members');
+  const [activeTab, setActiveTab] = useState('stats');
   const [usersList, setUsersList] = useState([]);
   const [usersError, setUsersError] = useState(null);
   const [launchStats, setLaunchStats] = useState(null);
@@ -24,6 +25,8 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
   const [editingProduct, setEditingProduct] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [testers, setTesters] = useState(null);
+  const [packApps, setPackApps] = useState(null);
+  const [packAppsError, setPackAppsError] = useState(null);
   const [testerReports, setTesterReports] = useState([]);
   const [testersError, setTestersError] = useState(null);
   const [testerBusy, setTesterBusy] = useState('');
@@ -137,12 +140,16 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
     if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
     return data;
   };
+  const loadPackApps = () => adminFetch('/api/admin/pack-applications')
+    .then((d) => { setPackApps(d.applications || []); setPackAppsError(null); })
+    .catch((err) => setPackAppsError('Pack applications are unavailable right now: ' + err.message));
   const loadTesters = () => Promise.all([adminFetch('/api/admin/testers'), adminFetch('/api/admin/testers/reports')])
     .then(([t, r]) => { setTesters(t); setTesterReports(r.reports || []); setTestersError(null); })
     .catch((err) => setTestersError('Testers are unavailable right now: ' + err.message));
 
   useEffect(() => {
     if (user && activeTab === 'testers') loadTesters();
+    if (user && activeTab === 'packs') loadPackApps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeTab]);
 
@@ -198,6 +205,12 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
       
       <div style={{ display: 'flex', gap: '15px', marginBottom: '30px', borderBottom: '1px solid var(--color-border)', paddingBottom: '15px', flexWrap: 'wrap' }}>
         <button
+          onClick={() => setActiveTab('stats')}
+          className={`btn ${activeTab === 'stats' ? 'btn-primary' : 'btn-outline'}`}
+        >
+          Stats
+        </button>
+        <button
           onClick={() => setActiveTab('members')}
           className={`btn ${activeTab === 'members' ? 'btn-primary' : 'btn-outline'}`}
         >
@@ -222,12 +235,20 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
           Testers{testers ? ` (${testers.approved} / ${testers.total})` : ''}
         </button>
         <button
+          onClick={() => setActiveTab('packs')}
+          className={`btn ${activeTab === 'packs' ? 'btn-primary' : 'btn-outline'}`}
+        >
+          Pack applications{packApps ? ` (${packApps.length})` : ''}
+        </button>
+        <button
           onClick={() => setActiveTab('seo')}
           className={`btn ${activeTab === 'seo' ? 'btn-primary' : 'btn-outline'}`}
         >
           SEO Content
         </button>
       </div>
+
+      {activeTab === 'stats' && <StatsTab user={user} />}
 
       {activeTab === 'members' && (
         <>
@@ -329,6 +350,49 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
         </>
       )}
 
+      {activeTab === 'packs' && (
+        <>
+          {packAppsError && (
+            <div className="glass-panel" style={{ padding: '16px', marginBottom: '16px', color: 'var(--color-text-muted)' }}>{packAppsError}</div>
+          )}
+          {packApps && (
+            <div className="glass-panel" style={{ padding: '24px', overflowX: 'auto' }}>
+              <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Pack applications ({packApps.length})</h2>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    {['Name', 'Artist', 'Links', 'Makes', 'Date'].map((h) => (
+                      <th key={h} style={{ padding: '12px', color: 'var(--color-text-muted)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {packApps.map((a) => (
+                    <tr key={a.email} style={{ borderBottom: '1px solid var(--color-border)', verticalAlign: 'top' }}>
+                      <td style={{ padding: '12px', fontWeight: '600', color: 'var(--color-accent)' }}>
+                        {a.name}
+                        <div style={{ fontWeight: '400', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{a.email}{a.country ? ` · ${a.country}` : ''}</div>
+                      </td>
+                      <td style={{ padding: '12px', fontSize: '0.9rem' }}>{a.artist}</td>
+                      <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '280px', wordBreak: 'break-all' }}>
+                        {(a.links || []).map((l) => <div key={l}><a href={l} target="_blank" rel="noopener noreferrer">{l}</a></div>)}
+                        {a.storeUrl && <div style={{ color: 'var(--color-text-muted)' }}>Sells: <a href={a.storeUrl} target="_blank" rel="noopener noreferrer">{a.storeUrl}</a></div>}
+                      </td>
+                      <td style={{ padding: '12px', fontSize: '0.9rem' }}>{(a.kinds || []).join(', ') || '—'}</td>
+                      <td style={{ padding: '12px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-GB') : ''}</td>
+                    </tr>
+                  ))}
+                  {packApps.length === 0 && (
+                    <tr><td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: 'var(--color-text-muted)' }}>No applications yet.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!packApps && !packAppsError && <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Loading applications…</div>}
+        </>
+      )}
+
       {activeTab === 'testers' && (
         <>
           {testersError && (
@@ -371,7 +435,7 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
                         <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '180px', wordBreak: 'break-all' }}>
                           {a.link ? <a href={a.link} target="_blank" rel="noopener noreferrer">{a.link}</a> : '—'}
                         </td>
-                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '340px', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{a.answer}</td>
+                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '340px', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{a.answer}{a.heard && <div style={{ marginTop: '6px', fontStyle: 'italic' }}>Heard via: {a.heard}</div>}</td>
                         <td style={{ padding: '12px', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
                           <div style={{ marginBottom: '8px', color: a.status === 'approved' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}>{a.status}</div>
                           <div style={{ display: 'flex', gap: '8px' }}>

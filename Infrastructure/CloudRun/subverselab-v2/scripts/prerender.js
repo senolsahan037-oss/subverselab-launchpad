@@ -40,13 +40,16 @@ import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
 import { FREE_TOOLS } from '../src/data/tools.js';
 import {
-  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, PRICES, FORMATS,
-  FAMILY_NAME, FAMILY_PRICE, FAMILY_VALUE_LINE, FAMILY_OFFER_TERMS, FAMILY_LATER, FAMILY_IMAGE, UPDATES_LINE, FAMILY_STARTS_AT, isFamilyLive,
-  ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS,
+  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, SAMPLE_PACKS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, CHECKOUT,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, FAMILY_STARTS_AT, isFamilyLive,
+  ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS,
+  priceText, currentPrice, launchPriceActive, launchNote, ACTIVATION_SHORT,
+  ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor,
 } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
 import { LEGAL_PAGES, LEGAL_UPDATED, LEGAL_EMAIL } from '../src/data/legalContent.js';
+import { FORUM_SEED_TOPICS } from '../src/data/forumSeed.js';
 
 function escapeHtml(str = '') {
   return String(str)
@@ -181,8 +184,19 @@ const HELP_OG_IMAGE = `${SITE_URL}/og-help.jpg`;
 // duplicating them.
 const RH = ' data-rh="true"';
 
-function buildHead({ title, description, canonical, image, icon, type = 'website', jsonLd = [] }) {
+// Pages that must stay out of search results but whose links may still be followed.
+const NOINDEX = 'noindex,follow';
+
+// `canonical` is optional (the 404 page and the private pages carry none: a canonical on them would point crawlers
+// at a URL that is not that page). `bare: true` writes only the title, robots and theme-colour tags: no
+// description, no Open Graph, no Twitter card (/account, /admin).
+function buildHead({ title, description, canonical, image, icon, type = 'website', jsonLd = [], robots, bare = false }) {
   const t = escapeHtml(title);
+  if (bare) {
+    return `<title${RH}>${t}</title>${robots ? `\n    <meta${RH} name="robots" content="${escapeHtml(robots)}" />` : ''}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2EFE7" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#032825" />`;
+  }
   const d = escapeHtml(description);
   const ogImage = image || DEFAULT_OG_IMAGE;
   // Dimensions are declared only for the brand cards, which really are 1200x630.
@@ -204,14 +218,16 @@ function buildHead({ title, description, canonical, image, icon, type = 'website
   return `<title${RH}>${t}</title>
     ${icon ? `<link${RH} rel="icon" type="image/svg+xml" href="${escapeHtml(icon)}" />` : ''}
     <meta${RH} name="description" content="${d}" />
-    <link${RH} rel="canonical" href="${canonical}" />
+    ${canonical ? `<link${RH} rel="canonical" href="${canonical}" />` : ''}${
+    robots ? `\n    <meta${RH} name="robots" content="${escapeHtml(robots)}" />` : ''
+  }
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2EFE7" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#032825" />
     <meta${RH} property="og:site_name" content="SubverseLab" />
     <meta${RH} property="og:title" content="${t}" />
     <meta${RH} property="og:description" content="${d}" />
     <meta${RH} property="og:type" content="${type}" />
-    <meta${RH} property="og:url" content="${canonical}" />${img}
+    ${canonical ? `<meta${RH} property="og:url" content="${canonical}" />` : ''}${img}
     <meta${RH} name="twitter:card" content="summary_large_image" />
     <meta${RH} name="twitter:image" content="${escapeHtml(ogImage)}" />
     <meta${RH} name="twitter:title" content="${t}" />
@@ -254,7 +270,7 @@ const ORGANIZATION = {
   '@type': 'Organization',
   name: 'SubverseLab',
   url: `${SITE_URL}/`,
-  description: 'Free, browser-based tools for music producers.',
+  description: 'Browser tools for music producers, free to start.',
   sameAs: [
     'https://www.youtube.com/@SubverseLab',
     'https://www.instagram.com/subverse_lab/',
@@ -332,12 +348,18 @@ function buildHomeBody(products, articleBySlug) {
 
   return page(`
       <h1>SubverseLab: Plugins and Tools for Music Producers</h1>
-      <p>SubverseLab builds free browser-based tools for arranging, generating, measuring, mixing and separating music. Everything runs in the browser with nothing to install, and everything below is free to use; some tools ask for a free account.</p>
+      <p>SubverseLab builds plugins for macOS and Windows (VST3 and AU; TABAN and ALEV are free) and browser tools for arranging, generating, measuring, mixing and separating music. The tools run in the browser with nothing to install and are free to start; some ask for a free account. Where a tool has a daily limit, the credits that come with any plugin purchase pay for more.</p>
       ${siteNav()}
       <section>
         <h2>Out now: seven audio plugins</h2>
         <p>VST3 and AU plugins from SubverseLab. Buy each on its own or all seven in the ${escapeHtml(FAMILY_NAME)} for $${FAMILY_PRICE} (regular price $${FAMILY_REGULAR_PRICE}${familyOfferEndLabel() ? `, launch price until ${escapeHtml(familyOfferEndLabel())}` : ''}).</p>
         <ul>${SHOWCASE_SLUGS.map((slug) => { const pl = ALL_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} ($${PRICES[slug]})</li>`; }).join('')}</ul>
+        <p>Also free, forever:</p>
+        <ul>${SHOWCASE_FREE_SLUGS.map((slug) => { const pl = FREE_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (free)</li>`; }).join('')}</ul>
+        <p>A stem separation app, sold on its own:</p>
+        <ul>${SHOWCASE_SOLO_SLUGS.map((slug) => { const pl = SOLO_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(priceText(slug))})</li>`; }).join('')}</ul>
+        <p>Coming soon:</p>
+        <ul>${SHOWCASE_SOON_SLUGS.map((slug) => { const pl = LINE2_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(line2AvailableLine(pl))})</li>`; }).join('')}</ul>
         <p><a href="/plugins">See all plugins</a></p>
       </section>
       <h2>The tools</h2>${toolSections}
@@ -439,7 +461,7 @@ async function main() {
 
   // Plugin and launch pages carry the free-tools links too, so crawlers that
   // land there (most launch traffic) can reach every tool page.
-  const toolsHtml = `<section><h2>Free tools for producers</h2><ul>${FREE_TOOLS.map(([slug, name, line]) => `<li><a href="/tools/${slug}">${escapeHtml(name)}</a> — ${escapeHtml(line)}</li>`).join('')}</ul></section>`;
+  const toolsHtml = `<section><h2>Browser tools for producers</h2><ul>${FREE_TOOLS.map(([slug, name, line]) => `<li><a href="/tools/${slug}">${escapeHtml(name)}</a> — ${escapeHtml(line)}</li>`).join('')}</ul></section>`;
   function writePage(routePath, head, bodyHtml) {
     if (bodyHtml && /^(plugins|launch)/.test(routePath) && !/manual/.test(routePath)) bodyHtml += toolsHtml;
     const html = bodyHtml ? renderPageWithBody(template, head, bodyHtml) : renderPage(template, head);
@@ -457,7 +479,7 @@ async function main() {
       '@type': 'WebSite',
       name: 'SubverseLab',
       url: `${SITE_URL}/`,
-      description: 'Free, browser-based tools for music producers.',
+      description: 'Browser tools for music producers, free to start.',
     },
     {
       '@context': 'https://schema.org',
@@ -590,12 +612,14 @@ async function main() {
   console.log(`prerender: plugin family ${FAMILY_LIVE ? 'LIVE' : `not live yet (starts ${FAMILY_STARTS_AT})`}`);
   const bundleLine = FAMILY_LIVE
     ? `<h2>${escapeHtml(FAMILY_NAME)} &mdash; $${FAMILY_PRICE}</h2>
-      <p>${escapeHtml(FAMILY_PLUGINS.map((p) => p.displayName).join(', '))}. ${escapeHtml(FAMILY_LATER)} ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(UPDATES_LINE)} <a href="${LAUNCH2.path}">The plugin family</a> &middot; <a href="${LAUNCH.path}">Kubbe and Kaset launch</a>.</p>
+      <p>${escapeHtml(FAMILY_PLUGINS.map((p) => p.displayName).join(', '))}. Launch price until ${escapeHtml(familyOfferEndLabel())}, regular price $${FAMILY_REGULAR_PRICE}. ${escapeHtml(UPDATES_LINE)} <a href="${LAUNCH2.path}">The plugin family</a> &middot; <a href="${LAUNCH.path}">Kubbe and Kaset launch</a>.</p>
       <p>Each on its own: ${escapeHtml(FAMILY_PLUGINS.map((p) => `${p.displayName} $${PRICES[p.slug]}`).join(' · '))}.</p>`
     : '';
+  // One price block per product page (decisions 2026-10-10): price, family, the date and regular price once, updates once.
   const ownLine = (pl) => FAMILY_LIVE
-    ? `$${PRICES[pl.slug]} on its own, or the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(UPDATES_LINE)}`
+    ? `$${PRICES[pl.slug]} on its own, or all seven for $${FAMILY_PRICE}. Launch price until ${escapeHtml(familyOfferEndLabel())} (regular $${FAMILY_REGULAR_PRICE}). ${escapeHtml(UPDATES_LINE)}`
     : `$${PRICES[pl.slug]} on its own. ${escapeHtml(UPDATES_LINE)}`;
+  const BUY_SENTENCE = 'Sold through Lemon Squeezy; the download and your licence key appear on your Account page within a minute.';
   writePage('plugins', buildHead({
     title: PLUGINS_INDEX.title,
     description: PLUGINS_INDEX.description,
@@ -606,6 +630,11 @@ async function main() {
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       ${bundleLine}
+      <p>${escapeHtml(TRUST_LINE)}</p>
+      ${LINE2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(line2AvailableLine(pl))}</h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
+      ${SOLO_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(priceText(pl.slug))}</h2>
+      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       ${FREE_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; free</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <nav><a href="/">Tools</a> &middot; <a href="/loom">Loom</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
@@ -639,8 +668,10 @@ async function main() {
       ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
-      <h2>Price and download</h2>
-      <p>${ownLine(pl)} Sold through Lemon Squeezy. Sign in to enter the Download Room; no key or activation is needed.</p>
+      <h2>Buying and downloading</h2>
+      <p>${ownLine(pl)}</p>
+      <p>${escapeHtml(trustLineFor(pl.slug))}</p>
+      <p>${BUY_SENTENCE} ${escapeHtml(ACTIVATION_LINE)}</p>
       <p>The free first ${LAUNCH.codesTotal.toLocaleString('en-US')} are claimed. <a href="${LAUNCH.path}">Kubbe and Kaset launch page</a>.</p>
       <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
@@ -698,12 +729,13 @@ async function main() {
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <p>${FAMILY_LIVE ? `Or the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ` : ''}${escapeHtml(FORMATS)}.</p>
+      <p>${escapeHtml(TRUST_LINE)}</p>
       <h2>Download Room</h2>
-      <ol><li><strong>Buy.</strong> Buy with Lemon Squeezy.</li><li><strong>Sign in.</strong> Sign in on this page with the e-mail you paid with.</li><li><strong>Download.</strong> Download Kubbe and Kaset for macOS or Windows.</li><li><strong>Install.</strong> No key or activation is needed.</li></ol>
+      <ol><li><strong>Buy.</strong> Buy with Lemon Squeezy.</li><li><strong>Sign in.</strong> Sign in on this page with the e-mail you paid with.</li><li><strong>Download.</strong> Download Kubbe and Kaset for macOS or Windows.</li><li><strong>Install.</strong> ${escapeHtml(ACTIVATION_LINE)}</li></ol>
       <h2>Manuals</h2>
       <ul>${PLUGINS.map((pl) => `<li><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> (<a href="${pl.manual}">PDF</a>)</li>`).join('')}</ul>
       <h2>Getting the plugins</h2>
-      <p>Buy, then sign in on subverselab.com/launch with the same e-mail and download. No key or activation is needed.</p>
+      <p>Buy, then sign in on subverselab.com/launch with the same e-mail and download. ${escapeHtml(ACTIVATION_LINE)}</p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   // Launch 2: KORO, YANKI, HAVA, MIHENK and TUTKAL, sold on their own and in the family, own counter.
@@ -730,18 +762,94 @@ async function main() {
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
       ],
     }), `<h1>${escapeHtml(pl.name)}</h1>
-      <p>${escapeHtml(pl.tagline)} Out ${escapeHtml(pl.releaseLabel)} &middot; ${escapeHtml(pl.formats)}.</p>
+      <p>${escapeHtml(pl.tagline)} ${FAMILY_LIVE ? `$${PRICES[pl.slug]} &middot;` : `Out ${escapeHtml(pl.releaseLabel)} &middot;`} ${escapeHtml(pl.formats)}.</p>
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
       ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
-      <h2>Price and download</h2>
+      <h2>${FAMILY_LIVE ? 'Buying and downloading' : 'Price and download'}</h2>
       ${FAMILY_LIVE
-        ? `<p>${escapeHtml(pl.displayName)} is $${PRICES[pl.slug]} on its own, or part of the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(UPDATES_LINE)}</p>
-      <p>${escapeHtml(LAUNCH2.askHow)}. <a href="${LAUNCH2.path}">How the family offer works</a>.</p>`
+        ? `<p>${ownLine(pl)}</p>
+      <p>${escapeHtml(trustLineFor(pl.slug))}</p>
+      <p>${BUY_SENTENCE} ${escapeHtml(LAUNCH2.askHow)}. <a href="${LAUNCH2.path}">How the family offer works</a>.</p>`
         : `<p>${escapeHtml(pl.displayName)} is out ${escapeHtml(pl.releaseLabel)}. The price is shown from that day. <a href="${LAUNCH2.path}">Launch page</a>.</p>`}
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  // The second line (LINE2_PLUGINS): ADALET and SEDA, sold on their own, no date and no checkout yet ("Coming soon").
+  for (const pl of LINE2_PLUGINS) {
+    writePage(pl.path.slice(1), buildHead({
+      title: pl.title,
+      description: pl.description,
+      canonical: `${SITE_URL}${pl.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: `SubverseLab ${pl.displayName}`,
+          applicationCategory: 'MultimediaApplication',
+          operatingSystem: 'macOS, Windows',
+          url: `${SITE_URL}${pl.path}`,
+          image: `${SITE_URL}${pl.og}`,
+          // No price until the checkout exists (owner 12 Oct).
+          ...(CHECKOUT[pl.slug] ? { offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD', availability: 'https://schema.org/InStock' } } : {}),
+          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
+      ],
+    }), `<h1>${escapeHtml(pl.displayName)}</h1>
+      <p>${escapeHtml(pl.tagline)} ${escapeHtml(line2AvailableLine(pl))} &middot; ${escapeHtml(pl.formats)}.</p>
+      <p>${escapeHtml(pl.intro)}</p>
+      <h2>${escapeHtml(pl.modesLabel)}</h2>
+      ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      <h2>The controls</h2>
+      <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
+      <h2>Price and availability</h2>
+      <p>${escapeHtml(line2AvailableLine(pl))}. ${escapeHtml(UPDATES_LINE)}</p>
+      <p>${escapeHtml(TRUST_LINE)}</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
+
+  // Products sold on their own at a real price (SOLO_PLUGINS: ELEK). The launch price is decided here at BUILD time
+  // (src/data/plugins.js launchPriceActive); the React page re-decides in the browser, so rebuild and deploy after the end moment.
+  for (const pl of SOLO_PLUGINS) {
+    writePage(pl.path.slice(1), buildHead({
+      title: pl.title,
+      description: pl.description,
+      canonical: `${SITE_URL}${pl.path}`,
+      image: `${SITE_URL}${pl.og}`,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'SoftwareApplication',
+          name: `SubverseLab ${pl.displayName}`,
+          applicationCategory: 'MultimediaApplication',
+          operatingSystem: 'macOS',
+          url: `${SITE_URL}${pl.path}`,
+          image: `${SITE_URL}${pl.og}`,
+          offers: { '@type': 'Offer', price: String(currentPrice(pl.slug)), priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
+      ],
+    }), `<h1>${escapeHtml(pl.displayName)}</h1>
+      <p>${escapeHtml(pl.tagline)} ${escapeHtml(priceText(pl.slug))} &middot; ${escapeHtml(pl.formats)}</p>
+      <p>${escapeHtml(pl.intro)}</p>
+      <h2>${escapeHtml(pl.modesLabel)}</h2>
+      ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      <h2>The controls</h2>
+      <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
+      <p>${escapeHtml(pl.controlsNote)}</p>
+      <h2>Price and download</h2>
+      <p>${launchPriceActive(pl.slug) ? `<s>$${PRICES[pl.slug]}</s> $${currentPrice(pl.slug)} &mdash; ${escapeHtml(launchNote(pl.slug))}` : `$${PRICES[pl.slug]}`}. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(ACTIVATION_SHORT)}</p>
+      <p>${escapeHtml(trustLineFor(pl.slug))}</p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
@@ -774,7 +882,8 @@ async function main() {
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Get it free</h2>
-      <p>The checkout asks for an e-mail address, no card. The download then appears on your account page.</p>
+      <p>The checkout asks for an e-mail address, no card. The download then appears on your account page. ${escapeHtml(ACTIVATION_LINE_FREE)}</p>
+      <p>${escapeHtml(TRUST_LINE_FREE)}</p>
       <p><a href="${pl.manual}">${escapeHtml(pl.displayName)} manual (PDF)</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
@@ -787,8 +896,9 @@ async function main() {
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: FAMILY_LIVE ? FAMILY_NAME : 'KORO, YANKI, HAVA and MIHENK', url: `${SITE_URL}${LAUNCH2.path}` }])],
   }), FAMILY_LIVE
     ? `<h1>${escapeHtml(FAMILY_NAME)} &mdash; seven products, $${FAMILY_PRICE}</h1>
-      <p>${escapeHtml(LAUNCH2.offerNow)}. ${escapeHtml(FAMILY_VALUE_LINE)}. ${escapeHtml(FAMILY_OFFER_TERMS)}. ${escapeHtml(FAMILY_LATER)}</p>
-      <p>KORO, YANKI, HAVA, MIHENK and TUTKAL are out October 5. Every plugin is also sold on its own. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(LAUNCH2.askHow)}.</p>
+      <p>${escapeHtml(LAUNCH2.offerNow)}. Launch price until ${escapeHtml(familyOfferEndLabel())} &middot; regular $${FAMILY_REGULAR_PRICE}. ${escapeHtml(UPDATES_LINE)}</p>
+      <p>Every plugin is also sold on its own. ${escapeHtml(LAUNCH2.askHow)}.</p>
+      <p>${escapeHtml(TRUST_LINE)}</p>
       ${FAMILY_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]} on its own</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <p>All seven together: $${FAMILY_PRICE}.</p>
@@ -806,14 +916,57 @@ async function main() {
     description: TESTERS.description,
     canonical: `${SITE_URL}${TESTERS.path}`,
     image: `${SITE_URL}${LAUNCH2_PLUGINS[0].og}`,
+    // Out of the index until the owner opens the call (decisions 2026-10-10); the URL keeps working.
+    robots: NOINDEX,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'Testers', url: `${SITE_URL}${TESTERS.path}` }])],
-  }), `<h1>Test KORO, YANKI, HAVA, MIHENK and TUTKAL</h1>
-      <p>100 producers get all five free, chosen so that every operating system and DAW is covered.</p>
+  }), `<h1>Become a SubverseLab tester</h1>
+      <p>100 producers test our plugins free, chosen so that every operating system and DAW is covered. 100 seats. Applications are read by hand; you hear back by e-mail.</p>
       <h2>What you get</h2>
-      <p>KORO, YANKI, HAVA, MIHENK and TUTKAL for macOS and Windows, free, from the Download Room. No key or activation is needed.</p>
+      <p>The plugins under test, for macOS and Windows, free, from the Download Room, for as long as you test. Testers get the same builds buyers get. Which plugins they are comes with your seat.</p>
       <h2>What we ask in return</h2>
-      <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li></ul>
+      <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li><li>Tell us where you heard about SubverseLab.</li></ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  writePage('sample-packs', buildHead({
+    title: SAMPLE_PACKS.title,
+    description: SAMPLE_PACKS.description,
+    canonical: `${SITE_URL}${SAMPLE_PACKS.path}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Sample packs', url: `${SITE_URL}${SAMPLE_PACKS.path}` }])],
+  }), `<h1>Sample packs: under construction</h1>
+      <p>We are building the SubverseLab pack store the way we built our plugins: our own sound first, measured and finished, then the producers we believe in.</p>
+      <p>Producers who want to publish their packs with us can apply on this page.</p>
+      <p>Every pack is checked and packaged by SubverseLab before it is published. You keep the rights to your sounds; nothing is exclusive.</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Forum (public, in the nav): its own title/description/canonical instead of the homepage shell's. /forum/<id> stays client-only.
+  writePage('forum', buildHead({
+    title: 'Forum | SubverseLab',
+    description: 'Questions and answers about SubverseLab plugins and browser tools, from producers and from us.',
+    canonical: `${SITE_URL}/forum`,
+    jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Forum', url: `${SITE_URL}/forum` }])],
+  }), `<h1>SubverseLab Forum</h1>
+      <p>Ask a clear question, share what you tried, and add an answer when you know one.</p>
+      <ul>${FORUM_SEED_TOPICS.map((t) => `<li>${escapeHtml(t.title)}</li>`).join('')}</ul>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Private pages: never the homepage title or canonical, never indexed (robots.txt already disallows them).
+  writePage('account', buildHead({ title: 'Account | SubverseLab', robots: 'noindex, nofollow', bare: true }),
+    '<h1>Your account</h1>\n      <p>Sign in to see your plugins, downloads, licence keys and credits.</p>');
+  writePage('admin', buildHead({ title: 'Admin | SubverseLab', robots: 'noindex, nofollow', bare: true }),
+    '<h1>Admin</h1>\n      <p>Sign in with an admin account.</p>');
+
+  // dist/404.html: served by server.js with status 404 for unknown URLs. Same app shell (the in-app 404 page paints
+  // after load), but no canonical and noindex, so previews and crawlers do not read the homepage's head.
+  {
+    const html = renderPageWithBody(template, buildHead({
+      title: 'Page not found | SubverseLab',
+      description: 'That page is not on subverselab.com.',
+      robots: 'noindex',
+    }), `<h1>The signal stops here.</h1>
+      <p><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help</a></p>`);
+    writeFileSync(join(ROOT, 'dist', '404.html'), html);
+    written += 1;
+  }
 
   // Privacy Policy and Terms of Use: same text as LegalPage.jsx, from legalContent.js.
   const legalMail = (t) => escapeHtml(t).split(LEGAL_EMAIL).join(`<a href="mailto:${LEGAL_EMAIL}">${LEGAL_EMAIL}</a>`);
@@ -841,6 +994,8 @@ async function main() {
       title: a.metaTitle || `${a.title} | SubverseLab`,
       description,
       canonical,
+      // Sensei's guide is kept out of search results (Search Console cleanup, 2026-10-07).
+      robots: a.slug === 'sensei' ? NOINDEX : undefined,
       type: 'article',
       image: product?.coverImage || undefined,
       jsonLd: [
@@ -866,6 +1021,8 @@ async function main() {
         title: `${p.title} | SubverseLab`,
         description: toMetaDescription(p.description),
         canonical,
+        // Tool pages are kept out of the index; crawlers may still follow their links.
+        robots: NOINDEX,
         image: p.coverImage || undefined,
         icon: p.slug === 'subverse-mix-check' ? '/subverse-mix-check-mark.svg' : undefined,
         jsonLd: [

@@ -5,12 +5,12 @@ import PageMeta from './PageMeta';
 import Icon from './Icon';
 import LaunchCountdown from './LaunchCountdown';
 import BuyButton from './BuyButton';
-import FamilyOffer from './FamilyOffer';
 import { useFamilyLive } from '../hooks/useFamilyLive';
 import DownloadButtons from './DownloadButtons';
+import PluginDemos from './PluginDemos';
 import {
   INSTAGRAM_DM, LAUNCH, LAUNCH2, PRICES, FORMATS, PLUGINS, PRESS_KIT, RELEASE2_AT,
-  FAMILY_NAME, FAMILY_PRICE, FAMILY_PLUGINS, FAMILY_VALUE_LINE, FAMILY_OFFER_TERMS, FAMILY_UNTIL, UPDATES_LINE,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_REGULAR_PRICE, UPDATES_LINE, ACTIVATION_LINE, trustLineFor, familyOfferEndLabel,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
 import { useLaunch1Full } from '../hooks/useLaunchCounter';
@@ -36,12 +36,15 @@ export default function PluginPage({ plugin }) {
   const second = plugin.launchId === 'launch2';
   const launch = second ? LAUNCH2 : LAUNCH;
   const other = PLUGINS.find((p) => p.slug !== plugin.slug) || PLUGINS[0];
-  const otherFamily = FAMILY_PLUGINS.filter((p) => p.slug !== plugin.slug);
-  const releaseLabel = second ? plugin.releaseLabel : 'now';
-  const headPrice = second ? (familyLive ? `$${PRICES[plugin.slug]} · or in the plugin family` : null) : `$${PRICES[plugin.slug]}`;
+  const releaseLabel = second && !familyLive ? plugin.releaseLabel : 'now';
+  // One price block per page (decisions 2026-10-10): the head names the price and the family; the note under the
+  // buttons carries the end date, the regular price and the updates line, once.
+  const headPrice = second && !familyLive
+    ? null
+    : familyLive ? `$${PRICES[plugin.slug]} · or all seven for $${FAMILY_PRICE}` : `$${PRICES[plugin.slug]}`;
+  const trust = trustLineFor(plugin.slug);
   const offerPrice = PRICES[plugin.slug];
   const [w, h] = plugin.imageSize;
-  const demos = (plugin.demos || []).filter((d) => d.youtube);
 
   const schema = {
     '@context': 'https://schema.org',
@@ -72,24 +75,27 @@ export default function PluginPage({ plugin }) {
 
           <div className="plugin-offer">
             <div>
-              <p className="plugin-offer-head">{headPrice ? `${headPrice} · out ${releaseLabel}` : `Out ${releaseLabel}`}</p>
+              <p className="plugin-offer-head">{headPrice || `Out ${releaseLabel}`}</p>
               <p className="plugin-offer-sub">{plugin.formats || FORMATS}</p>
             </div>
-            {second ? <LaunchCountdown target={RELEASE2_AT} /> : <LaunchCountdown />}
+            {second ? <LaunchCountdown target={RELEASE2_AT} hideWhenOut /> : <LaunchCountdown hideWhenOut />}
           </div>
 
           <div className="plugin-cta-row">
             {/* The family is the highlighted best-value offer; the single is the quieter button beside it. */}
             {familyLive && <BuyButton slug="family" className="btn plugin-btn" label={`Get the family — $${FAMILY_PRICE}`} />}
             <BuyButton slug={plugin.slug} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn plugin-btn'} full={second ? undefined : full} />
-            <Link to={launch.path} className="plugin-cta-note">
-              {second
-                ? (familyLive ? `${FAMILY_UNTIL}, all seven plugins — ${UPDATES_LINE}` : `Out ${releaseLabel} — see the launch page`)
-                : full
-                  ? (familyLive ? `$${PRICES[plugin.slug]} on its own, or the plugin family of seven for ${FAMILY_UNTIL}. ${UPDATES_LINE}` : `$${PRICES.kubbe} each — see the launch page`)
-                  : `${launch.offer} — enter the Download Room`} →
+            <Link to={familyLive ? LAUNCH2.path : launch.path} className="plugin-cta-note">
+              {familyLive
+                ? `Launch price $${FAMILY_PRICE} until ${familyOfferEndLabel()} (regular $${FAMILY_REGULAR_PRICE}). ${UPDATES_LINE}`
+                : second
+                  ? `Out ${releaseLabel} — see the launch page`
+                  : full
+                    ? `$${PRICES.kubbe} each — see the launch page`
+                    : `${launch.offer} — enter the Download Room`} →
             </Link>
           </div>
+          <p className="plugin-trust">{trust}</p>
 
           <figure className="plugin-panel">
             <img src={mode.image} alt={`${plugin.name}'s front panel with ${mode.name} selected`}
@@ -112,22 +118,7 @@ export default function PluginPage({ plugin }) {
       <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
         <p className="plugin-lead">{plugin.intro}</p>
 
-        {demos.length > 0 && (
-          <section className="plugin-section">
-            <h2>Hear it</h2>
-            <div className="plugin-demos">
-              {demos.map((d) => (
-                <figure key={d.youtube} className="plugin-demo">
-                  <iframe src={`https://www.youtube-nocookie.com/embed/${d.youtube}`}
-                          title={`${plugin.name} — ${d.caption}`} loading="lazy"
-                          allow="encrypted-media; picture-in-picture; fullscreen"
-                          referrerPolicy="strict-origin-when-cross-origin" />
-                  <figcaption>{d.caption}</figcaption>
-                </figure>
-              ))}
-            </div>
-          </section>
-        )}
+        <PluginDemos plugin={plugin} />
 
         {plugin.sections.map((s) => (
           <section key={s.heading} className="plugin-section">
@@ -149,42 +140,20 @@ export default function PluginPage({ plugin }) {
           {plugin.controlsNote && <p style={{ marginTop: '16px' }}>{plugin.controlsNote}</p>}
         </section>
 
-        <section className="plugin-section">
-          <h2>Price and download</h2>
-          {second && !familyLive ? (
-            <p>
-              {plugin.displayName} is out {plugin.releaseLabel}. The price is shown here from that day.
-            </p>
-          ) : second ? (
-            <>
-              <p>
-                {plugin.displayName} is ${PRICES[plugin.slug]} on its own. Or get the {FAMILY_NAME}: {otherFamily.map((p) => p.displayName).join(', ')} and {plugin.displayName} together for ${FAMILY_PRICE}.
-                {' '}{FAMILY_VALUE_LINE}. {FAMILY_OFFER_TERMS}. Sold through Lemon Squeezy.
-              </p>
-              <p>{UPDATES_LINE}</p>
-              <div className="plugin-buy-row">
-                <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />
-                <BuyButton slug={plugin.slug} className="btn btn-outline plugin-buy-single" />
-              </div>
-            </>
-          ) : (
-            <>
-              <p>
-                {familyLive
-                  ? `$${PRICES[plugin.slug]} on its own. Or get the ${FAMILY_NAME} — seven products, ${FAMILY_UNTIL}.`
-                  : `$${PRICES[plugin.slug]} on its own.`}
-                {' '}Sold through Lemon Squeezy.{full ? ' The free 1,000 downloads are gone.' : ' Free launch downloads are gated by sign-in on the Download Room.'}
-              </p>
-              <p>{UPDATES_LINE}</p>
-              <div className="plugin-buy-row">
-                {familyLive && <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />}
-                <BuyButton slug={plugin.slug} full={full} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn btn-primary'} />
-              </div>
-            </>
-          )}
-        </section>
+        {plugin.notYet.length > 0 && (
+          <section className="plugin-section">
+            <h2>Not done yet</h2>
+            <ul>
+              {plugin.notYet.map((t) => <li key={t}>{t}</li>)}
+            </ul>
+          </section>
+        )}
 
-        <FamilyOffer style={{ marginTop: 0, marginBottom: '8px' }} />
+        <section className="plugin-section">
+          <h2>Buying and downloading</h2>
+          <p className="plugin-trust">{trust}</p>
+          <p>Sold through Lemon Squeezy; the download and your licence key appear on your Account page within a minute.</p>
+        </section>
 
         <section className="plugin-section">
           <h2>{second ? 'Download Room' : full ? 'Download Room' : 'Free Download Room'}</h2>
@@ -195,12 +164,10 @@ export default function PluginPage({ plugin }) {
           ) : second ? (
             <p>
               Buy {plugin.displayName} or the family, then sign in on <Link to={launch.path}>the family page</Link> with the e-mail you paid with and download.
-              {' '}{plugin.displayName} is out {plugin.releaseLabel}.
             </p>
           ) : full ? (
             <p>
-              The free 1,000 have been claimed. {plugin.name} is ${PRICES[plugin.slug]}, {familyLive ? `or part of the ${FAMILY_NAME} (${FAMILY_UNTIL})` : ''}.
-              Already bought it? Sign in on <Link to={launch.path}>the launch page</Link> with your order e-mail and download.
+              Bought it? Sign in on <Link to={launch.path}>the launch page</Link> with your order e-mail and download.
             </p>
           ) : (
             <p>
@@ -208,15 +175,6 @@ export default function PluginPage({ plugin }) {
             </p>
           )}
         </section>
-
-        {plugin.notYet.length > 0 && (
-          <section className="plugin-section">
-            <h2>Not done yet</h2>
-            <ul>
-              {plugin.notYet.map((t) => <li key={t}>{t}</li>)}
-            </ul>
-          </section>
-        )}
 
         <section className="plugin-section">
           <h2>Download</h2>
@@ -233,7 +191,7 @@ export default function PluginPage({ plugin }) {
           ) : (
             <>
               <p>
-                Sign in to enter the Download Room. No key or activation is needed. Installation steps are in the manual.
+                Sign in to enter the Download Room. {ACTIVATION_LINE} Installation steps are in the manual.
               </p>
               <DownloadButtons slug={plugin.slug} launchId={plugin.launchId || 'launch'} />
             </>

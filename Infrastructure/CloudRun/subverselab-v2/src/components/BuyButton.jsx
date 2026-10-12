@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from './Icon';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import VerifyEmailNotice from './VerifyEmailNotice';
-import { CHECKOUT, PRICES, pluginBySlug } from '../data/plugins';
+import { CHECKOUT, pluginBySlug, currentPrice } from '../data/plugins';
+import usePurchaseStatus, { checkoutStarted, markCheckoutStarted } from '../hooks/usePurchaseStatus';
 
 // One Lemon Squeezy checkout button. The links live in CHECKOUT in
 // src/data/plugins.js; while one is empty the button is shown disabled as
@@ -25,11 +26,13 @@ function withBuyer(url, email, uid) {
     return u.toString();
   } catch { return url; }
 }
-// Remembered for this tab when a checkout opens, so /launch knows a purchase
-// may be on its way and polls for it. sessionStorage can be unavailable.
-const CHECKOUT_KEY = 'svl_checkout_started';
-export function checkoutStarted() { try { return sessionStorage.getItem(CHECKOUT_KEY) === '1'; } catch { return false; } }
-function markCheckoutStarted() { try { sessionStorage.setItem(CHECKOUT_KEY, '1'); } catch { /* ignored */ } }
+// Remembered for this tab when a checkout opens (src/hooks/usePurchaseStatus.js), so /launch knows a purchase
+// may be on its way and polls for it, and so the buttons can tell the buyer the order is on its way.
+export { checkoutStarted };
+
+// A signed-in account that already owns the product never sees a Buy button for it: the button becomes a link to
+// its card on /account (a family owner: to the downloads). Right after a checkout was started in this tab and
+// until the product shows up as owned (at most three minutes), it says the order is on its way instead.
 
 // `full` is the launch-1 counter: false while the free 1,000 are still
 // going, true once they are gone, undefined for products that have no free
@@ -39,15 +42,24 @@ export default function BuyButton({ slug, label, email, uid, full, className = '
   // Pages that pass no buyer still bind the order to whoever is signed in.
   const [signedIn, setSignedIn] = useState(() => auth.currentUser);
   useEffect(() => onAuthStateChanged(auth, setSignedIn), []);
+  const status = usePurchaseStatus();
+  const name = pluginBySlug(slug)?.displayName || '';
   const url = full === false ? '' : withBuyer(CHECKOUT[slug], email || signedIn?.email, uid || signedIn?.uid);
-  const text = label || `Buy ${pluginBySlug(slug)?.displayName || ''} — $${PRICES[slug]}`.replace('Buy  —', 'Buy —');
-  // An e-mail/password account must verify its address before it can buy (the order is matched to it).
-  const unverified = Boolean(signedIn) && !signedIn.emailVerified && signedIn.providerData?.some((p) => p.providerId === 'password') && url;
-  if (unverified) {
+  // The label carries the price a buyer pays now (ELEK: the launch price); the struck regular price lives next to the button, as the family's does.
+  const text = label || `Buy ${pluginBySlug(slug)?.displayName || ''} \u2014 $${currentPrice(slug)}`;
+  if (signedIn && status.loaded && status.owns(slug)) {
     return (
-      <span className="plugin-buy-unverified" role="status">
-        <strong>Check your inbox to verify your e-mail</strong> before buying ({signedIn.email}). Then reload this page.
-        <VerifyEmailNotice />
+      <Link to={slug === 'family' ? '/account' : `/account#${slug}`} className={`${className} plugin-buy-owned`}>
+        <Icon name="download" /> {slug === 'family' ? 'You own the family \u2014 go to your downloads' : `You own ${name} \u2014 Download`}
+      </Link>
+    );
+  }
+  if (signedIn && status.expecting(slug)) {
+    return (
+      <span className="plugin-buy-pending" role="status">
+        <span>Order received? It appears in your account within a minute.</span>
+        <Link to="/account" className="btn btn-primary">Open account</Link>
+        {url && <a href={url} className="plugin-buy-pending-back" target="_blank" rel="noopener noreferrer">Not finished? Back to checkout</a>}
       </span>
     );
   }
@@ -62,7 +74,7 @@ export default function BuyButton({ slug, label, email, uid, full, className = '
     );
   }
   return (
-    <a href={url} className={className} target="_blank" rel="noopener noreferrer" onClick={markCheckoutStarted}>
+    <a href={url} className={className} target="_blank" rel="noopener noreferrer" onClick={() => markCheckoutStarted(slug)}>
       <Icon name="purchase" /> {text}
     </a>
   );

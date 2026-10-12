@@ -158,6 +158,8 @@ export default function ArticlePage() {
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={article.title} />
         <meta name="twitter:description" content={metaDescription} />
+        {/* Kept out of search results until Sensei ships (matches scripts/prerender.js). */}
+        {slug === 'sensei' && <meta name="robots" content="noindex,follow" />}
         {slug === 'subverse-mix-check' && <link rel="icon" type="image/svg+xml" href="/subverse-mix-check-mark.svg" />}
       </Helmet>
 

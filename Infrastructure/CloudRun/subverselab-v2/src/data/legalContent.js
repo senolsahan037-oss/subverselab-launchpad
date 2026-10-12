@@ -38,6 +38,7 @@ export const PRIVACY = {
           'Problem reports. The report forms on the Download Room and on the storefront store the affected product, your operating system, the e-mail address you type (or "Anonymous" if you leave it empty), and your description. The Download Room form also stores your account ID if you are signed in, your browser\'s user-agent string (the first 300 characters), the page you were on, the step, the DAW you name and the last download message shown to you. You can send these without signing in.',
           'Forum. If you post a topic or a reply we store the text, your account ID and a display name. The display name is your profile name or, if you have none, the part of your e-mail address before the @ sign. Topics and replies are public.',
           'Server logs. Our web server runs on Google Cloud Run in Belgium (europe-west1). Google Cloud Logging records each request with the time, the URL, your IP address and your browser\'s user-agent string. Cloud Logging keeps these for 30 days by default.',
+          'Page counts, without cookies. We count page views on our own server without cookies: only the page address and the name of the referring website are counted, with no IP address and no identifier, so they cannot be traced back to you. To tell a first visit from the next pages, the browser tab keeps one flag in its session storage (svl-landed = 1); it holds no identifier and is gone when you close the tab.',
           'Usage statistics, only if you accept. Google Analytics 4 (through Firebase) is switched off until you press "Accept analytics" in the banner at the bottom of the page; before that nothing from it is loaded or stored. If you accept, it measures visits and pages using identifiers stored in your browser, and reports to us in aggregate. It records your approximate location (country, region and city, worked out from your IP address; Google Analytics does not store the IP address itself) and device data (device type, operating system, browser and screen size). Google signals is off, so there are no advertising features, no ad personalisation and no cross-device tracking. We use it to see which pages are read. You can decline, or change your mind at any time with "Cookie settings" in the footer; declining stops collection and removes the Google Analytics cookies.',
         ],
       ],
@@ -65,7 +66,7 @@ export const PRIVACY = {
         'We do not sell your data, rent it out or share it for advertising. The following providers process data for us or are loaded by the site:',
         [
           'Google (Firebase Authentication, Firestore database, Cloud Run hosting, Cloud Logging, Cloud Storage for the installers, Google Analytics, Google Fonts). Google Fonts serves the site\'s typefaces from Google\'s servers, so your IP address reaches Google when a page loads.',
-          'Gmail SMTP, which Firebase Authentication uses to send the verification and password-reset e-mails.',
+          'Gmail SMTP, which Firebase Authentication uses to send the password-reset e-mails.',
           'Lemon Squeezy, the merchant of record for paid products. It collects your payment details and billing information under its own privacy policy, handles payment, tax, invoices and refunds, and tells us about your order.',
           'YouTube. Some plugin pages embed demo videos from youtube-nocookie.com, and the storefront embeds a YouTube playlist from youtube.com. YouTube may set cookies and receives your IP address when the player loads.',
         ],
@@ -159,7 +160,7 @@ export const TERMS = {
       blocks: [
         [
           'You must be 16 or older.',
-          'Use an e-mail address that is really yours and keep your sign-in details to yourself. Some downloads need a verified e-mail address.',
+          'Use an e-mail address that is really yours and keep your sign-in details to yourself. Use the address that can receive mail; an order placed under another address is claimed with its order number.',
           'One person, one account, and one free launch claim per person. Making several accounts or using other people\'s e-mail addresses to claim more than one is not allowed.',
           'We may suspend or close an account, and withdraw its licence, if it is used abusively, to get around the limits above, to attack the site, or to share or resell the plugins. We will tell you why when we can.',
           'You can delete your account yourself at any time with "Delete my account" on your Account page (see the Privacy Policy for what is kept).',

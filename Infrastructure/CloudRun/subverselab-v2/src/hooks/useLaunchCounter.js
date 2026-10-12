@@ -8,6 +8,7 @@ export function useLaunchCounter(launchId = 'launch') {
   const [codes, setCodes] = useState(null);
   useEffect(() => {
     let alive = true;
+    if (!launchId) return undefined;   // a caller that must not read any counter (/launch2) passes null
     fetch(`/api/launch/codes?launch=${launchId}`)
       .then((r) => (r.ok ? r.json() : { available: false }))
       .then((body) => { if (alive) setCodes(body); })

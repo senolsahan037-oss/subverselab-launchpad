@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useTheme from '../hooks/useTheme';
+import InboxBell from './InboxBell';
 
 export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '', onSearch }) {
   const location = useLocation();
@@ -155,14 +156,7 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
 
         {/* E-Commerce Icons */}
         <div className="navbar-account" style={{ display: 'flex', alignItems: 'center', gap: '15px', borderLeft: '1px solid var(--color-border)', paddingLeft: '20px' }}>
-          {user && (
-            <div title="Your membership credits" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', color: 'var(--color-primary)' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon>
-              </svg>
-              <span>Free Tier</span>
-            </div>
-          )}
+          <InboxBell user={user} />
 
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

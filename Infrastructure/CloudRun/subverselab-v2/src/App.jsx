@@ -21,8 +21,10 @@ import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginPage from './components/PluginPage';
 import FreePluginPage from './components/FreePluginPage';
+import NewLinePluginPage from './components/NewLinePluginPage';
 import LaunchPage from './components/LaunchPage';
 import TestersPage from './components/TestersPage';
+import SamplePacksPage from './components/SamplePacksPage';
 import PluginManualPage from './components/PluginManualPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
@@ -31,8 +33,9 @@ import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import NotFound from './components/NotFound';
 import { LEARN_INDEX } from './data/siteMeta';
-import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK, TUTKAL, FREE_PLUGINS } from './data/plugins';
+import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK, TUTKAL, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS } from './data/plugins';
 import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
+import useHitCounter from './hooks/useHitCounter';
 
 /* ============================================================
    GLOBAL AUDIO PLAYER
@@ -93,6 +96,12 @@ function GlobalPlayer({ track, isPlaying, onPlayPause }) {
       }} title="Close player"><Icon name="close" size={14} /></button>
     </div>
   );
+}
+
+// Counts one page view per route change (cookieless, see hooks/useHitCounter.js). It needs the router, so it is a component.
+function HitCounter() {
+  useHitCounter();
+  return null;
 }
 
 /* ============================================================
@@ -206,6 +215,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <Router>
+        <HitCounter />
         <div className={`app-container ${activeTrack ? 'has-player' : ''}`}>
 
           <Navbar
@@ -260,12 +270,14 @@ export default function App() {
               <Route path={HAVA.path} element={<PluginPage key={HAVA.slug} plugin={HAVA} />} />
               <Route path={MIHENK.path} element={<PluginPage key={MIHENK.slug} plugin={MIHENK} />} />
               <Route path={TUTKAL.path} element={<PluginPage key={TUTKAL.slug} plugin={TUTKAL} />} />
+              {[...LINE2_PLUGINS, ...SOLO_PLUGINS].map((p) => <Route key={p.slug} path={p.path} element={<NewLinePluginPage key={p.slug} plugin={p} />} />)}
               {FREE_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<FreePluginPage key={p.slug} plugin={p} />} />)}
               <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
               <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/launch2" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} launchId="launch2" />} />
               <Route path="/testers" element={<TestersPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
+              <Route path="/sample-packs" element={<SamplePacksPage user={user} />} />
 
               <Route path={PRIVACY.path} element={<LegalPage doc={PRIVACY} />} />
               <Route path={TERMS.path} element={<LegalPage doc={TERMS} />} />

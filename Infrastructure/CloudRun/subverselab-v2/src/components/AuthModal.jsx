@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-import VerifyEmailNotice, { sendVerificationMail } from './VerifyEmailNotice';
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
 } from 'firebase/auth';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
-  const [inbox, setInbox] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -37,19 +35,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     try {
       if (activeTab === 'signup') {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const sent = await sendVerificationMail(cred.user);
-        if (!sent.ok) {
-          // Keep the dialog open so the Firebase error code is seen, not swallowed.
-          setError(`Account created, but ${sent.message[0].toLowerCase()}${sent.message.slice(1)} You can resend it from the download page.`);
-          onLoginSuccess({ email });
-          setInbox(email);
-          return;
-        }
-        // Account created and the mail is on its way: stay open and say so.
-        onLoginSuccess({ email });
-        setInbox(email);
-        return;
+        // No verification mail is sent: the only check is that the address can receive mail. If the check itself
+        // is unavailable the sign-up goes on (the server checks again wherever the account acts).
+        const check = await fetch(`/api/email/check?email=${encodeURIComponent(email.trim())}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+        if (check && check.ok === false) { setError(check.error || 'This e-mail address cannot receive mail.'); return; }
+        await createUserWithEmailAndPassword(auth, email, password);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -94,18 +84,11 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
           </svg>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: '600', letterSpacing: '0.06em', color: 'var(--color-text)', textTransform: 'uppercase' }}>SubverseLab</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>Free tools for music producers</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>Browser tools for music producers</div>
           </div>
         </div>
 
-        {inbox ? (
-          <div role="status" style={{ textAlign: 'center' }}>
-            <h3 style={{ margin: '0 0 8px' }}>Check your inbox to verify your e-mail</h3>
-            <p className="auth-desc">We sent a verification link to <strong>{inbox}</strong>. Open it, then reload this page. Downloads and purchases stay locked until the address is verified. Check the spam folder too.</p>
-            <VerifyEmailNotice />
-            <button type="button" className="btn btn-ghost" style={{ marginTop: '12px' }} onClick={onClose}>Close</button>
-          </div>
-        ) : (<>
+        <>
         <div className="auth-tabs">
           <div className={`auth-tab ${activeTab === 'login' ? 'active' : ''}`} onClick={() => { setActiveTab('login'); setError(''); }}>Sign In</div>
           <div className={`auth-tab ${activeTab === 'signup' ? 'active' : ''}`} onClick={() => { setActiveTab('signup'); setError(''); }}>Join Free</div>
@@ -172,7 +155,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             </span>
           )}
         </div>
-        </>)}
+        </>
       </div>
     </div>
   );

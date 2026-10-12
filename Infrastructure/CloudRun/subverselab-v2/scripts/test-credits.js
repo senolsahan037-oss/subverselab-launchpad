@@ -71,7 +71,7 @@ state.auth = { verifyIdToken: async (token) => {
   const t = state.tokens[token.replace(/^valid-/, '')];
   if (!token.startsWith('valid-') || !t) throw new Error('invalid token');
   return clone(t);
-} };
+}, getUserByEmail: async () => { throw Object.assign(new Error('no user'), { code: 'auth/user-not-found' }); } };
 state.FieldValue = { serverTimestamp: () => '<server-time>' };
 globalThis.__crTestApp = { initializeApp() {}, applicationDefault() {}, getApps: () => [] };
 globalThis.__crTestFirestore = { getFirestore: () => state.db, FieldValue: state.FieldValue };
@@ -97,6 +97,8 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
   .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
   .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
   .replace("from './credits.js';", `from '${url('credits.js')}';`)
+  .replace("from './inbox.js';", `from '${url('inbox.js')}';`)
+  .replace("from './stats.js';", `from '${url('stats.js')}';`)
   .replace('createCreditsService({ getAdmin: adminFirestore })', 'createCreditsService({ getAdmin: adminFirestore, verifyOidc: globalThis.__crTestOidc })')
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__crTestApp)')
@@ -106,6 +108,8 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
   .replace(/const PORT = process\.env\.PORT \|\| 8080;[\s\S]*?\n\);\s*$/, '');
 assert.ok(transformed.includes('__crTestOidc'), 'server.js no longer builds the credits service the way this test expects');
 const server = await import(`data:text/javascript;base64,${Buffer.from(transformed).toString('base64')}`);
+// No test touches DNS: every domain has a mail server.
+(await import(pathToFileURL(resolve(root, 'entitlements.js')).href)).setMxResolver(async (domain) => [{ exchange: `mx.${domain}`, priority: 10 }]);
 const { orderAmount } = await import(url('credits.js'));
 const WH_SECRET = 'credits-test-webhook-secret';
 process.env.LEMONSQUEEZY_WEBHOOK_SECRET = WH_SECRET;
@@ -288,6 +292,19 @@ await test('a Google account claims parked credits through /api/purchases/status
   assert.equal(await bal('google-g'), 300);
 });
 
+await test('/api/purchases/status: a non-proven password account (no verification mail any more) does not collect parked credits; the proven one does', async () => {
+  await hook(order('park2@example.com', { id: 570, total_usd: 400 }));
+  D.set('launch/counter', { claimed: 0, downloads: 0 });
+  const np = login('np-park', 'np-park', 'park2@example.com', { email_verified: false });
+  const out = await call('get', '/api/purchases/status', { token: np });
+  assert.equal(out.status, 200); assert.equal(out.body.unverified, true);
+  assert.equal((await bal('np-park')) || 0, 0);
+  assert.ok(D.has('pending_credits/park2@example.com'));
+  const ok = login('park2', 'park2', 'park2@example.com');
+  assert.equal((await call('get', '/api/purchases/status', { token: ok })).body.unverified, false);
+  assert.equal(await bal('park2'), 400);
+});
+
 await test('GET /api/credits/balance: needs a sign-in, returns balance, fixed costs and the last 20 lines', async () => {
   assert.equal((await call('get', '/api/credits/balance')).status, 401);
   assert.equal((await call('get', '/api/credits/balance', { token: 'valid-nobody' })).status, 401);
@@ -298,7 +315,7 @@ await test('GET /api/credits/balance: needs a sign-in, returns balance, fixed co
   const out = await call('get', '/api/credits/balance', { token: tok });
   assert.equal(out.status, 200);
   assert.equal(out.body.balance, 7);
-  assert.deepEqual(out.body.costs, { splitter: 50, visualizer: 50, mixcheck: 100 });
+  assert.deepEqual(out.body.costs, { splitter: 50, visualizer: 50, mixcheck: 100, 'arrangement-gps': 25 });
   assert.equal(out.body.recent.length, 20);
   assert.equal(out.body.recent[0].at, '2026-10-05T10:00:24Z');
   assert.ok(out.body.recent.every((l) => l.delta === 1 && !('uid' in l)));

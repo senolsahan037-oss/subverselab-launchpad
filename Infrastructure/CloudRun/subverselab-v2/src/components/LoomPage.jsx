@@ -33,7 +33,8 @@ const LAYERS = [
   ['Presetor / AISoundDesigner', 'Device chains and a sample palette measured from your own projects, not from presets someone else shipped.'],
   ['MusicalIntelligence', 'Genre evidence measured from real records; part suggestions against the project key.'],
   ['Mix Check / SampleAgent', 'Audio measurement and profile comparison; YouTube to a sliced sample pack.'],
-  ['Loom extension', "The single connection to Live. Runs inside Live 12.4 beta as extension id subverselab.loom."],
+  ['Loom Control Surface', 'AbletonScripts/Loom: the connection to a running set on any Live 12, enabled in Settings, Link/MIDI. Every operation is read back; Loom-written clips are tracked in an ownership ledger.'],
+  ['Loom extension', 'The Ableton Extension for a Live with an Extensions tab (12.4 beta), extension id subverselab.loom, package loom.ablx: the same protocol with fewer capabilities. It has no transport, song key, preset loading or recording.'],
 ];
 
 const Section = ({ title, children }) => (
@@ -129,8 +130,9 @@ export default function LoomPage() {
 
       <Section title="What it is made of">
         <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.7', marginBottom: '18px' }}>
-          Seven engines under one tool namespace, plus the MCP server that exposes them —
-          45 tools in total.
+          Six engine groups and two ways into Live, behind one MCP server (version 2.1.0) —
+          59 tools in total; the default tool list shows 11 and the rest are found through{' '}
+          <code>loom_tools</code>.
         </p>
         <div style={{ display: 'grid', gap: '10px' }}>
           {LAYERS.map(([name, what]) => (
@@ -159,16 +161,20 @@ python3 install.py --check    # report only, changes nothing`}</Code>
           rather than something you discover when a write is refused.
         </p>
         <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.7' }}>
-          Live's own step is one: add <code>extension/dist/loom.ablx</code> under Extensions in
-          Live 12.4 beta and restart Live. After that, ask Claude anything about your projects.
+          Live's own step is one, and which one depends on your Live. On any Live 12, enable the
+          Control Surface (<code>AbletonScripts/Loom</code>) in Settings, Link/MIDI. On a Live whose
+          Settings have an Extensions tab (12.4 beta), add <code>extension/dist/loom.ablx</code>
+          there and restart Live. After that, ask Claude anything about your projects.
         </p>
       </Section>
 
       <Section title="How it talks to Live">
         <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.7', marginBottom: '16px' }}>
-          There is exactly one path: the Loom extension running inside Live. No Control Surface, no
-          automatic fallback, no second writer. The extension opens a file bridge in its own storage
-          directory and the MCP server finds that bridge on every call.
+          One endpoint at a time: the Control Surface or the Loom extension (id{' '}
+          <code>subverselab.loom</code>, bridge protocol <code>loom.bridge/3</code>, extension
+          0.4.4). There is no automatic fallback and no ranking: if both are alive, the call is
+          refused as <code>AMBIGUOUS_BRIDGE</code> rather than guessed. Each opens a file bridge
+          in its own storage directory and the MCP server finds that bridge on every call.
         </p>
         <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.7', marginBottom: '16px' }}>
           One tool answers every connection question — which bridge it is talking to and why, how
@@ -192,8 +198,8 @@ python3 install.py --check    # report only, changes nothing`}</Code>
         </p>
         <div style={{ display: 'grid', gap: '10px' }}>
           {[
-            ['Presets the SDK cannot load',
-             'It cannot open a .adg or .adv. Loom reads the preset\u2019s own XML instead \u2014 pads, notes, names, sample files \u2014 resolves those files on your machine and rebuilds the pads inside Live as chain, Simpler and sample. The answer also names what did not carry across: per-pad effects and macros.'],
+            ['Presets the extension SDK cannot load',
+             'The Control Surface loads presets through Live\u2019s browser. The extension SDK cannot open a .adg or .adv, so on that path Loom reads the preset\u2019s own XML \u2014 pads, notes, names, sample files \u2014 resolves those files on your machine and rebuilds the pads inside Live as chain, Simpler and sample. The answer also names what did not carry across: per-pad effects and macros.'],
             ['Device chains from your own projects',
              'Chains are harvested out of .als and .adv files and loaded into Live with no repairs. What you get back is your own vocabulary, measured from your work, not a preset someone else shipped.'],
             ['A note map Live stores inverted',

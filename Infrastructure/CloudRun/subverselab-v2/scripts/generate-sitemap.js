@@ -114,7 +114,7 @@ function buildLlmsTxt(articles, products) {
 
   return `# SubverseLab
 
-> Free, browser-based tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free; some require a free account, and where a tool applies a daily limit its own guide states it.
+> Free, browser-based tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free to start; some require a free account. Where a tool has a daily limit, its own guide states it, and the credits that come with any plugin purchase (every dollar is 100 credits) pay for more.
 
 SubverseLab publishes independent, single-purpose production tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
 
@@ -172,8 +172,12 @@ async function main() {
     urlEntry(`${SITE_URL}/plugins/tutkal`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/taban`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/alev`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/adalet`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/seda`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/elek`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/launch2`, new Date().toISOString().slice(0, 10), '0.8'),
-    urlEntry(`${SITE_URL}/testers`, new Date().toISOString().slice(0, 10), '0.6'),
+    // /testers is noindex until the owner opens the call (prerender.js); no sitemap entry for a noindex page.
+    urlEntry(`${SITE_URL}/sample-packs`, new Date().toISOString().slice(0, 10), '0.5'),
     urlEntry(`${SITE_URL}/privacy`, '2026-10-02', '0.3'),
     urlEntry(`${SITE_URL}/terms`, '2026-10-02', '0.3'),
   ];
@@ -181,20 +185,15 @@ async function main() {
   // Published guides — the real, fully public, keyword-rich SEO content.
   for (const a of articles) {
     if (!a.slug) continue;
+    // /learn/sensei is noindex until Sensei ships (prerender.js); no sitemap entry for a noindex page.
+    if (a.slug === 'sensei') continue;
     entries.push(urlEntry(`${SITE_URL}/learn/${a.slug}`, isoDate(a.updatedAt), '0.7'));
   }
 
-  // Every remote tool gets a Tool Room page. Member-gated ones used to be
-  // excluded because a signed-out visitor (and therefore a crawler) saw only
-  // a bare "Sign In Required" wall — genuinely thin content. ToolRoom.jsx
-  // now renders the tool's real title, description and guide link to
-  // everyone, gating only the tool itself, so these pages carry the same
-  // content for a crawler as for a signed-out human and belong in the index.
-  for (const p of products) {
-    if (p.source_type === 'remote' && p.slug) {
-      entries.push(urlEntry(`${SITE_URL}/tools/${p.slug}`, isoDate(p.updatedAt), '0.6'));
-    }
-  }
+  // Tool Room pages (/tools/*) are deliberately NOT listed: they carry
+  // <meta name="robots" content="noindex,follow"> (see prerender.js), and a
+  // sitemap entry for a noindex page sends crawlers mixed signals. Search
+  // Console cleanup, 2026-10-07.
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join('\n')}\n</urlset>\n`;
   writeFileSync(join(ROOT, 'public', 'sitemap.xml'), xml);

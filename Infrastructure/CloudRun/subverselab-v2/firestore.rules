@@ -50,6 +50,10 @@ service cloud.firestore {
     // reports. launch2/testers is the seat counter. Applications hold personal
     // answers and the approved list is the gate itself, so nothing is readable
     // or writable from a client; the page goes through /api/testers/*.
+    // Sample-pack applications (server.js /api/packs/apply, Admin SDK only): personal data, no client access.
+    match /pack_applications/{document=**} {
+      allow read, write: if false;
+    }
     match /tester_applications/{document=**} {
       allow read, write: if false;
     }
@@ -66,6 +70,11 @@ service cloud.firestore {
     match /launch2_uids/{document=**} {
       allow read, write: if false;
     }
+    // uid -> its orders {product, status, refunded, created, email}, written by the webhook and the backfill script (Admin SDK only).
+    // Holds the checkout e-mail of each order, so no client may read or write it.
+    match /orders_by_uid/{document=**} {
+      allow read, write: if false;
+    }
     // What an account deletion leaves behind: hashed-e-mail markers (accountDeletion.js).
     // Server only; spelled out so a broad rule can never open them.
     match /erased_emails/{document=**} {
@@ -73,6 +82,12 @@ service cloud.firestore {
     }
     // Tool credits (server.js -> credits.js, Admin SDK only). A signed-in user may read only their own
     // balance document; the ledger and the e-mail-parked credits are never readable. No client writes.
+    // Inbox: the platform's messages to one account (inbox.js, written by server.js only through the Admin SDK).
+    // The owner may read their own messages; every write (new message, read flag) goes through /api/inbox.
+    match /inbox/{uid}/messages/{messageId} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
     match /credits/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
@@ -81,6 +96,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
     match /pending_credits/{document=**} {
+      allow read, write: if false;
+    }
+    // Cookieless page-view counts per day (server.js /api/hit, stats.js; Admin SDK only, read through /api/admin/stats).
+    match /site_stats/{document=**} {
       allow read, write: if false;
     }
     match /reports_archive/{document=**} {
