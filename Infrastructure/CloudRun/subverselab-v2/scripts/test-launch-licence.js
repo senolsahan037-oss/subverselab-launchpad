@@ -9,7 +9,7 @@ import assert from 'assert/strict';
 import {
   createLaunchService, generateKey, normaliseKey, tokenBucket,
   LAUNCH_TOTAL, SOLD_OUT, STORE_ID, PRODUCT_IDS,
-} from '../launchLicence.js';
+} from '../api/launchLicence.js';
 
 // ------------------------------------------------------------ fake Firestore
 function fakeFirestore() {
@@ -32,7 +32,12 @@ function fakeFirestore() {
   let queue = Promise.resolve();
   const db = {
     docs,
-    collection: (c) => ({ doc: (id) => ref(`${c}/${id}`) }),
+    collection: (c) => ({
+      doc: (id) => ref(`${c}/${id}`),
+      where: (field, op, value) => ({
+        get: async () => ({ docs: [...docs.keys()].filter((p) => p.startsWith(`${c}/`) && docs.get(p)?.[field] === value).map((p) => ({ ...snap(p), ref: ref(p) })) }),
+      }),
+    }),
     // Transactions run one at a time and commit their writes at the end,
     // which is the guarantee the real one gives for these access patterns.
     runTransaction(fn) {
@@ -331,6 +336,77 @@ await test('token bucket: 30 a minute per IP, refills', () => {
   t += 2000; // two seconds = one token
   assert.equal(take('1.2.3.4'), true);
   assert.equal(take('1.2.3.4'), false);
+});
+
+await test('tester keys: issue is one per tester per product, idempotent, 2 computers, own product id; counter, claims and plugin_licenses untouched', async () => {
+  const { db, svc } = service();
+  const a = await svc.issueTesterKey({ email: 'Tess@Example.com', product: 'seda' });
+  assert.equal(a.created, true);
+  assert.match(a.key, /^SVL-/);
+  assert.deepEqual(db.docs.get(`launch_keys/${a.key}`), {
+    email: 'tess@example.com', uid: null, product: 'seda', product_id: 9021, status: 'active', activation_limit: 2, instances: {}, created: '2026-10-01T00:00:00.000Z', source: 'tester',
+  });
+  const again = await svc.issueTesterKey({ email: 'tess@example.com', product: 'seda' });
+  assert.deepEqual([again.key, again.created], [a.key, false]);
+  const b = await svc.issueTesterKey({ email: 'tess@example.com', product: 'adalet' });
+  assert.notEqual(b.key, a.key);
+  assert.equal(db.docs.get(`launch_keys/${b.key}`).product_id, 9022);
+  assert.equal(PRODUCT_IDS.seda, 9021); assert.equal(PRODUCT_IDS.adalet, 9022);
+  const other = await svc.issueTesterKey({ email: 'sam@example.com', product: 'seda' });
+  assert.notEqual(other.key, a.key);
+  assert.equal([...db.docs.keys()].filter((k) => k.startsWith('launch_keys/')).length, 3);
+  await assert.rejects(svc.issueTesterKey({ email: 'x@example.com', product: 'kubbe' }));
+  await assert.rejects(svc.issueTesterKey({ email: 'a/b@example.com', product: 'seda' }));
+  for (const path of ['launch/counter']) assert.equal(db.docs.has(path), false, `${path} untouched`);
+  assert.equal([...db.docs.keys()].some((k) => k.startsWith('launch_claims/') || k.startsWith('plugin_licenses/')), false, 'no claim, no purchase record');
+  assert.deepEqual(svc.testerProducts, ['seda', 'adalet']);
+  assert.deepEqual(await svc.testerKeysFor('tess@example.com'), { seda: { key: a.key, status: 'active' }, adalet: { key: b.key, status: 'active' } });
+  assert.deepEqual((await svc.testerKeysOfProduct('seda')).map((k) => k.email).sort(), ['sam@example.com', 'tess@example.com']);
+});
+
+await test('tester keys: activate / validate / deactivate answer with the key\'s own product; two computers; nothing mirrored to plugin_licenses', async () => {
+  const { db, svc } = service();
+  const { key } = await svc.issueTesterKey({ email: 'tess@example.com', product: 'seda' });
+  const one = await svc.activate({ licenseKey: key, instanceName: 'Mac A' });
+  assert.equal(one.status, 200);
+  assert.deepEqual(one.body.meta, { store_id: STORE_ID, product_id: 9021, product_name: 'SEDA' });
+  assert.equal(one.body.license_key.activation_limit, 2);
+  assert.equal((await svc.activate({ licenseKey: key, instanceName: 'Mac B' })).status, 200);
+  const third = await svc.activate({ licenseKey: key, instanceName: 'Mac C' });
+  assert.equal(third.status, 400);
+  assert.match(third.body.error, /activation limit/);
+  const v = await svc.validate({ licenseKey: key, instanceId: one.body.instance.id });
+  assert.deepEqual([v.body.valid, v.body.meta.product_id], [true, 9021]);
+  assert.equal((await svc.deactivate({ licenseKey: key, instanceId: one.body.instance.id })).body.meta.product_id, 9021);
+  assert.equal([...db.docs.keys()].some((k) => k.startsWith('plugin_licenses/')), false, 'activation never writes a purchase record');
+  assert.equal(db.docs.has('launch/counter'), false);
+  // A normal launch key keeps the bundle answer.
+  const launchKey = (await svc.claim({ uid: 'u9', email: 'norm@example.com' })).body.key;
+  assert.equal((await svc.activate({ licenseKey: launchKey, instanceName: 'M' })).body.meta.product_id, PRODUCT_IDS.bundle);
+});
+
+await test('tester keys: disable closes the licence (validate says disabled, activate refuses), enable reopens it; per product or all', async () => {
+  const { svc } = service();
+  const seda = (await svc.issueTesterKey({ email: 'tess@example.com', product: 'seda' })).key;
+  const adalet = (await svc.issueTesterKey({ email: 'tess@example.com', product: 'adalet' })).key;
+  const inst = (await svc.activate({ licenseKey: seda, instanceName: 'Mac A' })).body.instance.id;
+  assert.equal(await svc.setTesterKeyStatus({ email: 'tess@example.com', product: 'seda', status: 'disabled' }), 1);
+  const v = await svc.validate({ licenseKey: seda, instanceId: inst });
+  assert.deepEqual([v.status, v.body.valid, v.body.error, v.body.license_key.status], [200, false, 'This license key is disabled.', 'disabled']);
+  const act = await svc.activate({ licenseKey: seda, instanceName: 'Mac B' });
+  assert.deepEqual([act.status, act.body.activated, act.body.error], [400, false, 'This license key is disabled.']);
+  assert.equal((await svc.validate({ licenseKey: adalet })).body.valid, true, 'the other product is untouched');
+  assert.equal(await svc.setTesterKeyStatus({ email: 'tess@example.com', product: 'seda', status: 'disabled' }), 0, 'repeat changes nothing');
+  assert.equal(await svc.setTesterKeyStatus({ email: 'tess@example.com', product: 'seda', status: 'active' }), 1);
+  assert.equal((await svc.validate({ licenseKey: seda, instanceId: inst })).body.valid, true);
+  assert.equal(await svc.setTesterKeyStatus({ email: 'tess@example.com', status: 'disabled' }), 2, 'all of a tester\'s keys');
+  assert.equal((await svc.validate({ licenseKey: adalet })).body.valid, false);
+  assert.equal((await svc.testerKeysFor('tess@example.com')).adalet.status, 'disabled');
+  await assert.rejects(svc.setTesterKeyStatus({ email: 'tess@example.com', status: 'banana' }));
+  // Only tester keys are ever switched by this call.
+  const launchKey = (await svc.claim({ uid: 'u9', email: 'norm@example.com' })).body.key;
+  await svc.setTesterKeyStatus({ email: 'norm@example.com', status: 'disabled' });
+  assert.equal((await svc.validate({ licenseKey: launchKey })).body.valid, true);
 });
 
 console.log(`${passed} passed${process.exitCode ? ', some FAILED' : ''}`);

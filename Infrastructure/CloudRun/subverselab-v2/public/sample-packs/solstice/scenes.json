@@ -1,0 +1,82 @@
+[
+ {
+  "t": 0,
+  "label": "Accra Gold: 114 BPM, G minor"
+ },
+ {
+  "t": 4.21,
+  "label": "Bahia Marimba: 120 BPM, G minor"
+ },
+ {
+  "t": 8.21,
+  "label": "Bamako Rain: 94 BPM, G minor"
+ },
+ {
+  "t": 13.32,
+  "label": "Bogota Ember: 92 BPM, C minor"
+ },
+ {
+  "t": 18.53,
+  "label": "Cali Verano: 96 BPM, E minor"
+ },
+ {
+  "t": 23.53,
+  "label": "Cartagena Breeze: 122 BPM, E minor"
+ },
+ {
+  "t": 27.47,
+  "label": "Cienfuegos Son: 106 BPM, A minor"
+ },
+ {
+  "t": 32,
+  "label": "Dakar Palms: 116 BPM, A minor"
+ },
+ {
+  "t": 36.13,
+  "label": "Havana Courtyard: 104 BPM, D minor"
+ },
+ {
+  "t": 40.75,
+  "label": "Kumasi Highlife: 112 BPM, E minor"
+ },
+ {
+  "t": 45.04,
+  "label": "Lagos Sunset: 118 BPM, A minor"
+ },
+ {
+  "t": 49.1,
+  "label": "Leblon Hour: 100 BPM, D minor"
+ },
+ {
+  "t": 53.9,
+  "label": "Lome Market: 122 BPM, G minor"
+ },
+ {
+  "t": 57.84,
+  "label": "Luanda Coast: 124 BPM, C minor"
+ },
+ {
+  "t": 61.71,
+  "label": "Medellin Rain: 100 BPM, D minor"
+ },
+ {
+  "t": 66.51,
+  "label": "Mombasa Glow: 108 BPM, B minor"
+ },
+ {
+  "t": 70.95,
+  "label": "SanJuan Terrace: 98 BPM, B minor"
+ },
+ {
+  "t": 75.85,
+  "label": "Soweto Glow: 110 BPM, B minor"
+ },
+ {
+  "t": 80.22,
+  "label": "Veracruz Night: 102 BPM, A minor"
+ },
+ {
+  "t": 84.92,
+  "label": "Zanzibar Tide: 123 BPM, E minor"
+ }
+]

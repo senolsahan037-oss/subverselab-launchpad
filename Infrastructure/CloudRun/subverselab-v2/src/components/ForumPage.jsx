@@ -90,7 +90,7 @@ export default function ForumPage({ user, onLoginClick }) {
     setNotice('');
     try {
       await addDoc(topicsRef, {
-        ...form, title: form.title.trim(), body: form.body.trim(), authorId: user.uid,
+        title: form.title.trim(), body: form.body.trim(), category: form.category, authorId: user.uid,   // exactly the fields firestore.rules accepts
         authorName: user.displayName || user.email?.split('@')[0] || 'Member',
         createdAt: serverTimestamp(),
       });

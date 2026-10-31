@@ -121,20 +121,23 @@ globalThis.__testersTestAdminFirestore = { getFirestore: () => state.db, FieldVa
 globalThis.__testersTestAdminAuth = { getAuth: () => state.auth };
 globalThis.__testersTestStorage = { Storage: class { constructor() { return state.storage; } } };
 
-const serverSource = await readFile(resolve(root, 'server.js'), 'utf8');
-const launchUrl = pathToFileURL(resolve(root, 'launchLicence.js')).href;
-const entitlementsUrl = pathToFileURL(resolve(root, 'entitlements.js')).href;
-const accountUrl = pathToFileURL(resolve(root, 'accountDeletion.js')).href;
+const serverSource = await readFile(resolve(root, 'api/server.js'), 'utf8');
+const launchUrl = pathToFileURL(resolve(root, 'api/launchLicence.js')).href;
+const entitlementsUrl = pathToFileURL(resolve(root, 'api/entitlements.js')).href;
+const accountUrl = pathToFileURL(resolve(root, 'api/accountDeletion.js')).href;
 const transformed = serverSource
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
-  .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(root)};`)
+  .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(resolve(root, 'api'))};`)
   .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${launchUrl}';`)
   .replace("from './entitlements.js';", `from '${entitlementsUrl}';`)
   .replace("import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';", `import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from '${accountUrl}';`)
-  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
-  .replace("from './inbox.js';", `from '${pathToFileURL(resolve(root, 'inbox.js')).href}';`)
-  .replace("from './stats.js';", `from '${pathToFileURL(resolve(root, 'stats.js')).href}';`)
+  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'api/credits.js')).href}';`)
+  .replace("from './inbox.js';", `from '${pathToFileURL(resolve(root, 'api/inbox.js')).href}';`)
+  .replace("from './stats.js';", `from '${pathToFileURL(resolve(root, 'api/stats.js')).href}';`)
+  .replace("from './catalog.js';", `from '${pathToFileURL(resolve(root, 'api/catalog.js')).href}';`)
+  .replace("from './catalogSchema.js';", `from '${pathToFileURL(resolve(root, 'api/catalogSchema.js')).href}';`)
+  .replace("from './agents.js';", `from '${pathToFileURL(resolve(root, 'api/agents.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__testersTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__testersTestAdminFirestore)')

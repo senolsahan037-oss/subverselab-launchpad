@@ -1,0 +1,34 @@
+[
+ {
+  "t": 0,
+  "label": "Kicks: Furnace, Rivet, Chainsaw, Cavern"
+ },
+ {
+  "t": 6.4,
+  "label": "Kick + rumble: F1 Rolling, A1 Grind"
+ },
+ {
+  "t": 12.8,
+  "label": "Tops: Furnace top loop"
+ },
+ {
+  "t": 19.2,
+  "label": "Loop: Furnace full (F)"
+ },
+ {
+  "t": 25.6,
+  "label": "Hits: claps, snares, metal, zaps"
+ },
+ {
+  "t": 32,
+  "label": "Loop: Chainsaw + fill"
+ },
+ {
+  "t": 38.4,
+  "label": "Stabs + noise over kick + rumble F1"
+ },
+ {
+  "t": 44.8,
+  "label": "Loop: Molten (F) + Chainsaw percussion, impact"
+ }
+]

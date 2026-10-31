@@ -1,0 +1,20 @@
+{
+  "name": "subverselab-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "subverselab.com API service: every /api route (downloads, licences, Lemon Squeezy webhook, credits, testers, admin, inbox, stats, account delete).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "7.22.0",
+    "express": "5.2.1",
+    "firebase-admin": "13.10.0",
+    "google-auth-library": "10.9.1"
+  }
+}

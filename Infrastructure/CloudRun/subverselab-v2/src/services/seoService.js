@@ -7,6 +7,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { stripToolPrefix } from '../utils/toolName';
 
 const COL = 'seo_articles';
 
@@ -40,7 +41,7 @@ function toArticle(docSnap) {
   const d = docSnap.data();
   return {
     id: docSnap.id,
-    ...d,
+    ...stripToolPrefix(d),
     createdAt: d.createdAt?.toDate?.() ?? new Date(),
     updatedAt: d.updatedAt?.toDate?.() ?? new Date(),
   };

@@ -3,9 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import DownloadButtons from './DownloadButtons';
 import { SITE_URL } from '../data/siteMeta';
+import { CHECKOUT } from '../data/plugins';
 
-/*  A plugin's owner's manual as a page — /plugins/kubbe/manual,
- *  /plugins/kaset/manual. Driven by src/data/pluginManuals.js, which
+/*  A plugin's owner's manual as a page — /plugins/<slug>/manual for every
+ *  product in MANUALS. Driven by src/data/pluginManuals.js, which
  *  prerender.js reads too. The PDF stays linked for printing.
  */
 
@@ -63,6 +64,8 @@ export default function PluginManualPage({ manual }) {
   const { plugin } = manual;
   const { hash } = useLocation();
   const [w, h] = manual.imageSize;
+  // Download buttons only for a product that is sold (ADALET has no checkout yet). Same ticket route as its room.
+  const sold = !(plugin.launchId === 'line2' && !CHECKOUT[plugin.slug]);
 
   // A link such as /plugins/kaset/manual#download arrives through the router,
   // which does not scroll to the fragment by itself.
@@ -87,7 +90,7 @@ export default function PluginManualPage({ manual }) {
             <a href={manual.pdf} target="_blank" rel="noopener noreferrer" className="btn plugin-btn">
               Manual as PDF
             </a>
-            <Link to={plugin.path} className="plugin-cta-note">About {plugin.name}, price and launch code →</Link>
+            <Link to={plugin.path} className="plugin-cta-note">About {plugin.name}, price and download →</Link>
           </div>
           <figure className="plugin-panel">
             <img src={manual.image} alt={manual.imageAlt} width={w} height={h} />
@@ -107,8 +110,8 @@ export default function PluginManualPage({ manual }) {
           <section key={s.id} id={s.id} className="plugin-section manual-section">
             <h2><span className="manual-num">{i + 1}</span>{s.heading}</h2>
             {s.blocks.map((b, j) => <Block key={j} block={b} />)}
-            {s.id === 'installation' && (
-              <DownloadButtons slug={plugin.slug} className="plugin-buy-row" />
+            {s.id === 'installation' && sold && (
+              <DownloadButtons slug={plugin.slug} launchId={plugin.launchId || 'launch'} className="plugin-buy-row" />
             )}
           </section>
         ))}

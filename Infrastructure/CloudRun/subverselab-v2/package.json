@@ -2,11 +2,11 @@
   "name": "subverselab-v2",
   "version": "1.0.0",
   "type": "module",
-  "description": "",
+  "description": "subverselab.com pages (site service: server.js + dist). The API service is api/ (own package.json).",
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "eslint src && node scripts/generate-sitemap.js && vite build && node scripts/prerender.js",
+    "build": "eslint src && node scripts/generate-sitemap.js && vite build && node scripts/prerender.js && node scripts/split-media.js",
     "preview": "vite preview",
     "generate-sitemap": "node scripts/generate-sitemap.js",
     "prerender": "node scripts/prerender.js",
@@ -17,29 +17,34 @@
     "test:packs": "node scripts/test-packs.js",
     "test:account": "node scripts/test-account-delete.js",
     "test:credits": "node scripts/test-credits.js",
-    "test:stats": "node scripts/test-stats.js"
+    "test:stats": "node scripts/test-stats.js",
+    "test:split": "node scripts/test-split.js",
+    "test:samplepacks": "node scripts/test-sample-packs.js",
+    "import:packs": "node scripts/import-sample-packs.js",
+    "start:api": "node api/server.js",
+    "start:site": "node server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "compression": "^1.8.1",
-    "express": "^5.2.1",
-    "firebase": "^12.17.0",
-    "firebase-admin": "^13.10.0",
-    "google-auth-library": "^10.9.1",
-    "@google-cloud/storage": "^7.22.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-helmet-async": "^3.0.0",
-    "react-router-dom": "^7.18.2"
+    "express": "^5.2.1"
   },
   "devDependencies": {
+    "@google-cloud/storage": "^7.22.0",
     "@vitejs/plugin-react": "^6.0.5",
     "eslint": "^9.39.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "firebase": "^12.17.0",
+    "firebase-admin": "^13.10.0",
     "globals": "^17.11.0",
+    "google-auth-library": "^10.9.1",
     "puppeteer-core": "^25.8.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-helmet-async": "^3.0.0",
+    "react-router-dom": "^7.18.2",
     "vite": "^8.2.0"
   }
 }

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 import { getFirestore } from 'firebase/firestore';
 
@@ -21,6 +21,8 @@ export const app = initializeApp(firebaseConfig);
 export const MEASUREMENT_ID = firebaseConfig.measurementId;
 export const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(() => {});
+// Local dev only: finishes the redirect sign-in started in AuthModal (see there).
+if (import.meta.env.DEV) getRedirectResult(auth).catch((e) => { window.__svlLastDownloadError = `google redirect: ${e.code || e.message}`; console.warn('google redirect', e.code || e.message); });
 
 export const storage = getStorage(app);
 export const db = getFirestore(app);

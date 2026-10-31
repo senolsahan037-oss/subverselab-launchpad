@@ -9,22 +9,28 @@ import './index.css';
 
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
+import AccountSignIn from './components/AccountSignIn';
 import Storefront from './components/Storefront';
+import HomePage from './components/HomePage';
 import AccountPage from './components/AccountPage';
 import AdminPanel from './components/AdminPanel';
 import ArticlePage from './components/ArticlePage';
 import ToolRoom from './components/ToolRoom';
 import HelpPage from './components/HelpPage';
 import LegalPage from './components/LegalPage';
-import { PRIVACY, TERMS } from './data/legalContent';
+import { PRIVACY, TERMS, REFUNDS } from './data/legalContent';
 import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
-import PluginPage from './components/PluginPage';
-import FreePluginPage from './components/FreePluginPage';
-import NewLinePluginPage from './components/NewLinePluginPage';
+import PluginRoom from './components/PluginRoom';
+import CatalogPluginRoom from './components/CatalogPluginRoom';
+import LabRoom from './components/lab/LabRoom';
+import ScrollToTop from './components/ScrollToTop';
 import LaunchPage from './components/LaunchPage';
 import TestersPage from './components/TestersPage';
 import SamplePacksPage from './components/SamplePacksPage';
+import SamplePackPage from './components/SamplePackPage';
+import PresetPacksPage from './components/PresetPacksPage';
+import { stripToolPrefix } from './utils/toolName';
 import PluginManualPage from './components/PluginManualPage';
 import ForumPage from './components/ForumPage';
 import Footer from './components/Footer';
@@ -33,8 +39,8 @@ import Icon from './components/Icon';
 import PageMeta from './components/PageMeta';
 import NotFound from './components/NotFound';
 import { LEARN_INDEX } from './data/siteMeta';
-import { KUBBE, KASET, KORO, YANKI, HAVA, MIHENK, TUTKAL, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS } from './data/plugins';
-import { KUBBE_MANUAL, KASET_MANUAL } from './data/pluginManuals';
+import { ROOM_PLUGINS } from './data/plugins';
+import { MANUALS } from './data/pluginManuals';
 import useHitCounter from './hooks/useHitCounter';
 
 /* ============================================================
@@ -65,7 +71,7 @@ function GlobalPlayer({ track, isPlaying, onPlayPause }) {
         width: '44px', height: '44px', borderRadius: '50%',
         background: 'var(--color-primary)', border: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'pointer', flexShrink: 0, color: '#000',
+        cursor: 'pointer', flexShrink: 0, color: 'var(--color-bg)',
       }}>
         {isPlaying ? (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="4" height="16" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>
@@ -147,7 +153,7 @@ export default function App() {
       // it with undefined. Fixes the regression where legacy covers
       // disappeared after this normalization was introduced.
       const data = snap.docs.map((d) => {
-        const p = d.data();
+        const p = stripToolPrefix(d.data());
         const mixCheckOverride = d.id === 'subverse-mix-check' || p.slug === 'subverse-mix-check';
         const coverImage = mixCheckOverride ? '/subverse-mix-check-cover.jpg' : (p.coverImage || p.image);
         return { id: d.id, ...p, coverImage, image: coverImage };
@@ -216,6 +222,7 @@ export default function App() {
     <HelmetProvider>
       <Router>
         <HitCounter />
+        <ScrollToTop />
         <div className={`app-container ${activeTrack ? 'has-player' : ''}`}>
 
           <Navbar
@@ -233,12 +240,13 @@ export default function App() {
               </div>
             )}
             <Routes>
-              <Route path="/" element={<Storefront {...sharedProps} />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/tools" element={<Storefront {...sharedProps} />} />
 
               <Route path="/account" element={
                 user
                   ? <AccountPage user={user} packs={packs} onLogout={handleLogout} onDeleted={handleAccountDeleted} />
-                  : <Navigate to="/" replace />
+                  : <AccountSignIn onLoginClick={() => setAuthModalOpen(true)} />
               } />
 
               <Route path="/admin" element={
@@ -260,27 +268,25 @@ export default function App() {
               <Route path="/loom" element={<LoomPage />} />
 
               {/* Plugins are pages, not synced products: they run in the visitor's
-                  DAW and are sold through Lemon Squeezy (Rules/02). One shared
-                  PluginPage, driven by src/data/plugins.js. */}
+                  DAW and are sold through Lemon Squeezy. One room template for every
+                  product (PluginRoom), driven by src/data/plugins.js. */}
               <Route path="/plugins" element={<PluginsPage />} />
-              <Route path={KUBBE.path} element={<PluginPage key={KUBBE.slug} plugin={KUBBE} />} />
-              <Route path={KASET.path} element={<PluginPage key={KASET.slug} plugin={KASET} />} />
-              <Route path={KORO.path} element={<PluginPage key={KORO.slug} plugin={KORO} />} />
-              <Route path={YANKI.path} element={<PluginPage key={YANKI.slug} plugin={YANKI} />} />
-              <Route path={HAVA.path} element={<PluginPage key={HAVA.slug} plugin={HAVA} />} />
-              <Route path={MIHENK.path} element={<PluginPage key={MIHENK.slug} plugin={MIHENK} />} />
-              <Route path={TUTKAL.path} element={<PluginPage key={TUTKAL.slug} plugin={TUTKAL} />} />
-              {[...LINE2_PLUGINS, ...SOLO_PLUGINS].map((p) => <Route key={p.slug} path={p.path} element={<NewLinePluginPage key={p.slug} plugin={p} />} />)}
-              {FREE_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<FreePluginPage key={p.slug} plugin={p} />} />)}
-              <Route path={KUBBE_MANUAL.path} element={<PluginManualPage key={KUBBE_MANUAL.slug} manual={KUBBE_MANUAL} />} />
-              <Route path={KASET_MANUAL.path} element={<PluginManualPage key={KASET_MANUAL.slug} manual={KASET_MANUAL} />} />
+              {/* Prototype, local review only: noindex, not prerendered, not in the sitemap. */}
+              <Route path="/lab/:slug" element={<LabRoom />} />
+              {ROOM_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<PluginRoom key={p.slug} plugin={p} />} />)}
+              {/* Plug-ins added from /admin (the live catalogue) get the same room; a static room above wins for its own slug. */}
+              <Route path="/plugins/:slug" element={<CatalogPluginRoom />} />
+              {MANUALS.map((m) => <Route key={`${m.slug}-manual`} path={m.path} element={<PluginManualPage key={m.slug} manual={m} />} />)}
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/launch2" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} launchId="launch2" />} />
               <Route path="/testers" element={<TestersPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/sample-packs" element={<SamplePacksPage user={user} />} />
+              <Route path="/sample-packs/:slug" element={<SamplePackPage />} />
+              <Route path="/preset-packs" element={<PresetPacksPage />} />
 
               <Route path={PRIVACY.path} element={<LegalPage doc={PRIVACY} />} />
               <Route path={TERMS.path} element={<LegalPage doc={TERMS} />} />
+              <Route path={REFUNDS.path} element={<LegalPage doc={REFUNDS} />} />
 
               <Route path="/forum" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/forum/:topicId" element={<ForumPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />

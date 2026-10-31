@@ -58,17 +58,20 @@ globalThis.__testersTestAdminApp = { initializeApp() {}, applicationDefault() {}
 globalThis.__testersTestAdminFirestore = { getFirestore: () => state.db, FieldValue: state.FieldValue };
 globalThis.__testersTestAdminAuth = { getAuth: () => state.auth };
 
-const serverSource = await readFile(resolve(root, 'server.js'), 'utf8');
+const serverSource = await readFile(resolve(root, 'api/server.js'), 'utf8');
 const transformed = serverSource
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
-  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(root)};`)
-  .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${url('launchLicence.js')}';`)
-  .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
-  .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
-  .replace("from './credits.js';", `from '${url('credits.js')}';`)
-  .replace("from './inbox.js';", `from '${url('inbox.js')}';`)
-  .replace("from './stats.js';", `from '${url('stats.js')}';`)
+  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(resolve(root, 'api'))};`)
+  .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${url('api/launchLicence.js')}';`)
+  .replace("from './entitlements.js';", `from '${url('api/entitlements.js')}';`)
+  .replace("from './accountDeletion.js';", `from '${url('api/accountDeletion.js')}';`)
+  .replace("from './credits.js';", `from '${url('api/credits.js')}';`)
+  .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
+  .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
+  .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
+  .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace('const hits = createHitCounter(', 'export const hits = createHitCounter(')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__testersTestAdminApp)')
@@ -76,7 +79,7 @@ const transformed = serverSource
   .replace("await import('firebase-admin/auth')", 'await Promise.resolve(globalThis.__testersTestAdminAuth)')
   .replace(/const PORT = process\.env\.PORT \|\| 8080;[\s\S]*?\n\);\s*$/, '');
 const server = await import(`data:text/javascript;base64,${Buffer.from(transformed).toString('base64')}`);
-const stats = await import(url('stats.js'));
+const stats = await import(url('api/stats.js'));
 
 const routeHandlers = new Map(server.app.router.stack
   .filter((layer) => layer.route)
@@ -271,6 +274,10 @@ await test('normalisePath: every route path the site data declares (plugins.js) 
   for (const p of paths) assert.equal(stats.normalisePath(p), p, p);
   const legal = await readFile(resolve(root, 'src/data/legalContent.js'), 'utf8');
   for (const m of legal.matchAll(/\bpath: '(\/[^']*)'/g)) assert.equal(stats.normalisePath(m[1]), m[1]);
+  // Sample pack pages (16 Oct): every imported pack is counted under its own path.
+  const { SAMPLE_PACK_LIST } = await import('../src/data/samplePacks.js');
+  for (const p of SAMPLE_PACK_LIST) assert.equal(stats.normalisePath(`/sample-packs/${p.slug}`), `/sample-packs/${p.slug}`);
+  assert.equal(stats.normalisePath('/sample-packs/Bad Slug!'), '/other');
 });
 
 await test('refHost: host only, own host and empty are (direct), junk is (other)', () => {
@@ -378,6 +385,36 @@ await test('field keys: encode/decode round-trip, only [a-z0-9_-], never starts 
   assert.notEqual(stats.encodeKey('a.b'), stats.encodeKey('a/b'));
 });
 
+await test('counter: Buy clicks. Counted by product|page|place|intro, never as a page view; junk product or /admin ignored; unknown place -> other; capped', async () => {
+  state.db.docs.clear();
+  const c = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  assert.equal(c.hit({ buy: 'family', path: '/', place: 'showcase', intro: true }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'family', path: '/', place: 'showcase', intro: true }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'family', path: '/plugins/taban', place: 'room-family', intro: false }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'jingfang', path: '/plugins/jingfang', place: 'nowhere' }, BROWSER), true);
+  assert.equal(c.hit({ buy: '../x', path: '/' }, BROWSER), false, 'a slug outside [a-z0-9-] is not counted');
+  assert.equal(c.hit({ buy: 'family', path: '/admin' }, BROWSER), false);
+  assert.equal(c.hit({ buy: 'family', path: '/' }, 'Googlebot/2.1'), false);
+  assert.equal(c.pendingViews(), 0, 'a Buy click is not a page view');
+  assert.equal(c.pendingBuys(), 4);
+  await c.flush();
+  const doc = state.db.docs.get('site_stats/2026-10-11');
+  assert.equal(doc.views, 0); assert.equal(doc.visits, 0);
+  const buys = Object.fromEntries(Object.entries(doc.buys).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.deepEqual(buys, { 'family|/|showcase|intro': 2, 'family|/plugins/taban|room-family|no-intro': 1, 'jingfang|/plugins/jingfang|other|no-intro': 1 });
+  const v = stats.aggregateViews([{ id: '2026-10-11', data: { views: 5, visits: 2, buys: doc.buys } }], { days: 1, now: NOW });
+  assert.equal(v.buy_clicks, 4);
+  assert.equal(v.perDay.get('2026-10-11').buy_clicks, 4);
+  assert.deepEqual(v.buys[0], { slug: 'family', path: '/', place: 'showcase', intro: true, clicks: 2 });
+  state.db.docs.clear();
+  const c2 = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  for (let i = 0; i < stats.MAX_BUY_KEYS + 10; i++) c2.hit({ buy: `p${i}`, path: '/', place: 'room' }, BROWSER);
+  await c2.flush();
+  const capped = Object.fromEntries(Object.entries(state.db.docs.get('site_stats/2026-10-11').buys).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.equal(Object.keys(capped).length, stats.MAX_BUY_KEYS + 1);
+  assert.equal(capped['(other)|/other|other|no-intro'], 10);
+});
+
 /* ---- the route -------------------------------------------------------------- */
 await test('POST /api/hit: 204 for anything, counts a browser, ignores a bot, stores no IP or user agent, 120 per minute per IP', async () => {
   state.db.docs.clear();
@@ -403,10 +440,11 @@ await test('POST /api/hit: 204 for anything, counts a browser, ignores a bot, st
 
 await test('privacy text, rules and Dockerfile: one plain sentence, site_stats closed to clients, stats.js copied', async () => {
   const legal = await readFile(resolve(root, 'src/data/legalContent.js'), 'utf8');
-  assert.match(legal, /without cookies: only the page address and the name of the referring website are counted, with no IP address and no identifier/);
+  assert.match(legal, /without cookies: only the page address, the name of the referring website and, when you press a Buy button, which product and which part of the page it was are counted, with no IP address and no identifier/);
+  assert.match(legal, /svl-intro-seen = 1/);
   const rules = await readFile(resolve(root, 'firestore.rules'), 'utf8');
   assert.match(rules, /match \/site_stats\/\{document=\*\*\} \{\s*allow read, write: if false;/);
-  const docker = await readFile(resolve(root, 'Dockerfile'), 'utf8');
+  const docker = await readFile(resolve(root, 'api/Dockerfile'), 'utf8');
   assert.match(docker, /COPY server\.js [^\n]*\bstats\.js\b[^\n]* \.\//);
 });
 
@@ -419,6 +457,30 @@ await test('client hook: skips /admin, uses sendBeacon with fetch fallback, stor
   assert.doesNotMatch(hook, /document\.cookie|localStorage\./);
   const app = await readFile(resolve(root, 'src/App.jsx'), 'utf8');
   assert.match(app, /<Router>\s*<HitCounter \/>/);
+});
+
+await test('joinMembers: orders join by e-mail, buyers without an account are listed, newest first, pending skipped', async () => {
+  const members = [{ uid: 'u1', email: 'Leo@Example.com', lastActiveAt: '2026-10-27T09:00:00Z', downloads: 3 }, { uid: 'u2', email: 'quiet@example.com' }];
+  const licences = [
+    { id: 'leo@example.com', data: { orders: {
+      a: { product: 'family', status: 'paid', amount_usd_cents: 1999, created: '2026-10-11T10:00:00Z' },
+      b: { product: 'seda', status: 'paid', amount_usd_cents: 1500, created: '2026-10-26T21:36:00Z' },
+      c: { product: 'ru8', status: 'pending', amount_usd_cents: 2500, created: '2026-10-27T00:00:00Z' },
+    } } },
+    { id: 'guest@example.com', data: { orders: { d: { product: 'alev', status: 'paid', amount_usd_cents: 0, created: '2026-10-20T00:00:00Z' } } } },
+  ];
+  const rows = stats.joinMembers(members, licences);
+  assert.equal(rows.length, 3);
+  const leo = rows.find((r) => r.uid === 'u1');
+  assert.deepEqual(leo.purchases.map((p) => p.product), ['seda', 'family']);
+  assert.equal(leo.spentCents, 3499);
+  assert.equal(leo.hasAccount, true);
+  assert.equal(rows.find((r) => r.uid === 'u2').purchases.length, 0);
+  const guest = rows.find((r) => r.email === 'guest@example.com');
+  assert.equal(guest.hasAccount, false);
+  assert.equal(guest.purchases[0].kind, 'free');
+  const src = await readFile(resolve(root, 'api/server.js'), 'utf8');
+  assert.match(src, /lastActiveAt: u\.metadata\.lastRefreshTime/);
 });
 
 const failed = results.filter((r) => !r.ok);

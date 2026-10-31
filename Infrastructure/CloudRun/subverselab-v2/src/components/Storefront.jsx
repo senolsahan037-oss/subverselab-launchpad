@@ -5,9 +5,20 @@ import { collection, addDoc } from 'firebase/firestore';
 import SEOSection from './SEOSection';
 import Icon from './Icon';
 import PageMeta from './PageMeta';
-import { HOME } from '../data/siteMeta';
-import PluginShowcase from './PluginShowcase';
+import { TOOLS } from '../data/siteMeta';
 import ProductActions from './ProductActions';
+
+// Card images for the browser tools: a crop of each tool's real interface (public/tools/cards, captured 22 Oct 2026
+// from subverselab.com while signed in). The banners stored with the products carried 'SUBVERSE' lettering.
+const TOOL_CARD_IMAGES = {
+  'arrangement-gps': '/tools/cards/arrangement-gps.webp',
+  sensei: '/tools/cards/sensei.webp',
+  'subverse-mix-check': '/tools/cards/subverse-mix-check.webp',
+  'subverse-splitter': '/tools/cards/subverse-splitter.webp',
+  'subverse-visualizer': '/tools/cards/subverse-visualizer.webp',
+  synthpulse: '/tools/cards/synthpulse.webp',
+  'time-frequency-sync': '/tools/cards/time-frequency-sync.webp',
+};
 
 export default function Storefront({ packs = [], publishedGuideSlugs = new Set(), activeTrack, isPlaying, onPlayPause, user, onLoginClick, searchQuery = '' }) {
   const [filter, setFilter] = useState('all');
@@ -64,9 +75,9 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
 
   return (
     <div>
-      <PageMeta title={HOME.title} description={HOME.description} path={HOME.path} />
+      <PageMeta title={TOOLS.title} description={TOOLS.description} path={TOOLS.path} />
 
-      <PluginShowcase />
+      {/* /tools since 2026-10-26 (owner): the homepage is the news (HomePage.jsx); the tools live here, under the Tools tab. */}
 
       {/* ── Compact Hero ── */}
       <div className="container">
@@ -89,7 +100,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase',
               letterSpacing: '1px', color: 'var(--color-accent)',
             }}>
-              ◆ Plugins and Tools for Producers
+              ◆ SubverseLab Tools
             </div>
             <h1 style={{
               fontSize: 'clamp(1.5rem, 3vw, 2rem)', fontWeight: '900',
@@ -98,7 +109,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
               textWrap: 'balance',
             }}>
-            SubverseLab: Plugins and Tools for Music Producers
+            Browser tools for music producers
             </h1>
             <p style={{
               fontSize: '0.9rem', color: 'var(--color-text-muted)',
@@ -106,7 +117,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               display: '-webkit-box', WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical', overflow: 'hidden',
             }}>
-              Analog-style plugins for macOS and Windows, two of them free, plus browser tools for arranging, measuring, mixing and stem separation.
+              Sketch an arrangement, write drums, check your mix or split a song into stems, right in your browser. Nothing to install, free to start.
             </p>
           </div>
 
@@ -153,7 +164,7 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
           <div style={{ marginBottom: '32px' }}>
             <h2 style={{ fontSize: '1.3rem', fontWeight: '800', marginBottom: '8px' }}>Production Workflows</h2>
             <p style={{ color: 'var(--color-text-muted)', marginBottom: '16px' }}>
-              Walkthroughs and production workflows from the SubverseLab YouTube channel.
+              Watch the tools and plugins at work in real sessions, on the SubverseLab YouTube channel.
             </p>
             <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px' }}>
               <iframe
@@ -193,6 +204,8 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
             // would need that backend built for real before this can gate
             // anything meaningful again.
             const canDownload = isFree ? !!user : false;
+            // The tool's own screen, captured from the live tool (owner 22 Oct: no lettered banners on the cards).
+            const cardImage = TOOL_CARD_IMAGES[pack.id] || pack.image;
 
             return (
               <div
@@ -202,7 +215,8 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
               >
                 {/* Image */}
                 <div className="pack-image-container">
-                  {pack.image && <img src={pack.image} className="pack-image" alt={pack.title} />}
+                  {cardImage && <span className="pack-image-bg" style={{ backgroundImage: `url(${cardImage})` }} aria-hidden="true" />}
+                  {cardImage && <img src={cardImage} className="pack-image" alt={pack.title} loading="lazy" />}
                   <div className="pack-image-glow" style={{ background: `radial-gradient(circle at center, ${pack.accentColor || 'var(--color-primary)'} 0%, transparent 70%)` }}></div>
                   <div className={`pack-image-banner badge-${categoryClass}`}>{displayCat}</div>
 
@@ -290,8 +304,8 @@ export default function Storefront({ packs = [], publishedGuideSlugs = new Set()
           {filteredPacks.length === 0 && filter !== 'workflow' && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px', color: 'var(--color-text-muted)' }}>
               {query
-                ? `Nothing matches “${searchQuery.trim()}”.`
-                : 'No products found in this category.'}
+                ? `Nothing matches “${searchQuery.trim()}”. Try a shorter word, or browse All.`
+                : 'Nothing in this category yet. Browse All to see every tool.'}
             </div>
           )}
         </div>

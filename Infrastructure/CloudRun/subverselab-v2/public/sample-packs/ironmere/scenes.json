@@ -1,0 +1,50 @@
+[
+ {
+  "t": 0,
+  "label": "Ember Field: 85 BPM, E minor"
+ },
+ {
+  "t": 5.65,
+  "label": "Falling Archive: 95 BPM, A minor"
+ },
+ {
+  "t": 10.7,
+  "label": "First Light: 90 BPM, D minor"
+ },
+ {
+  "t": 16.03,
+  "label": "Glass Cathedral: 80 BPM, A minor"
+ },
+ {
+  "t": 22.03,
+  "label": "Hollow Sun: 80 BPM, E minor"
+ },
+ {
+  "t": 28.03,
+  "label": "Iron Tide: 100 BPM, D minor"
+ },
+ {
+  "t": 32.83,
+  "label": "Last Signal: 95 BPM, G minor"
+ },
+ {
+  "t": 37.89,
+  "label": "Northbound: 105 BPM, D minor"
+ },
+ {
+  "t": 42.46,
+  "label": "Paper Moon: 75 BPM, A minor"
+ },
+ {
+  "t": 48.86,
+  "label": "Quiet Machine: 90 BPM, G minor"
+ },
+ {
+  "t": 54.19,
+  "label": "Requiem Ink: 70 BPM, C minor"
+ },
+ {
+  "t": 61.05,
+  "label": "Undertow: 100 BPM, C minor"
+ }
+]

@@ -1,6 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function boundedString(v, lo, hi) {
+      return v is string && v.size() >= lo && v.size() <= hi;
+    }
+    function validAuthorName(v) {
+      return boundedString(v, 1, 120);
+    }
+    function validTopicText(d) {
+      return boundedString(d.title, 1, 300) && boundedString(d.body, 1, 10000)
+        && d.category in ['General question', 'Music production', 'Tool support', 'Feedback'];
+    }
+    function validReport(d) {
+      return d.keys().hasOnly(['productId', 'productTitle', 'os', 'userEmail', 'description', 'source', 'uid', 'userAgent', 'page', 'createdAt', 'status'])
+        && d.keys().hasAll(['description', 'status', 'createdAt'])
+        && boundedString(d.description, 1, 6000)
+        && d.status == 'Pending'
+        && (boundedString(d.createdAt, 1, 40) || d.createdAt is timestamp)   // the forms send an ISO string
+        && (!('productId' in d) || boundedString(d.productId, 0, 120))
+        && (!('productTitle' in d) || boundedString(d.productTitle, 0, 200))
+        && (!('os' in d) || boundedString(d.os, 0, 60))
+        && (!('userEmail' in d) || boundedString(d.userEmail, 0, 254))
+        && (!('source' in d) || boundedString(d.source, 0, 40))
+        && (!('userAgent' in d) || boundedString(d.userAgent, 0, 300))
+        && (!('page' in d) || boundedString(d.page, 0, 300))
+        && (!('uid' in d) || d.uid == null || (request.auth != null && d.uid == request.auth.uid));
+    }
     match /seo_articles/{document=**} {
       allow read: if true;
       // Matches the admin custom claim metadata-sync-service's verifyAdmin()
@@ -14,9 +39,10 @@ service cloud.firestore {
     match /products/{document=**} {
       allow read: if true;
     }
+    // Security audit 2026-10-17 F1: these records hold e-mails and names, and the site never reads or writes them from the
+    // browser (api/accountDeletion.js removes them with the Admin SDK). Closed: before, any signed-in account could list them all.
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if false;
     }
     // Plugin orders and licence keys, written only by server.js from signed
     // Lemon Squeezy webhooks (Admin SDK, which bypasses these rules). One
@@ -46,8 +72,9 @@ service cloud.firestore {
       allow read, write: if false;
     }
     // The 100-tester programme for launch 2 (server.js, Admin SDK only):
-    // applications, the approved list that opens the download gate, and the bug
-    // reports. launch2/testers is the seat counter. Applications hold personal
+    // applications, the approved list that opens the download gate (with the
+    // agreement record and the status active / ended / revoked), the reports
+    // and the per-account test builds. launch2/testers is the seat counter. Applications hold personal
     // answers and the approved list is the gate itself, so nothing is readable
     // or writable from a client; the page goes through /api/testers/*.
     // Sample-pack applications (server.js /api/packs/apply, Admin SDK only): personal data, no client access.
@@ -63,6 +90,25 @@ service cloud.firestore {
     match /tester_reports/{document=**} {
       allow read, write: if false;
     }
+    // Per-account test builds (server.js, Admin SDK only): the file path of an unreleased build is not public.
+    match /tester_builds/{document=**} {
+      allow read, write: if false;
+    }
+    // The tester's own results per build and the tester <-> SubverseLab message threads (server.js, Admin SDK only).
+    match /tester_build_results/{document=**} {
+      allow read, write: if false;
+    }
+    match /tester_messages/{document=**} {
+      allow read, write: if false;
+    }
+    // Hashed personal agent keys of testers (server.js, Admin SDK only).
+    match /tester_agent_tokens/{document=**} {
+      allow read, write: if false;
+    }
+    // e-mail -> tester licence key index (launchLicence.js, Admin SDK only).
+    match /tester_keys/{document=**} {
+      allow read, write: if false;
+    }
     match /launch2/{document=**} {
       allow read, write: if false;
     }
@@ -73,6 +119,14 @@ service cloud.firestore {
     // uid -> its orders {product, status, refunded, created, email}, written by the webhook and the backfill script (Admin SDK only).
     // Holds the checkout e-mail of each order, so no client may read or write it.
     match /orders_by_uid/{document=**} {
+      allow read, write: if false;
+    }
+    // RU-8 App Store purchases (api/appstore.js, Admin SDK only): originalTransactionId -> {uid, revoked, ...} and its uid index.
+    // The server decides ownership from them; no client may read or write either.
+    match /apple_purchases/{document=**} {
+      allow read, write: if false;
+    }
+    match /apple_by_uid/{document=**} {
       allow read, write: if false;
     }
     // What an account deletion leaves behind: hashed-e-mail markers (accountDeletion.js).
@@ -108,26 +162,69 @@ service cloud.firestore {
     match /forum_topics_archive/{document=**} {
       allow read, write: if false;
     }
+    // Audit F5: old counters, not read by the site any more (stats live in site_stats). Closed.
     match /analytics/{document=**} {
-      allow read: if request.auth != null;
+      allow read, write: if false;
     }
-    match /reports/{document=**} {
+    match /reports/{reportId} {
       // Anyone may file a report; only the site admins (verified admin e-mails, same list as
       // server.js ADMIN_EMAILS) may read or change them: reports hold other people's e-mails.
-      allow create: if true;
+      // Audit F3: one level only (no nested collections), only the fields the two report forms write
+      // (Storefront.jsx, DownloadRoomReport.jsx), strings with a size cap, status Pending, and a uid
+      // only when it is the caller's own.
+      allow create: if validReport(request.resource.data);
       allow read, update, delete: if request.auth != null
         && request.auth.token.email_verified == true
         && request.auth.token.email in ['info@subverselab.com', 'senolsahan037@gmail.com'];
     }
+    // Audit F2: the author can edit only title, body and category (and the edit time); authorId, authorName and createdAt
+    // never change, every field is a bounded string from the form (ForumPage.jsx). Replies are not edited by the site.
     match /forum_topics/{topicId} {
       allow read: if true;
-      allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['title', 'body', 'category', 'authorId', 'authorName', 'createdAt'])
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && validAuthorName(request.resource.data.authorName)
+        && validTopicText(request.resource.data);
+      allow update: if request.auth != null && resource.data.authorId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'body', 'category', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && validTopicText(request.resource.data);
+      allow delete: if request.auth != null && resource.data.authorId == request.auth.uid;
       match /replies/{replyId} {
         allow read: if true;
-        allow create: if request.auth != null && request.resource.data.authorId == request.auth.uid;
-        allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+        allow create: if request.auth != null
+          && request.resource.data.keys().hasOnly(['body', 'authorId', 'authorName', 'createdAt'])
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && validAuthorName(request.resource.data.authorName)
+          && boundedString(request.resource.data.body, 1, 10000);
+        allow update: if false;
+        allow delete: if request.auth != null && resource.data.authorId == request.auth.uid;
       }
+    }
+    // The live catalogue (api/catalog.js, owner 2026-10-31): news, plug-ins, sample packs and preset packs added from /admin.
+    // Written by the API with the Admin SDK after the admin check, read by the pages through GET /api/catalog (cached):
+    // no client reads or writes. Spelled out so a broad rule can never open them.
+    match /catalog_news/{document=**} {
+      allow read, write: if false;
+    }
+    match /catalog_plugins/{document=**} {
+      allow read, write: if false;
+    }
+    match /catalog_sample_packs/{document=**} {
+      allow read, write: if false;
+    }
+    match /catalog_preset_packs/{document=**} {
+      allow read, write: if false;
+    }
+    match /catalog_publishers/{document=**} {
+      allow read, write: if false;
+    }
+    // Admin agent keys (api/agents.js): hashes only, Admin SDK only.
+    match /catalog_agents/{document=**} {
+      allow read, write: if false;
     }
     match /{document=**} {
       allow read, write: if false;

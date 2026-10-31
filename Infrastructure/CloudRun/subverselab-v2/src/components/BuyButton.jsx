@@ -5,19 +5,19 @@ import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { CHECKOUT, pluginBySlug, currentPrice } from '../data/plugins';
 import usePurchaseStatus, { checkoutStarted, markCheckoutStarted } from '../hooks/usePurchaseStatus';
+import { sendBuyClick } from '../hooks/useHitCounter';
 
 // One Lemon Squeezy checkout button. The links live in CHECKOUT in
 // src/data/plugins.js; while one is empty the button is shown disabled as
 // "Available shortly" (the single checkouts of KORO, YANKI, HAVA, TUTKAL and
 // MIHENK are still to be created), so no page ever links to a checkout that
-// does not exist. Only Kubbe and Kaset pass `full`: while their free 1,000 last
-// (full === false) the button reads "After the first 1,000".
+// does not exist.
 // `email` (optional) pre-fills Lemon Squeezy's checkout e-mail, so a paid launch-2
 // order matches the signed-in account (?checkout[email]=).
 // `uid` (optional) is the signed-in Firebase uid, passed as checkout[custom][uid]:
 // Lemon Squeezy returns it as meta.custom_data.uid in the webhook, so the paid
 // order is bound to the account that clicked Buy and needs no e-mail round trip.
-function withBuyer(url, email, uid) {
+export function withBuyer(url, email, uid) {
   if (!url || (!email && !uid)) return url;
   try {
     const u = new URL(url);
@@ -38,7 +38,9 @@ export { checkoutStarted };
 // going, true once they are gone, undefined for products that have no free
 // period. While the free period runs the button stays closed even though the
 // checkout exists: the launch sells nothing it is giving away.
-export default function BuyButton({ slug, label, email, uid, full, className = 'btn btn-primary' }) {
+// `place` says which part of the page the button sits in (stats.js BUY_PLACES: showcase, offer, room, room-family, account,
+// launch); a click is counted by the cookieless counter with the page and whether the homepage opening was seen.
+export default function BuyButton({ slug, label, email, uid, full, place, className = 'btn btn-primary' }) {
   // Pages that pass no buyer still bind the order to whoever is signed in.
   const [signedIn, setSignedIn] = useState(() => auth.currentUser);
   useEffect(() => onAuthStateChanged(auth, setSignedIn), []);
@@ -50,7 +52,7 @@ export default function BuyButton({ slug, label, email, uid, full, className = '
   if (signedIn && status.loaded && status.owns(slug)) {
     return (
       <Link to={slug === 'family' ? '/account' : `/account#${slug}`} className={`${className} plugin-buy-owned`}>
-        <Icon name="download" /> {slug === 'family' ? 'You own the family \u2014 go to your downloads' : `You own ${name} \u2014 Download`}
+        <Icon name="download" /> {slug === 'family' ? 'You own this \u2014 go to your downloads' : `You own ${name} \u2014 Download`}
       </Link>
     );
   }
@@ -64,17 +66,15 @@ export default function BuyButton({ slug, label, email, uid, full, className = '
     );
   }
   if (!url) {
-    // Only a product with a free period (full === false) waits for the 1,000; every other empty link is "available shortly".
-    const soon = full !== false;
+    // The free 1,000 are over: an empty checkout link is always "available shortly".
     return (
-      <button type="button" className={`${className} plugin-buy-closed`} disabled
-              title={soon ? 'Available shortly' : 'Paid checkout opens after the first 1,000 free downloads'}>
-        {text} · {soon ? 'Available shortly' : 'After the first 1,000'}
+      <button type="button" className={`${className} plugin-buy-closed`} disabled title="Available shortly">
+        {text} · Available shortly
       </button>
     );
   }
   return (
-    <a href={url} className={className} target="_blank" rel="noopener noreferrer" onClick={() => markCheckoutStarted(slug)}>
+    <a href={url} className={className} target="_blank" rel="noopener noreferrer" onClick={() => { markCheckoutStarted(slug); sendBuyClick(slug, place); }}>
       <Icon name="purchase" /> {text}
     </a>
   );

@@ -2,7 +2,7 @@
 // Dry run by default (reads only, lists what it would write); `--write` applies it. Idempotent: merges per order id.
 // Run: node scripts/backfill-orders-by-uid.js [--write]   (needs Google credentials for project subverselab; the owner runs --write)
 import { pathToFileURL } from 'node:url';
-import { ORDERS_BY_UID, orderUid, uidOrderEntry } from '../entitlements.js';
+import { ORDERS_BY_UID, orderUid, uidOrderEntry } from '../api/entitlements.js';
 
 // Pure part: Map<uid, {orders:{orderId: entry}}> from plugin_licenses documents ([{id: e-mail, data}]).
 export function buildOrdersByUid(licenceDocs) {

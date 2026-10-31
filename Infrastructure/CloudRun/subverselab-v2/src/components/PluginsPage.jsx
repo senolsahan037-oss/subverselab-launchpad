@@ -1,195 +1,141 @@
-import React from 'react';
-import ToolsStrip from './ToolsStrip';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
-import FamilyOffer from './FamilyOffer';
-import BuyButton from './BuyButton';
 import LaunchPrice from './LaunchPrice';
-import { useFamilyLive } from '../hooks/useFamilyLive';
-import { useLaunch1Full } from '../hooks/useLaunchCounter';
+import BuyButton from './BuyButton';
 import {
-  PLUGINS_INDEX, PLUGINS, FAMILY_ONLY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, LAUNCH2, RELEASE2_LABEL, RELEASE3_LABEL,
-  FAMILY_PRICE, UPDATES_LINE, TRUST_LINE, launchPriceActive, launchNote,
+  PLUGINS_INDEX, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, CHECKOUT, PRICES, TRUST_LINE, BOX_IMG,
+  line2AvailableLine, launchPriceActive, launchEndLabel, BOX_LAYERS, BOX_SHELL, BOX_SHELL_DEFAULT,
 } from '../data/plugins';
+import { byLatestRelease } from '../data/productDates';
+import { useCatalog, catalogPlugins } from '../catalog/catalog';
+import { ROOM_PLUGINS } from '../data/plugins';
 
-// The Plugins tab: software that runs inside the visitor's own DAW, as opposed
-// to the browser tools on the storefront. One card per plugin in
-// src/data/plugins.js — the page does not pad itself out with placeholders.
+// The Plugins tab (owner decision 2026-10-15, "Option B"): one grid of cards that are links only, the family as the
+// one offer at the top, and buying and downloading in the room (PluginRoom.jsx). A card never carries a Buy button;
+// the only button a card can show is Download, for a signed-in owner, and it opens the room's download section.
 
-// Buy row under a plugin card (a button must not sit inside the card's link): the family is the highlighted
-// best-value button, the single the quieter one beside it.
-function CardBuy({ slug, full, familyLive }) {
-  return (
-    <div className="plugin-card-buy">
-      {familyLive && <BuyButton slug="family" label={`Get the family — $${FAMILY_PRICE}`} />}
-      <BuyButton slug={slug} full={full} className={familyLive ? 'btn btn-outline plugin-buy-single' : 'btn btn-primary'} />
-      <span className="plugin-card-buy-note">{UPDATES_LINE}</span>
-    </div>
-  );
+const GROUPS = [
+  { key: 'all', label: 'All' },
+  { key: 'solo', label: 'Sold on their own' },
+  { key: 'free', label: 'Free' },
+  { key: 'soon', label: 'Coming soon' },
+];
+
+// Page order (root CLAUDE.md "Store order", owner 2026-10-28): newest first by each product's latest release or update
+// (src/data/productDates.js), in "All" and inside every filter group; ADALET (no date, "Coming soon") goes last.
+// The list below only names the groups; ties keep this order.
+const STATIC_CARDS = [
+  // The family is retired (FAMILY_RETIRED, owner 2026-10-28): its products are cards sold on their own.
+  ...FAMILY_PLUGINS.map((p) => ({ p, group: 'solo' })),
+  ...SOLO_PLUGINS.map((p) => ({ p, group: 'solo' })),
+  ...LINE2_PLUGINS.map((p) => ({ p, group: CHECKOUT[p.slug] ? 'solo' : 'soon' })),
+  ...FREE_PLUGINS.map((p) => ({ p, group: 'free' })),
+];
+const KNOWN_SLUGS = ROOM_PLUGINS.map((p) => p.slug);
+
+// The hover view (owner 31 Oct, after three bubbles and one round one were tried): a second panel view that slides up out of
+// the box like a record out of its sleeve. The box and the view open the room; the key under the box buys.
+function bubble(p) {
+  const view = (p.modes || []).find((m) => m.key !== p.defaultMode && m.image) || (p.modes || [])[0];
+  return { image: view?.image || p.cardImage, text: 'View' };
+}
+
+function badge({ p, group }) {
+  if (group === 'free') return 'Free';
+  if (group === 'soon') return line2AvailableLine(p);
+  if (p.launchId === 'solo') return <><LaunchPrice slug={p.slug} note={false} />{launchPriceActive(p.slug) ? ' · launch price' : ''}</>;
+  return `$${PRICES[p.slug]}`;
 }
 
 export default function PluginsPage() {
-  const full = useLaunch1Full();
-  const familyLive = useFamilyLive();
+  const [group, setGroup] = useState('all');
+  // Plus the plug-ins added from /admin (the live catalogue), in the same store order.
+  const cat = useCatalog();
+  const CARDS = useMemo(() => byLatestRelease([...STATIC_CARDS, ...catalogPlugins(cat.plugins, KNOWN_SLUGS).map((p) => ({ p, group: p.free ? 'free' : 'solo' }))], (c) => c.p.slug), [cat]);
+  const shown = CARDS.filter((c) => group === 'all' || c.group === group);
+  const count = (key) => CARDS.filter((c) => c.group === key).length;
+
   return (
     <div className="container" style={{ padding: '40px 20px 96px' }}>
       <PageMeta title={PLUGINS_INDEX.title} description={PLUGINS_INDEX.description} path={PLUGINS_INDEX.path} />
 
-      <header style={{ marginBottom: '28px', maxWidth: '680px' }}>
+      <header style={{ marginBottom: '24px', maxWidth: '680px' }}>
         <h1 style={{ fontSize: 'clamp(1.6rem, 3vw, 2.2rem)', fontWeight: '900', margin: '0 0 10px' }}>Plugins</h1>
         <p style={{ color: 'var(--color-text-muted)', lineHeight: '1.6', margin: 0 }}>
-          Audio plugins you install in your own DAW. The web tools stay free in the browser; these
-          run inside Live, Logic or any host that loads VST3 or AU. {FORMATS}.
+          {/* No product counts in public copy (owner rule 2026-10-17); same sentence as the prerendered page (scripts/prerender.js). */}
+          Plugins and apps for macOS and Windows, each made for one job in your track. Open one to meet it: the real panel, what every control does, and how to make it yours.
         </p>
       </header>
 
-      <div className="plugin-card-list">
-        {PLUGINS.map((p) => (
-          <div key={p.slug} className="plugin-card-item">
-          <Link to={p.path} className="plugin-card">
-            <div className="plugin-card-media">
-              <img src={p.cardImage} alt={`${p.name}'s front panel`} width={p.imageSize[0]}
-                   height={p.imageSize[1]} loading="lazy" />
-            </div>
-            <div className="plugin-card-body">
-              <div className="plugin-card-top">
-                <span className="plugin-card-badge">${PRICES[p.slug]} · or in the family</span>
-              </div>
-              <h2 className="plugin-card-title">{p.name} <span>{p.kind} · Model {p.model}</span></h2>
-              <p className="plugin-card-text">{p.description}</p>
-              <span className="plugin-card-link">See {p.name} →</span>
-            </div>
-          </Link>
-          <CardBuy slug={p.slug} full={full} familyLive={familyLive} />
-          </div>
+      <div className="plugin-filter" role="group" aria-label="Show">
+        {GROUPS.filter((g) => g.key === 'all' || count(g.key) > 0).map((g) => (
+          <button key={g.key} type="button" aria-pressed={group === g.key}
+                  className={`plugin-filter-chip${group === g.key ? ' active' : ''}`} onClick={() => setGroup(g.key)}>
+            {g.label}
+          </button>
         ))}
       </div>
 
-      <Link to={LAUNCH2.path} className="plugin-strip" style={{ margin: '40px 0 24px' }}>
-        <span className="plugin-strip-tag">Next</span>
-        <span className="plugin-strip-text">
-          {familyLive ? <>All seven are out. <b>{LAUNCH2.offerNow}</b></> : <>Four more out {RELEASE2_LABEL}. <b>{LAUNCH2.offerBefore}</b>.</>}
-        </span>
-        <span className="plugin-strip-go">{familyLive ? 'How the family works →' : 'See the four →'}</span>
-      </Link>
-
-      <div className="plugin-card-list">
-        {FAMILY_ONLY_PLUGINS.map((p) => (
-          <div key={p.slug} className="plugin-card-item">
-          <Link to={p.path} className="plugin-card">
-            <div className="plugin-card-media">
-              <img src={p.cardImage} alt={`${p.name}'s front panel`} width={p.imageSize[0]}
-                   height={p.imageSize[1]} loading="lazy" />
-            </div>
-            <div className="plugin-card-body">
-              <div className="plugin-card-top">
-                <span className="plugin-card-badge">${PRICES[p.slug]}{familyLive ? ' · or in the family' : ` · Out ${RELEASE2_LABEL}`}</span>
-              </div>
-              <h2 className="plugin-card-title">{p.name} <span>{p.kind} · Model {p.model}</span></h2>
-              <p className="plugin-card-text">{p.description}</p>
-              <span className="plugin-card-link">See {p.name} →</span>
-            </div>
-          </Link>
-          <CardBuy slug={p.slug} familyLive={familyLive} />
-          </div>
-        ))}
-      </div>
-
-      {/* The family offer right under the seven, then ELEK (sold on its own) under it, then the coming ones (owner, 12 Oct) */}
-      <FamilyOffer style={{ marginTop: '24px' }} />
-
-      {SOLO_PLUGINS.length > 0 && (
-        <>
-          <div className="plugin-strip" style={{ margin: '40px 0 24px' }}>
-            <span className="plugin-strip-tag">New</span>
-            <span className="plugin-strip-text"><b>Out now, sold on its own.</b> {SOLO_PLUGINS.map((p) => p.displayName).join(', ')}: stems, vocal removal, key and tempo, on your Mac.</span>
-          </div>
-          <div className="plugin-card-list">
-        {SOLO_PLUGINS.map((p) => (
-          <div key={p.slug} className="plugin-card-item">
-          <Link to={p.path} className="plugin-card">
-            <div className="plugin-card-media">
-              <img src={p.cardImage} alt={`${p.displayName}'s window`} width={p.imageSize[0]}
-                   height={p.imageSize[1]} loading="lazy" />
-            </div>
-            <div className="plugin-card-body">
-              <div className="plugin-card-top">
-                <span className="plugin-card-badge"><LaunchPrice slug={p.slug} note={false} />{launchPriceActive(p.slug) ? ' · launch price' : ''}</span>
-              </div>
-              <h2 className="plugin-card-title">{p.displayName} <span>{p.kind} · Model {p.model}</span></h2>
-              <p className="plugin-card-text">{p.description}</p>
-              <span className="plugin-card-link">See {p.displayName} →</span>
-            </div>
-          </Link>
-          <div className="plugin-card-buy">
-            <BuyButton slug={p.slug} className="btn btn-outline plugin-buy-single" />
-            <span className="plugin-card-buy-note">{launchPriceActive(p.slug) ? `${launchNote(p.slug)[0].toUpperCase()}${launchNote(p.slug).slice(1)}. ` : ''}{UPDATES_LINE}</span>
-          </div>
-          </div>
-        ))}
-          </div>
-        </>
-      )}
-
-      <div className="plugin-strip" style={{ margin: '40px 0 24px' }}>
-        <span className="plugin-strip-tag">Soon</span>
-        <span className="plugin-strip-text"><b>Two more, {RELEASE3_LABEL ? `out ${RELEASE3_LABEL}` : 'coming soon'}.</b> Sold on their own.</span>
-      </div>
-      <div className="plugin-card-list">
-        {LINE2_PLUGINS.map((p) => (
-          <div key={p.slug} className="plugin-card-item">
-          <Link to={p.path} className="plugin-card">
-            <div className="plugin-card-media">
-              <img src={p.cardImage} alt={`${p.displayName}'s front panel`} width={p.imageSize[0]}
-                   height={p.imageSize[1]} loading="lazy" />
-            </div>
-            <div className="plugin-card-body">
-              <div className="plugin-card-top">
-                <span className="plugin-card-badge">{line2AvailableLine(p)}</span>
-              </div>
-              <h2 className="plugin-card-title">{p.displayName} <span>{p.kind} · Model {p.model}</span></h2>
-              <p className="plugin-card-text">{p.description}</p>
-              <span className="plugin-card-link">See {p.displayName} →</span>
-            </div>
-          </Link>
-          </div>
-        ))}
-      </div>
-
-      {FREE_PLUGINS.length > 0 && (
-        <>
-          <div className="plugin-strip" style={{ margin: '40px 0 24px' }}>
-            <span className="plugin-strip-tag">Free</span>
-            <span className="plugin-strip-text"><b>Free, forever.</b> The checkout asks for an e-mail address, no card.</span>
-          </div>
-          <div className="plugin-card-list">
-            {FREE_PLUGINS.map((p) => (
-              <div key={p.slug} className="plugin-card-item">
-              <Link to={p.path} className="plugin-card">
-                <div className="plugin-card-media">
-                  <img src={p.cardImage} alt={`${p.displayName}'s front panel`} width={p.imageSize[0]}
-                       height={p.imageSize[1]} loading="lazy" />
-                </div>
-                <div className="plugin-card-body">
-                  <div className="plugin-card-top">
-                    <span className="plugin-card-badge">Free · out now</span>
-                  </div>
-                  <h2 className="plugin-card-title">{p.displayName} <span>{p.kind} · Model {p.model}</span></h2>
-                  <p className="plugin-card-text">{p.description}</p>
-                  <span className="plugin-card-link">See {p.displayName} →</span>
-                </div>
+      {/* Owner 31 Oct: every product as its box on the page ground (the TORNA news frame's look), the lines under it; panels,
+          videos and the rest live in the room. A catalogue plug-in without a box picture gets a box drawn from its panel. */}
+      <div className="box-grid">
+        {shown.map((c) => {
+          const { p } = c;
+          const box = BOX_IMG[p.slug] || p.boxImage;
+          const layers = BOX_LAYERS[p.slug];
+          return (
+            <article key={p.slug} className="box-item">
+              <Link to={p.path} className="box-link" aria-label={`${p.displayName}, ${p.kind}`}>
+                {/* On hover / focus (owner 31 Oct) a second panel view slides up out of the box like a record out of its sleeve. */}
+                <span className="box-pops" aria-hidden="true">
+                  <span className="box-device" style={{ '--shell': BOX_SHELL[p.slug] || BOX_SHELL_DEFAULT }}>
+                    <img className="box-pop" src={bubble(p).image} alt="" loading="lazy" decoding="async" />
+                  </span>
+                </span>
+                {layers
+                  ? (
+                    <>
+                      {/* The lid, hinged at its back edge (the frame's top), lifts on hover; the body stays; the view rises between them. */}
+                      <img className="box-img box-lid" src={layers.lid} alt="" aria-hidden="true" loading={shown.indexOf(c) < 3 ? 'eager' : 'lazy'} decoding="async" />
+                      <img className="box-img box-body" src={layers.body} alt={`${p.displayName} in its box`} loading={shown.indexOf(c) < 3 ? 'eager' : 'lazy'} decoding="async" />
+                    </>
+                  )
+                  : box
+                  ? <img className="box-img" src={box} alt={`${p.displayName} in its box`} loading={shown.indexOf(c) < 3 ? 'eager' : 'lazy'} decoding="async" />
+                  : (
+                    <span className="box-drawn" aria-hidden="true">
+                      <span className="box-drawn-side"><span>{p.model}</span></span>
+                      <span className="box-drawn-front">
+                        <span className="box-drawn-model">{p.model}</span>
+                        <img src={p.cardImage} alt="" width={p.imageSize[0]} height={p.imageSize[1]} loading="lazy" />
+                        <span className="box-drawn-name">{p.displayName}</span>
+                        <span className="box-drawn-kind">{p.kind}</span>
+                      </span>
+                    </span>
+                  )}
               </Link>
-              <div className="plugin-card-buy">
-                <BuyButton slug={p.slug} label={`Get ${p.displayName} free`} />
+              {/* Owner 31 Oct: the box and its bubbles lead into the room; the key under the box goes straight to the checkout
+                  (BuyButton: owned -> Download, free -> Get free, a product without a checkout -> a closed key). The name still
+                  opens the room, so nobody lands in a checkout by reading. */}
+              <div className="box-lines">
+                <h2 className="box-name"><Link to={p.path}>{p.displayName}</Link></h2>
+                <span className="box-kind">{p.kind}</span>
+                <span className="box-price">{badge(c)}</span>
+                {c.group !== 'soon' && (
+                  <span className="box-buy-row">
+                    <BuyButton place="showcase" slug={p.slug} className="btn btn-primary box-buy"
+                      label={c.group === 'free' ? `Get ${p.displayName} free` : `Buy ${p.displayName}`} />
+                    {p.launchId === 'solo' && launchPriceActive(p.slug) && <span className="box-until">until {launchEndLabel(p.slug)}</span>}
+                  </span>
+                )}
               </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+            </article>
+          );
+        })}
+      </div>
 
-      <p className="plugin-trust">{TRUST_LINE}</p>
-      <ToolsStrip />
+      <p className="plugin-trust" style={{ marginTop: '28px' }}>{TRUST_LINE}</p>
     </div>
   );
 }

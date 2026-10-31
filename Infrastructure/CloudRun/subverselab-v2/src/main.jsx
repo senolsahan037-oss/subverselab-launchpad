@@ -21,8 +21,11 @@ for (const el of document.head.querySelectorAll('[data-rh="true"]')) {
   el.remove();
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Local preview as the owner, dev server only (src/devPreview.js); the production build drops this branch.
+const start = () => ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-)
+);
+if (import.meta.env.DEV) import('./devPreview.js').finally(start);
+else start();

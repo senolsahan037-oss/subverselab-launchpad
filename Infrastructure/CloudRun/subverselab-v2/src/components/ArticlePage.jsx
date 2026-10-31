@@ -57,7 +57,7 @@ function ArticleBody({ body }) {
     } else if (line.startsWith('### ')) {
       elements.push(<h3 key={key++} style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--color-primary)', margin: '24px 0 12px' }}>{line.slice(4)}</h3>);
     } else if (line.startsWith('---')) {
-      elements.push(<hr key={key++} style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: '32px 0' }} />);
+      elements.push(<hr key={key++} className="svl-divider" />);
     } else if (line.match(/^\d+\. /)) {
       elements.push(
         <li key={key++} style={{ color: 'var(--color-text-muted)', lineHeight: '1.7', marginBottom: '8px', paddingLeft: '4px' }}>
@@ -83,33 +83,57 @@ function ArticleBody({ body }) {
   return <div>{elements}</div>;
 }
 
+// The prerendered /learn/<slug> page carries its guide as JSON (scripts/prerender.js, id "svl-page-data"). Painting
+// from it means the guide never waits on Firestore: Google's renderer did not get the Firestore answer in time and
+// saw an empty page, reported as "Soft 404" (Search Console, 22 Oct 2026).
+function embeddedArticle(slug) {
+  try {
+    const el = typeof document !== 'undefined' && document.getElementById('svl-page-data');
+    const a = el && JSON.parse(el.textContent).article;
+    if (!a || a.slug !== slug) return null;
+    return { ...a, updatedAt: a.updatedAt ? new Date(a.updatedAt) : null };
+  } catch {
+    return null;
+  }
+}
+
+function withGuideOverrides(slug, art) {
+  if (slug === 'subverse-mix-check') {
+    return { ...art, body: mixCheckGuide, answer: 'Evidence-first audio measurement for your mix or master, with direct loudness, level, spectral, and mono fold-down evidence.' };
+  }
+  return art;
+}
+
 /* ────────────────────────────────────────────────────────────
    Article Page
    ──────────────────────────────────────────────────────────── */
 export default function ArticlePage() {
   const { slug } = useParams();
-  const [article, setArticle] = useState(null);
+  const [article, setArticle] = useState(() => {
+    const embedded = embeddedArticle(slug);
+    return embedded ? withGuideOverrides(slug, embedded) : null;
+  });
   const [related, setRelated] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !embeddedArticle(slug));
   const [notFound, setNotFound] = useState(false);
   const schemaRef = useRef(null);
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      const embedded = embeddedArticle(slug);
+      setLoading(!embedded);
       setNotFound(false);
+      if (embedded) setArticle(withGuideOverrides(slug, embedded));
       try {
-        let art = await getSEOArticleBySlug(slug).catch(() => null);
-        
+        const art = await getSEOArticleBySlug(slug).catch(() => null);
+
         if (!art) {
-          setNotFound(true);
+          // Firestore had no answer: keep the embedded guide; only a page without one is "not found".
+          if (!embedded) setNotFound(true);
           return;
         }
 
-        if (slug === 'subverse-mix-check') {
-          art = { ...art, body: mixCheckGuide, answer: 'Evidence-first audio measurement for your mix or master, with direct loudness, level, spectral, and mono fold-down evidence.' };
-        }
-        setArticle(art);
+        setArticle(withGuideOverrides(slug, art));
 
         const relatedArts = await getSEOArticles({ type: 'blog' }).catch(() => []);
         setRelated(relatedArts.filter(r => r.slug !== slug).slice(0, 3));
@@ -137,7 +161,7 @@ export default function ArticlePage() {
       <div className="container" style={{ paddingTop: '80px', paddingBottom: '80px', textAlign: 'center' }}>
         <h1 style={{ marginBottom: '16px' }}>Article Not Found</h1>
         <p style={{ color: 'var(--color-text-muted)', marginBottom: '32px' }}>This guide doesn't exist or hasn't been published yet.</p>
-        <Link to="/" className="btn btn-primary">Back to Tools</Link>
+        <Link to="/tools" className="btn btn-primary">Back to Tools</Link>
       </div>
     );
   }
@@ -225,8 +249,8 @@ export default function ArticlePage() {
               <ArticleBody body={article.body} />
 
               {/* Back link */}
-              <div style={{ marginTop: '56px', paddingTop: '32px', borderTop: '1px solid var(--color-border)' }}>
-                <Link to="/" className="btn btn-outline" style={{ marginRight: '12px' }}>← Browse Tools</Link>
+              <div className="svl-divider-top" style={{ marginTop: '56px', paddingTop: '32px' }}>
+                <Link to="/tools" className="btn btn-outline" style={{ marginRight: '12px' }}>← Browse Tools</Link>
                 <Link to="/learn" className="btn btn-ghost">More Guides</Link>
               </div>
             </article>
@@ -234,7 +258,7 @@ export default function ArticlePage() {
 
           {/* Related Articles */}
           {related.length > 0 && (
-            <div style={{ marginTop: '80px', paddingTop: '48px', borderTop: '1px solid var(--color-border)' }}>
+            <div className="svl-divider-top" style={{ marginTop: '80px', paddingTop: '48px' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginBottom: '24px' }}>Related Guides</h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '20px' }}>
                 {related.map(rel => (

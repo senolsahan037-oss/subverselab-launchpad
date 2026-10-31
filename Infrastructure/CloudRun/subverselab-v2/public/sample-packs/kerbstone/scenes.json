@@ -1,0 +1,42 @@
+[
+ {
+  "t": 0,
+  "label": "Kicks + snares"
+ },
+ {
+  "t": 6.67,
+  "label": "Hats: skippy, triplet and 32nd rolls"
+ },
+ {
+  "t": 10,
+  "label": "808 Slide: sliding 808 line, F# minor"
+ },
+ {
+  "t": 16.67,
+  "label": "808 Grit: Estate 808 loop, D minor"
+ },
+ {
+  "t": 20,
+  "label": "Drum loop: Postcode, UK drill 144, with fill"
+ },
+ {
+  "t": 26.67,
+  "label": "Percussion + rims: Courtyard + Southbank"
+ },
+ {
+  "t": 30,
+  "label": "Claps + rims"
+ },
+ {
+  "t": 33.33,
+  "label": "Drum loop: Underpass, UK drill 144, A minor"
+ },
+ {
+  "t": 40,
+  "label": "Drum loop: Bronx, NY drill 140, 808 Punch"
+ },
+ {
+  "t": 46.86,
+  "label": "End: 808 G1 Punch"
+ }
+]

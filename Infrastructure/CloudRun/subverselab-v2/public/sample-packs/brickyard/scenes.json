@@ -1,0 +1,34 @@
+[
+ {
+  "t": 0,
+  "label": "Kicks + snares: 8 kicks, 8 snares (one-shots, 140 BPM grid)"
+ },
+ {
+  "t": 6.857,
+  "label": "Hats: HatLoop 140 Overpass (32nd + triplet rolls)"
+ },
+ {
+  "t": 10.286,
+  "label": "808 line: 808Loop 140 F minor Overpass (kick + 808, legato slides)"
+ },
+ {
+  "t": 17.143,
+  "label": "Trap loop: DrumLoop 140 F minor Overpass, 3 bars + Overpass fill"
+ },
+ {
+  "t": 24,
+  "label": "Boom bap loop: DrumLoop 90 Corduroy"
+ },
+ {
+  "t": 34.667,
+  "label": "Boom bap loop: DrumLoop 84 Brownstone (bars 5-6)"
+ },
+ {
+  "t": 40.381,
+  "label": "Trap loop: DrumLoop 144 Bb minor Glasshouse (808 slides)"
+ },
+ {
+  "t": 43.714,
+  "label": "End hit: Kick Overpass + 808 F1 Heavy + Crash Shatter"
+ }
+]

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiUrl } from '../utils/endpoints';
 
 // The signed-in account's inbox (GET /api/inbox, POST /api/inbox/read; messages are written by the server only).
 // Loaded when the account is known, then every 60 s and whenever the window regains focus. When any component
@@ -15,7 +16,7 @@ export default function useInbox(user) {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      const r = await fetch('/api/inbox', { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(apiUrl('/api/inbox'), { headers: { Authorization: `Bearer ${token}` } });
       const body = await r.json().catch(() => ({}));
       if (alive.current && r.ok && Array.isArray(body.messages)) setState({ messages: body.messages, unread: Number(body.unread) || 0, loaded: true });
     } catch { /* the bell keeps what it had */ }
@@ -42,7 +43,7 @@ export default function useInbox(user) {
     });
     try {
       const token = await user.getIdToken();
-      await fetch('/api/inbox/read', {
+      await fetch(apiUrl('/api/inbox/read'), {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(all ? { all: true } : { ids }),

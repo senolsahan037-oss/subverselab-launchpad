@@ -1,0 +1,46 @@
+[
+ {
+  "t": 0,
+  "label": "Kick + clap (125 BPM)"
+ },
+ {
+  "t": 3.84,
+  "label": "Shuffled hats"
+ },
+ {
+  "t": 7.68,
+  "label": "Percussion: congas, bongos, shaker, tambourine"
+ },
+ {
+  "t": 11.52,
+  "label": "Full loop: Strobe"
+ },
+ {
+  "t": 19.2,
+  "label": "One-shots: kicks and claps"
+ },
+ {
+  "t": 23.04,
+  "label": "Full loop: Garment (tambourine section)"
+ },
+ {
+  "t": 30.72,
+  "label": "Toms and tuned percs over hats"
+ },
+ {
+  "t": 34.56,
+  "label": "Deep: Velour (120 BPM)"
+ },
+ {
+  "t": 38.56,
+  "label": "Tech: Rivet (126 BPM)"
+ },
+ {
+  "t": 42.37,
+  "label": "Tech percussion + top: Rivet"
+ },
+ {
+  "t": 46.18,
+  "label": "Fill + end hit (125 BPM)"
+ }
+]

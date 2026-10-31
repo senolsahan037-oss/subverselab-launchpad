@@ -1,6 +1,583 @@
-# SubverseLab — complete tool guides
+# SubverseLab — products and tool guides
 
-> Full text of every published SubverseLab guide. Index: https://subverselab.com/llms.txt
+> Every plug-in and app as its page describes it, then the full text of every published browser-tool guide. Index: https://subverselab.com/llms.txt
+
+# TORNA — Graphic equalizer
+Source: https://subverselab.com/plugins/torna
+
+Graphic equalizer plugin: twelve bands from 16 Hz to 32 kHz, ±12 dB, a LEFT and a RIGHT bank, and a spectrum analyzer, modelled part by part from a 1983 service schematic. For the mix bus and the master. Mac and Windows.
+Some mixes do not need surgery; they need a balance move. TORNA is a graphic equalizer modelled part by part from a 1983 service schematic: the input stage, the twelve resonators of each channel, the slide pots and the way they are wired, the output stage and its supply rails, and the analyzer’s filters and display. Its bands are broad and overlapping, as on the original, so a few sliders move the whole mix: a smile on the master, weight under the drums, a vocal brought forward. Twelve bands from 16 Hz to 32 kHz, ±12 dB, one bank for the left channel and one for the right, and a spectrum analyzer in the middle. Built for the mix bus and the master bus.
+Price: $12.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Broad bands that work on each other
+The twelve bands sit at 16, 32, 63, 125, 250 and 500 Hz and 1, 2, 4, 8, 16 and 32 kHz, ±12 dB at the slider ends. They are broad and overlapping, as on the circuit they come from, so a few sliders move the whole balance of a mix. LEFT and RIGHT are separate banks; LINK moves them together, COPY L ▸ R and R ▸ L copy one bank to the other, and FLAT returns every slider to 0 dB.
+
+## A spectrum analyzer and the true curve
+In the middle sits a spectrum analyzer: twelve band columns, one per slider, and TOTAL for the whole signal. It reads the output or the input (ANALYZER OUT / IN), the left channel, the right or both, and LEVEL sets its sensitivity; it only draws and never changes the sound. Under it the EQUALIZER GRAPHIC draws the real response of both channels, computed from the circuit as you move a slider, with the moved slider’s value on its top line.
+
+## Presets and memories
+The ◀ PRESET ▶ keys step through the factory presets: FLAT, MASTER SMILE, MASTER GENTLE, MIX BUS CLEAN, LOW END WEIGHT, VOCAL PRESENCE, DRUM BUS, AIR, LOUDNESS, BRIGHT HI-FI, WARM and RADIO. Hold ▶ for one second to save the 24 sliders as your own preset (USER 01, USER 02 …), listed after the factory ones in every project. MEMORY A, B and C keep three settings with the project: press to recall, hold to store. Double-click a slider to return it to the preset or memory loaded last, or to 0 dB.
+
+## The switches of the original
+EQ IN/OUT takes the equalizer out of the path without a click. NOR/REV reverses the curve. ATT −6 dB is the input attenuator, for a hot bus that drives the output stage into its rails. INPUT and OUTPUT set the level before and after the equalizer, ±12 dB. POWER off passes the signal untouched.
+
+## The rear plate
+The REAR key at the bottom turns the unit round to its rear plate. LINE LEVEL (1, 2 or 4 V at 0 dBFS, default 2 V) moves only the point where the output stage clips: +19, +13 or +7 dB above full scale. CAP LIGHTS sets the slider-cap lights to ON, DIM or OFF.
+
+## Controls
+- Sliders 16 Hz … 32 kHz: Twelve per channel, LEFT and RIGHT banks, −12 to +12 dB, default 0 dB.
+- POWER · EQ IN/OUT: POWER off passes the signal untouched; EQ OUT takes the equalizer out of the path without a click.
+- ATT −6 dB · NOR/REV · LINK: Input attenuator; reverse the curve; move both banks together.
+- INPUT · OUTPUT: Level before and after the equalizer, −12 to +12 dB.
+- MEMORY A · B · C: Press to recall all 24 sliders, hold one second to store them.
+- COPY L ▸ R · R ▸ L · FLAT: Copy one bank to the other, or return every slider to 0 dB.
+- ◀ PRESET ▶: Step through the factory presets and your own; hold ▶ one second to save the sliders as a user preset.
+- Analyzer: LEFT · RIGHT · LEVEL · ANALYZER: Which channel it reads, its sensitivity, and whether it reads the output or the input. Display only.
+- REAR: LINE LEVEL · CAP LIGHTS: 1, 2 or 4 V at full scale (default 2 V); slider-cap lights ON, DIM or OFF.
+- SIZE · ?: Window size 75 or 100 %; short help over the panel.
+Latency 64 samples at every sample rate from 44.1 to 192 kHz, reported to the host. Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows.
+
+---
+
+# JING FANG — Microtonal synthesizer
+Source: https://subverselab.com/plugins/jingfang
+
+Microtonal synthesizer plugin: a 3-row keyboard on a 53-step grid (or any equal grid), a Tuning Lab that learns a tuning from a recording, Scala in and out.
+JING FANG plays between the keys. Out of the box it is a normal synthesizer: every key plays its usual note, from any MIDI keyboard, your DAW or the computer keyboard. Press MICRO and the keyboard opens into three rows: the usual notes in the middle, each note one step higher above and one step lower below, on a 53-step grid (22.64 cents a step) by default or any grid from 5 to 96 steps. Now the notes of a maqam melody sit exactly where they belong. Around it is a complete instrument: three oscillators, a filter, FM, a drum mode, drive, echo and reverb, a patch bay, an arpeggiator, a step sequencer and a drum machine, with GENERATE to write their patterns for the sound you have loaded.
+Price: $60 (regular $150), launch price until 1 December 2026.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## A normal synthesizer until you ask for more
+Every key is its usual note until you press MICRO, so any MIDI keyboard, pad controller, DAW piano roll or the computer keyboard works with no setup. In MICRO each note name sits on its low, usual or high row: click the strip above the keyboard, right- or Alt-click a key, or send keyswitches from your controller while you play. A4 sets the reference pitch (415 to 466 Hz), and the rows are part of the preset, so SAVE and your DAW project keep them. An MPE controller plays with per-note pitch bend, pressure (level) and slide (brightness).
+
+## Learn a tuning from a recording
+Give the Tuning Lab a WAV, AIFF or FLAC of a solo line and it measures the steps the player really used; a step that sounds lower on the way down than on the way up keeps both values, and DIRECTION plays the falling one when the melody comes down. Load Scala .scl / .kbm files or the built-in tunings in 53 commas, maqam tunings among them; MORPH moves every key from one tuning to another with one knob, WHAT SOUNDS shows each interval you hold with its nearest simple ratio and beat rate, adaptive just intonation settles chords on pure ratios, and EXPORT writes your tuning back out as Scala files.
+
+## A full instrument around it
+Three oscillators (saw, square with pulse width, triangle, sine, white or pink noise and a plucked string, each with unison up to 8, detune and spread), a LP / BP / HP / notch filter with drive, amp and filter envelopes with curves, FM from oscillator 2, and a drum mode with a pitch envelope, a click layer and choke groups. Every sound carries its own effects rack: EQ, a compressor, drive, chorus, flanger or phaser, a tempo-synced echo (ping-pong, stereo, mono or tape) and a reverb; and the patch bay lays cables from three LFOs, the envelopes, velocity, key, mod wheel, aftertouch and random to pitch, levels, pulse width, cutoff, resonance, drive, FM, pan and more. Every part of the panel has its own preset slot, so a sound can take its oscillators from one preset and its filter from another.
+
+## Patterns inside, made for the DAW
+An arpeggiator with chord shapes, a 16-step sequencer whose steps can sit on their high or low row and carry their own velocity, probability and ratchet, and an 8-track drum machine live inside the presets, as on a hardware synthesizer. GENERATE writes a melody, bass line, chords or arp rhythm for the loaded sound, and a beat for the drum machine; roll again for another, or step back through the last 16. Started one after the other, the sequencer and the drum machine join the same grid. In a DAW JING FANG follows the host tempo, starts and stops with it and stays locked to its bar; switch SEQ or DRUM to MIDI to play them from your own notes, or drag a sequence or a beat onto a track as a MIDI clip.
+
+## Controls
+- OSC 1 · 2 · 3: Each with its own type, level, octave, semi, fine, pan, unison, detune and spread.
+- FILTER: LP, BP, HP or notch, with cutoff, resonance, drive, key, envelope and velocity amounts.
+- AMP ENV · FILTER ENV: Attack, decay, sustain and release, with curves.
+- FM: Oscillator 2 modulates 1, 3 or both.
+- PITCH · CLICK · DRUM: Drum mode: a pitch envelope and a click layer for kicks, snares and percussion.
+- DRIVE · ECHO · REVERB: On every sound; the echo follows the tempo.
+- FX RACK: Behind the key in the reverb title bar: EQ, compressor, chorus / flanger / phaser and the echo type.
+- TUNING: GRID (5 to 96 steps, 53 by default), A4 (415 to 466 Hz), HIGH ROW and LOW ROW (0 to 12 steps), KEYSWITCH and its start key.
+- PLAY: NORMAL · MICRO · LAB: Usual notes; every note name on its low, usual or high row; or the Tuning Lab deciding every pitch.
+- PATCH · SEQ · DRUM: The patch bay, the step sequencer and the drum machine, each on its own page.
+- GENERATE: On SEQ: ROLL, RHYTHM and NOTES write a pattern for the loaded sound; DENSITY, COMPLEX, MUTATE, RANGE, MICRO and a scale shape it. On DRUM: ROLL writes a beat, with DENSITY, COMPLEX and MUTATE. < > steps through the last 16 rolls.
+- Preset slots: Every panel takes its settings from a preset of your choice.
+Drag a knob up or down; double-click returns it to the value of the preset that is loaded now. “?” opens help over the panel.
+
+---
+
+# ELEK — Stem separation app
+Source: https://subverselab.com/plugins/elek
+
+Stem separation app: split a track into vocals, drums, bass and other, remove the vocal, or read tempo and key. It runs on your computer; nothing is uploaded.
+Need the acapella for a remix, the drums to study, or an instrumental to sing over? Drop a track into ELEK and choose: four stems (vocals, drums, bass and other), vocal removal, or just the tempo and key. It all runs on your computer, so your music never leaves it. Every result is saved in its own folder, named so you can find it, and kept in a list you can reopen.
+Price: $7 (regular $25), launch price until 1 December 2026.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Three operations, one choice
+Stem separation writes vocals, drums, bass and other. Vocal removal writes the vocal and the instrumental. Key & BPM reads the tempo, the musical key, its Camelot code and how sure the reading is, without separating anything. Nothing starts when you drop a file: you pick the operation first.
+
+## Clean joins, no seams
+The separation engine is HT-Demucs, run over overlapping windows with a cross-fade, so the stems have no clicks where the windows meet. The instrumental is the mix minus the vocal, so nothing that is not the voice is lost.
+
+## Any file, lined up to the sample
+WAV, AIFF, MP3 and FLAC, mono or stereo, at any sample rate. Files that are not at 44.1 kHz are converted for the engine and the stems come back aligned to the original to the sample, as 24-bit WAV at 44.1 kHz, ready to drop under the track in your DAW.
+
+## Named so you can find them
+Every run gets its own folder in Music/ELEK. Files carry the track name, the stem, the tempo and the key, for example Bir Araya Gelemeyiz_Vocals_144BPM_Bmin_ELEK.wav. The key is written into the name only when the reading is decisive; the window always shows it with its confidence.
+
+## Earlier separations, one click away
+The start screen lists your earlier runs, newest first, until you delete the files. Click one and it opens in the mixer again, with its tempo and key.
+
+## Listen before you take it
+Play all stems together, click any waveform to jump, mute, solo and set the level of each stem. Grab a stem's waveform and drag it onto a track in your DAW, or open the folder.
+
+## How fast
+Measured on an Apple M2 with 8 GB of memory: a four-minute track separates into four stems in about three and a half minutes; tempo and key take a few seconds. 8 GB of memory is enough; separation uses about 2.4 GB at its peak.
+
+## Controls
+- DROP / CHOOSE FILE: Load a track; it is only loaded, nothing runs yet.
+- KEY & BPM: Tempo, key, Camelot and confidence, no separation.
+- VOCAL REMOVAL: Vocals and instrumental as WAV.
+- STEM SEPARATION: Vocals, drums, bass and other as WAV.
+- MIXER: Play, seek, mute, solo and level for each stem; drag a waveform into your DAW.
+- WAV: Drag a stem into your DAW, or click to show the file.
+- EARLIER SEPARATIONS: Reopen any earlier run that is still on disk.
+- AUDIO OUTPUT: Choose the output device (standalone app).
+Everything runs on your computer. No account is needed to use the app once it is installed.
+
+---
+
+# SEDA — Analog delay
+Source: https://subverselab.com/plugins/seda
+
+Bucket-brigade (BBD) analog delay plugin, 20 to 1200 ms, zero latency. LISTEN ducks the echo while you play and throws it at the end of the phrase. Mac and Windows.
+An echo that waits for you. SEDA is a bucket-brigade analog delay: 8192 stages, companded, from 20 to 1200 ms, with feedback up to 110 % and zero latency. Switch on LISTEN and it hears the phrase: the echo ducks while you sing or play, then throws at the end of the line, in the gap where an echo belongs. The duck-and-throw you would otherwise draw by hand, done by the delay itself.
+Price: $15.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## A real bucket brigade
+The delay line is a BBD with 8192 stages, companded, and it runs from 20 to 1200 ms. Feedback goes up to 110 %. AGE switches between NEW and OLD.
+
+## LISTEN: the delay listens to the phrase
+While you play or sing, SEDA ducks the echo (DUCK). At the end of the phrase it throws the echo (THROW). Programs are chosen on an LED display. An analog VU meter shows the wet level, and a red needle shows the duck depth.
+
+## Time, loop, movement, width
+TIME in milliseconds or SYNC to the host with a NOTE value (1/32 to dotted 1/1) and AUTO. LOOP: FEEDBACK, TONE, COMPANDER, AGE. MOD: RATE, DEPTH, SHAPE sine or triangle. STEREO: MONO, WIDE, PING-PONG, WIDTH and WET HP. OUT: MIX, dry to wet.
+
+## RUNAWAY and CHAOS
+RUNAWAY raises the loop gain past 100 %: the repeats grow into a steady drone that darkens with every pass and can start from the delay’s own hiss, held at a fixed level so it never runs out of control. CHAOS adds a slow random wobble to the delay clock, stronger when the loop is loud; above 50 % it also jumps the pitch by an octave, a fifth or a fourth on the beat. Both knobs open at 0, where SEDA sounds exactly as before.
+
+## Controls
+- TIME · SYNC · NOTE · AUTO: 20 to 1200 ms, or the host tempo as a NOTE value from 1/32 to dotted 1/1.
+- FEEDBACK · TONE · COMPANDER · AGE: The loop. Feedback up to 110 %. AGE: NEW or OLD.
+- RATE · DEPTH · SHAPE: MOD. SHAPE is sine or triangle.
+- MONO · WIDE · PING-PONG · WIDTH · WET HP: STEREO.
+- RUNAWAY · CHAOS: RUNAWAY pushes the loop past 100 % into a darkening self-oscillation; a red lamp shows when it is over. CHAOS wobbles the clock, and above 50 % steps the pitch on the beat. Both open at 0.
+- MIX: Dry to wet.
+- LISTEN · DUCK · THROW: Ducks the echo while you play or sing and throws it at the end of the phrase; programs on an LED display.
+- VU meter: The analog meter shows the wet level; a red needle shows the duck depth.
+Zero latency. Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows.
+
+---
+
+# RU-8 — Drum machine
+Source: https://subverselab.com/plugins/ru8
+
+Drum machine plugin and app: synthesized pads that carry their own steps, kits that change the whole sound, A/B rhythms with fill and auto, and MIDI drag-out.
+Open RU-8, press play, and the groove is already running. Pick a kit and the whole machine changes its sound; pick a set and only the rhythm changes, so a trap rhythm on a lo-fi kit is one click away. Every pad is a drum synthesized inside RU-8 with its own steps, so you shape the beat pad by pad, by hand, and drag it into your DAW as MIDI when it feels right. Strong without being pushed, clean by default.
+Price: $25.
+Formats: macOS 11 or later (Apple Silicon and Intel) · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Play first, program later
+Press play and RU-8 runs a full rhythm from the start. A and B switch on the next bar, FILL drops a fill on the next bar, and AUTO plays A, a fill, B and a fill by itself, so you can jam over it before you touch a single step.
+
+## Pads that carry their own steps
+Each pad holds its own pattern of steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads at the same time as the sequencer, with velocity.
+
+## Kits bring the character, sets bring the rhythm
+Pick a kit and the whole machine changes its sound: the drums, and the settings of SPACE, ECHO and GLUE that go with them. Pick a set and only the rhythm changes. Any set plays on any kit, so a trap rhythm on a lo-fi kit is a valid sound. Loading either one makes the knobs glide to their new values.
+
+## Drums made inside, not played back
+Every sound is synthesized by RU-8 itself, so tune, decay and level reshape the drum rather than stretch a recording. SPACE is an algorithmic reverb with ROOM, PLATE and HALL; ECHO is a tempo-synced ping-pong delay. Every pad has its own send to each, so the snare can sit in the room while the kick stays dry.
+
+## Clean by default
+A gentle glue on the bus and a safety limiter at −1 dBFS, nothing more. Character that needs tape saturation, dust or bit reduction comes from a kit’s COLOR on the rear panel, and most kits leave it off.
+
+## An interface you can read
+One panel, no hidden pages: the pad bed, the channel strip of the selected pad and the effects all in view. The panel scales up for large screens, “?” opens help as notes over the panel, and the moods change only the colours.
+
+## Kits from analog to Anatolia
+The kits run from a sine-sub Analog and a clicky Punch to Trap with a long 808, Brush with a jazz ride, FM-bell Glass, dusty Lo-fi, an acoustic Breaks kit and Anatolia with darbuka, bendir, def and zil. The sets cover House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro and Shuffle, plus four empty USER sets saved with your project.
+
+## The rear panel and the MIDI map
+Turn the machine round for COLOR (tape, dust and crush), the note map and the output. The pads answer General MIDI drum notes by default (C1 is the kick), or notes 36 to 51 from pad 1 up; C-1, D-1, E-1 and F-1 switch to A, B, a bar of fill and off at their exact sample, so a DAW lane or a controller can arrange RU-8.
+
+## Take the rhythm with you
+Drag the selected pad’s pattern, or the whole drum, from the panel onto a track in your DAW as a MIDI clip: standard MIDI, channel 10, with the swing written into the timing. Inside a host the steps follow the host’s timeline, so the same project plays and bounces the same way every time.
+
+## Controls
+- KIT: Large readout with arrows. Loading a kit moves its channel, SPACE, ECHO and GLUE values; the knobs glide.
+- SET: Small readout with arrows. Loads both sections, the tempo, the swing and the echo time, and lands on the next bar while playing.
+- A · B · FILL · AUTO: Switch section, play a fill, or let RU-8 arrange them.
+- TEMPO · SWING · HUMAN: Tempo (standalone; the plug-in follows the host), swing, and a little human timing and level.
+- GLUE · VOLUME: Bus compressor and master volume, before the −1 dBFS limiter.
+- Channel strip: For the selected pad: level, tune, decay, pan, and its sends to SPACE and ECHO, plus mute and solo.
+- SPACE: ROOM, PLATE or HALL, with size, damping, pre-delay and return.
+- ECHO: Tempo-synced ping-pong: note value, feedback, tone and return.
+- COLOR (rear): TAPE, DUST and CRUSH, set per kit.
+- MIDI: Host notes and controllers play the pads; patterns drag out as MIDI clips.
+- Moods: Cream, Night, Powder and Pink. Colour only.
+Drag a knob up or down; double-click returns it to the value of the kit or set that is loaded now. “?” opens help over the panel.
+
+---
+
+# KIYMA — Audio mincer
+Source: https://subverselab.com/plugins/kiyma
+
+Free glitch and beat-repeat plugin: it chops the last phrase into steps and replays them in a new order, locked to the bar. Zero latency. Mac and Windows.
+Glitch edits that land in time, without cutting a single clip. KIYMA listens to the channel it sits on, keeps the last complete block of bars, cuts it into steps and decides, step by step, whether to play the step that belongs there or to jump to another one nearby. The block always plays back in one bar: two bars squeezed into one come out an octave up, half a bar stretched over one an octave down. Raise a switch for a tuned starting point, or turn the knobs and make your own. Free, with zero latency.
+Price: Free (a $0 checkout that asks for an e-mail address, no card).
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · Free, no card; the download appears on your Account page.
+
+## Five sweet spots
+The switch bank holds five tuned settings: LEAN (no chop, one bar replayed), MINCE (two bars in one), CHUNK (eight big slices), GRISTLE (four bars in one, 32 steps) and BONE (half a bar stretched). Raise a switch and all eight knobs jump to it; turn any of them and the switch drops by itself.
+
+## Locked to the bar, no latency
+KIYMA follows the tempo, bar position and time signature of the DAW and only reads audio that has already arrived, so it adds no latency. The chop patterns are fixed tables: there is no randomness in the sound, so the same settings on the same song always give the same result, at any buffer size.
+
+## Controls
+- DENSITY: 0 to 100 %, default 40 %: the chance per step that the step jumps to another one. 0 % plays every step in order.
+- REACH: 1 to 16 steps, default 6: how far a jump can go, backwards or forwards.
+- PATTERN: 1 to 16, default 1: which fixed chop pattern is used.
+- LENGTH: 1/2, 1, 2 or 4 bars, default 2: how much of the past is read, always played back in one bar.
+- EDGE · STEPS: EDGE HARD to 10 ms rounds each cut; STEPS 8, 16 or 32 slices the block.
+- DRY/WET · OUTPUT: Blend 0 to 100 % (0 % is the input, bit for bit); output −24 to +6 dB.
+- Crank: SHUFFLE: adds 0 to 15 to the pattern number, a quick re-roll.
+Latency 0 samples. Drag up or down; Shift for fine moves; double-click to reset. Undo and redo with Cmd+Z on macOS, Ctrl+Z on Windows.
+
+---
+
+# KUBBE — Reverb
+Source: https://subverselab.com/plugins/kubbe
+
+Algorithmic reverb plugin with three modes (Hammam, Cistern, Valley) and a decay display that is measured, not nominal. VST3 and AU for Mac, VST3 for Windows. $9.
+Most reverbs hand you a list of algorithms and leave you scrolling. KUBBE gives you three rooms, and you hear the difference the moment you switch: a bright marble dome, a long dark cistern, an open valley whose echoes can land on your beat grid. Pick the one your track is asking for, set the decay, and get back to the song. It wears the face of a 1979 rack unit as it looked the day it left the factory, and every tail is made by the engine itself: no impulse responses, nothing recorded from a real place.
+Price: $9.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Measured, not nominal
+The decay display runs the engine on an impulse every time a setting changes. It draws the energy per 20 ms and the Schroeder curve, and prints the T60 it measures — at the default settings about 2.4 s in Hammam and about 6.6 s in Cistern. The Decay knob is scaled from that measurement.
+
+## Three rooms, not a list of algorithms
+Hammam is a marble dome: dense, bright first reflections, a flutter between parallel walls and a ring in the low mids. Cistern is underground: the column slaps arrive late and sparse, and the tail is long, dark and moves slowly, like water. Valley is open air: the far slopes answer one by one, each answer darker and more blurred, and with Echo Sync on the echoes land on the beat grid. Switching place lets the old tail ring out for 1.5 seconds instead of cutting it dead.
+
+## Made to sit in a mix
+Duck steps the tail back while the source plays, by up to 24 dB, and Freeze holds it about 6 dB under its level while you keep playing. Pre-delay runs from 0 to 250 ms or syncs from 1/64 to 1/4, Distance moves from near to far and darkens the tail as it goes, Width runs from mono to 150 %, and the low and high cuts shape the wet signal only.
+
+## Controls
+- Mix: Dry to wet.
+- Decay: Shown in measured seconds.
+- Pre-delay: In milliseconds, or synced from 1/64 to 1/4.
+- Distance: Near puts the early reflections up front; far is the room, darker.
+- Low Cut · High Cut: Shape the wet signal only. High Cut at 20 kHz is not fully open: each room has built-in cuts and Distance adds a low-pass.
+- Width: Stereo spread of the tail.
+- Duck: The tail steps back while the source plays, by up to 24 dB (the full 24 dB only for input at −12 dBFS or louder). It ducks, it does not mute.
+- Freeze: Holds the tail, about 6 dB under its level, while you keep playing. New input is not added to it.
+- Echo Sync: Valley only: the echoes land on 3/4, 5/4, 7/4, 5/2 or 7/2 beats.
+When you switch mode, the old tail rings out over 1.5 seconds instead of being cut.
+
+---
+
+# KASET — Tape colour
+Source: https://subverselab.com/plugins/kaset
+
+Cassette tape colour plugin: pick a generation from Master to 4th Dub and a tape type; every copy loses top end and gains hiss and saturation. VST3/AU, Windows VST3. $9.
+Every time a cassette was copied, it came back a little darker, a little hissier, a little more saturated. KASET puts that on a dial. Its face is a high-speed dubbing deck, and the Generation dial says how many copies away from the master you are: stay on Master for a light tape colour on the mix bus, or go down to the 4th Dub for a worn copy with the top end fallen to about 4.4 kHz. Auto Gain keeps the loudness level as you go, so you judge the colour, not the volume.
+Price: $9.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Generations
+The Generation selector runs Master, 1st, 2nd, 3rd and 4th Dub. Each dub is another pass through the tape model: the top end falls from about 10 kHz on the master to about 4.4 kHz on the 4th dub, and hiss and saturation build with every copy. Speed error does not build up: it is highest on the master and falls with each dub. Auto Gain keeps the loudness level as you move between generations, so a darker copy does not simply sound quieter.
+
+## Tape and bypass
+The Tape selector chooses Normal, Chrome or Metal. The TAPE / BYPASS key compares against the untouched signal: bypass is latency-aligned and bit-exact. The plugin reports 15 ms of latency (720 samples at 48 kHz), which your DAW compensates. For recording through it, the TRACK switch cuts that to 1.5 ms (72 samples at 48 kHz).
+
+## A dub of a dub
+Each generation is one more trip onto tape and back: record pre-emphasis, saturation, playback de-emphasis, head bump, gap loss, wow and flutter, hiss and worn-oxide dropouts, run again on top of the last. Hiss builds and the top end falls with every copy, while the speed error does not pile up: each pass drifts on its own. Every random element comes from a seeded generator, so the same input and settings give the same output, bit for bit.
+
+## Controls
+- Generation: Master, 1st, 2nd, 3rd or 4th Dub.
+- Tape: Normal, Chrome or Metal.
+- Input: Level into the tape. With Auto Gain on it changes the drive, not the output level.
+- Saturation: How hard the tape is driven.
+- Wow · Flutter: Slow and fast speed movement of the tape.
+- Hiss: Tape noise.
+- Wear: How worn the tape is.
+- Mix: Dry to wet.
+- Output: Level out.
+- Auto Gain: Keeps the loudness level across generations.
+- TRACK: Low-latency switch for recording: one moving head instead of five, the same tape colour, shallower wow at the deepest settings.
+- TAPE / BYPASS: Bypass is latency-aligned and bit-exact.
+Latency is 15 ms (720 samples at 48 kHz) in the default MIX path, and 1.5 ms (72 samples at 48 kHz, 66 at 44.1 kHz) with TRACK on.
+
+---
+
+# KORO — Vocal doubler + harmonizer
+Source: https://subverselab.com/plugins/koro
+
+Vocal doubler and harmonizer plugin. It detects the key live while the singer sings, keeps to safe intervals until it is sure, and never plays a wrong note.
+Backing vocals without picking a scale. Drop KORO on the lead and it listens while the singer sings, reading the key and scale as it goes. Until it is sure, it plays safe: a plain unison double, or the fifth. Thirds come in only on notes where every likely key agrees, so the harmony never lands on a wrong note. A tight double, a stack or a whole choir behind the voice, and you never open a scale menu.
+Price: $15.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Three steps
+Drop it on a vocal. Let the key read-out settle while the singer sings, or press LOCK once you like the key. Pick a mood. That is the whole workflow.
+
+## Moods
+Pick a mood by ear and KORO keeps it in key: Tight Double to thicken a lead, Backing Stack and Choir to put voices behind it, Third and Fifth for a single harmony line, and Arabesk Choir.
+
+## Never a wrong note
+Fifths and octaves are consonant in every key, so KORO plays them whenever a note is clearly sung. A third depends on the key, so KORO plays one only on a note where every key it still considers likely agrees; otherwise that voice falls back to a plain unison double, or to the fifth. The key is read from the audio continuously, and LOCK keeps the one you like.
+
+## A double and a harmony in one unit
+The double adds one to three gently re-performed voices that arrive at slightly different, slowly moving times: a human timing impression, not a chorus wobble. The harmony adds pitch-shifted voices above or below the lead, snapped to the key it hears, with the singer's vibrato and inflection kept. Both can run together, and KORO reports one fixed latency (54.10 ms at 44.1 kHz) whatever is on, so delay compensation never has to change.
+
+## Controls
+- DOUBLE: Amount of doubling. At zero the double is off.
+- HARMONY: Amount of scale-aware harmony.
+- COLOR: One knob that morphs the interval set: low third, high third, fifth, octave. The detected scale picks the exact notes.
+- WIDTH: Stereo spread of the double.
+- TONE: Brightness of the added voices.
+- OUTPUT: Output level.
+- AUTO / LOCK: The key is detected continuously and shown. LOCK freezes it.
+- BYPASS: Host bypass.
+- REAR: Per-voice level and pan (voices 2 and 3 only in CHOIR), glide, timing, manual key and scale, and MONO SAFE: the doubles go to the sides only, so a mono sum is exactly your lead.
+Latency is a fixed 54 ms at 44.1 kHz, with harmony on or off, and is reported to the host.
+
+---
+
+# YANKI — Tempo-synced tape echo
+Source: https://subverselab.com/plugins/yanki
+
+Tempo-synced tape echo plugin. It opens as a plain 1/8 echo at the host tempo; moods such as Dub Spiral and Worn Loop swell the repeats into a loop.
+Drop YANKI on a vocal or a bus and it is already in time: a 1/8 echo at your host tempo, a few repeats that fade the way tape does. When the song wants more, pick a mood. Push FEEDBACK past HOLD in Dub Spiral, Worn Loop and the others, and the loop swells up to the CAP you set, so a dub throw can grow big without running away from you.
+Price: $9.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Moods
+From a clean repeat to a loop that keeps growing: Echo, Slapback, Three Heads, Dub Spiral, Worn Loop, Yesilcam and Ters. Each one is a starting point; every knob is still yours.
+
+## One tape loop, three playback heads
+Everything runs through a tape loop with one record head and three playback heads. Each pass loses top end, picks up a little wow and flutter and is gently saturated, so the repeats sound like tape, not a copy. TIME follows the host tempo continuously and glides to a new tempo instead of jumping; YANKI reports zero latency, so the dry signal is never delayed.
+
+## See the repeats
+The glass echo field draws one ring per repeat: the radius is the delay time, brightness and thickness are the level after feedback, warmth is the tone, and the left-right offset is the stereo spread. Drag the rings to change TIME, FEEDBACK and SPREAD; the readout below shows the repeats, the first repeat's level and how many bars the echo takes to die away.
+
+## Controls
+- TIME: A sync ring (1/16, 1/8, dotted 1/8, 1/4, dotted 1/4, 1/2) or FREE milliseconds.
+- FEEDBACK: Repeat level. At HOLD the repeats fade by about 1 dB each; past it, the red SWELL range, the loop swells.
+- CAP: Ceiling for a swelling loop: off, or -12 to +12 dB over the dry signal.
+- TONE: Tone of the repeats.
+- WEAR: Tape wear.
+- MIX: Dry to wet. At 100 %, Echo, Yesilcam and Ters give echo only; in Slapback, Three Heads, Dub Spiral and Worn Loop the dry stays at full level and MIX sets how much echo is added.
+- OUTPUT: Output level.
+- END: What happens to the loop at the end: hold, cut or dump.
+- FREEZE: Tap to latch, hold for momentary.
+- DARKEN: An extra high-cut in the feedback loop. It acts on the swell; below HOLD it has almost no effect.
+- RISE · TEMPO LOCK · SPREAD · FINE: How far the swell reaches past HOLD, when it lands on the downbeat, stereo spread of the echoes, and a fine time offset on FREE.
+Latency is 0 ms. The display shows the host BPM and the resolved echo time. Double-click a knob to return it to its default.
+
+---
+
+# HAVA — Top-end air + spring sheen
+Source: https://subverselab.com/plugins/hava
+
+Exciter plugin for a bus or the master: a top-end air lift and a short spring sheen. A colour box with a short sheen tail (T60 0.63 s), not a reverb.
+When a mix sounds right but closed, reach for air, not more reverb. Drop HAVA on the bus, turn AIR, and the top end opens with a smooth lift above 9 kHz. Add SHEEN for a short spring sparkle (a chirp, a twang, a glint on the transients) that dies away fast: a measured tail of T60 0.63 s. It brightens and glues, and it never puts your track in a room: there is no decay or size control anywhere.
+Price: $12.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Moods
+Air Light and Air Full for a clean top-end lift, Air + Sheen and Sheen Only when you want the spring sparkle, and Master Air, with MASTER SAFE on, for the last insert on the master.
+
+## Air and sheen
+AIR is a smooth high shelf above 9 kHz, 0.6 dB per step at 11 kHz on its 0 to 10 scale. SHEEN is a short spring: a falling chirp, a twang at 1.5 kHz and a sparkle that lights up on transients and falls away at once. A 300 Hz low cut on the spring's send keeps kick drums and low toms out of it, and 300 ms after an impulse the sheen is at least 25 dB below where it started: glue, not a room.
+
+## Safe on the master
+MASTER SAFE makes HAVA fit for the last insert: it processes the mid channel only, holds the loudness with an auto-gain and puts a true-peak ceiling at -0.3 dBTP. With it off HAVA has no latency; with it on it reports a constant 80 samples at 48 kHz, so your host's delay compensation follows.
+
+## Controls
+- AIR: Top-end lift. The display shows the shelf target in dB at 11 kHz and the dB added above 8 kHz.
+- SHEEN: Amount of the short spring colour.
+- OUTPUT: Output level.
+- MASTER SAFE: Mid-only processing, auto-gain and a -0.3 dBTP ceiling. With it off there is no ceiling.
+- REAR: Twang, tension, drip and a low cut on the sheen send. They act only on the sheen spring, so they do nothing while SHEEN is 0.
+- BYPASS: Host bypass.
+Latency is 80 samples with MASTER SAFE on. Sheen tail T60 0.63 s: a short colour layer, not a reverb.
+
+---
+
+# MIHENK — Mastering app
+Source: https://subverselab.com/plugins/mihenk
+
+Transparent mastering plugin and app. It measures peaks, loudness, spectrum and phase, lists findings with a measured reason, and masters to the loudness target you pick.
+Mastering you can trust, because it shows you why. Load your track and MIHENK measures it first: peaks, loudness, spectrum and phase. Then it lists what it found, every finding with the measurement behind it, and masters to the loudness target you pick. Leave CHARACTER on OFF and it sets only level and ceiling; choose GENTLE or FULL when you want it to do more. One product: the same engine runs as a standalone app and inside your DAW.
+Price: $49.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Diagnosis and character
+On load MIHENK lists findings with a severity and a measured reason, for example an input that arrives hotter than a mastering-ready level. CHARACTER decides what is done about them: OFF (the default) sets level and ceiling only, GENTLE adds a little glue and air, FULL applies EQ and compression from the diagnosis.
+
+## Personal profile
+Off by default. When you switch it on, MIHENK learns your taste from your listening notes and can propose, and lock, the settings you keep choosing. It is local, explainable and resettable.
+
+## Controls
+- METERS: Input and output peak and true-peak meters, full panel height, with peak hold.
+- WAVE / SPECTRUM / LOUDNESS: Live during playback; the spectrum is drawn in layers, before and after each stage.
+- DIAGNOSIS: Measured findings, each with a severity and its reason; CHARACTER FULL applies what it can.
+- 3-BAND: Multiband compressor with 4th-order Linkwitz-Riley crossovers, or the wide glue mode.
+- AIR: High shelf at 10, 15, 20 or 40 kHz, static or dynamic.
+- LOW TOOLS: Phase-safe low mono and a low-end tightener.
+- LIMITER: True-peak limiter with lookahead.
+In a DAW, press LEARN and play the song once; until then only the -1 dBTP limiter runs. Latency is one fixed number, 332 ms at 48 kHz in every setting, reported to the host. Parameters are automatable and the state is saved with the DAW project.
+
+---
+
+# TUTKAL — Bus compressor
+Source: https://subverselab.com/plugins/tutkal
+
+Bus compressor plugin with three voicings: GLUE for the drum or mix bus, LA for vocals, PUMP for sidechain ducking in time with a kick.
+Three compressors you reach for in every session, behind one switch. GLUE holds a drum or mix bus together so it hits as one. LA levels a vocal smoothly, without grabbing it. PUMP ducks a pad or a bass in time with the kick, in note values at your tempo. The panel shows only the controls that work in the voicing you chose, so you set it, hear it and move on.
+Price: $12.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Three voicings, one switch
+GLUE, LA and PUMP share one measured engine. Only the controls that work in the chosen voicing are shown on the panel.
+
+## Quick start
+On a drum bus: leave GLUE on, set THRESHOLD around -18 dB until the meter swings 2 to 4 dB, keep RELEASE on AUTO. On a vocal: switch to LA and raise PEAK REDUCTION to about half. On a pad: switch to PUMP, choose the kick as the sidechain in your DAW (KEY on AUTO picks it up as soon as it carries signal) and set NOTE and DEPTH.
+
+## Controls
+- VOICING: GLUE, LA or PUMP.
+- THRESHOLD: Level above which the compressor works (GLUE and PUMP), -40 to 0 dB.
+- RATIO: GLUE: 1.5 to 20:1.
+- ATTACK · RELEASE · AUTO: GLUE timing. AUTO release follows how long the passage was pressed.
+- PEAK REDUCTION · COMPRESS / LIMIT: LA: how much to level, and the 3:1 or 12:1 character.
+- DEPTH · NOTE · SHAPE: PUMP: how deep the duck goes, how long it takes to recover, and the recovery shape.
+- KEY: ON or AUTO (default), in every voicing. AUTO listens to the sidechain as soon as it carries signal and lets go after 4 s of silence; ON always listens to the sidechain. With no sidechain routed TUTKAL listens to the track itself.
+- MAKEUP / GAIN · MIX: Output gain, and dry to compressed blend.
+- IN: Bypass. It is bit-exact and delayed by the latency, so the output never shifts in time.
+- REAR: SC HPF, a high-pass on the detector only (off by default, 20 to 300 Hz), the KEY switch and DRIVE, the output transformer.
+Latency is 63 samples at every sample rate and is reported to the host. Undo and redo with Cmd+Z on macOS, Ctrl+Z on Windows. Mono sidechain input, used by every voicing through KEY.
+
+---
+
+# ALEV — 3-band saturator
+Source: https://subverselab.com/plugins/alev
+
+Free three-band saturation plugin, loudness-matched so you hear the heat, not the volume. 8x oversampled, no fold-back. VST3 and AU for Mac, VST3 for Windows.
+Warmth, grit or full heat, band by band. ALEV splits the sound at 200 Hz and 3 kHz and heats each part on its own: turn a steel ring and that band saturates, from a faint warmth to a dense, driven sound. Each ring is loudness-matched, so what you hear is the colour, not a louder signal. The ember in the centre is the only light on the unit and glows with the heat of all three bands, breathing with the music. Free.
+Price: Free (a $0 checkout that asks for an e-mail address, no card).
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · Free, no card; the download appears on your Account page.
+
+## Heat, not loudness
+Each ring is loudness-matched: turning one band from 0 to 100 changes the loudness of pink noise by less than 0.1 LU, so what you hear is the saturation, not a louder signal. The matching is calibrated on pink noise: on kick-heavy material LOW at 100 % comes out about 4 dB quieter (measured −4.2 dB RMS on drums, same peak). The output never passes −1 dBTP.
+
+## No fold-back
+The saturation runs 8 times oversampled with antiderivative anti-aliasing: with HIGH at 100, a 10 kHz tone leaves no fold-back above −85 dBc. DRY/WET is phase-coherent, so blending in the dry signal never thins the sound.
+
+## Rings that move together
+Three pushers on the case set how the rings move. FREE: each on its own. LINK: the heat spreads to the neighbouring bands, each step 30 % behind (turn HIGH and MID follows, then LOW). GANG: all three turn together.
+
+## Controls
+- LOW · MID · HIGH: Three steel rings, 0 to 100 % heat each, a full turn. HIGH is the inner ring, LOW the outer. Crossovers at 200 Hz and 3 kHz. Defaults 30 / 30 / 20.
+- DRY/WET: The curved fader on the left of the bezel, 0 to 100 %. Default WET (100 %).
+- FREE · LINK · GANG: The pushers on the right of the case: how the rings move together.
+- Ember: The heat of the three bands: HIGH in the centre, MID around it, LOW at the edge. While a ring turns it shows the ring’s name and value.
+Latency 92 samples (1.9 ms at 48 kHz), reported to the host. Drag up or down; Shift for fine moves; double-click to reset.
+
+---
+
+# TABAN — Reverse limiter
+Source: https://subverselab.com/plugins/taban
+
+Free reverse limiter plugin: audio under the FLOOR is lifted to it, audio above it is left bit for bit. One fader, zero latency. VST3 and AU for Mac, VST3 for Windows.
+A limiter keeps audio from rising above a ceiling; TABAN keeps it from falling below a floor. Raise one fader and the quiet syllables, soft notes and fading tails of a track come up to the level you set, while everything louder passes through untouched. Bring back the words a singer swallowed without riding a fader through the whole take. Zero latency, and free.
+Price: Free (a $0 checkout that asks for an e-mail address, no card).
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · Free, no card; the download appears on your Account page.
+
+## Never over the floor
+The lift is worked out from the level of the very sample it is applied to, so a loud sound arriving after a quiet one is never boosted on its way in: no output sample is louder than the input or the floor, whichever is higher. No lookahead, so no latency.
+
+## Silence stays silence
+TABAN lifts by at most 24 dB and lets go near silence: the lift fades out between −80 and −96 dBFS, so room tone, dither and the end of a reverb tail are not dragged up. A steady note gets a steady gain, so TABAN adds no distortion to it.
+
+## Controls
+- FLOOR: OFF (−60) to 0 dBFS. Audio under it is lifted to it; audio above it is left alone. Linear in dB.
+- OUTPUT: −12 to +12 dB after the floor.
+- IN: Off = bypassed, bit for bit, with a 10 ms crossfade.
+- LIFT: Read-out of the lift right now, in dB, with a HOLDING THE FLOOR lamp.
+- IN · OUT bars: Levels on the fader’s own scale: the OUT bar stops at the cap.
+Latency is 0 samples. Undo and redo with Cmd+Z on macOS, Ctrl+Z on Windows.
+
+---
+
+# ADALET — Dynamic EQ
+Source: https://subverselab.com/plugins/adalet
+
+ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows.
+ADALET is a dynamic EQ with six bands and zero latency, with helpers that find the problem for you. Any bell or shelf can be made dynamic, so it cuts or lifts only while the sound needs it. TARGET cuts a named part of a sound, such as a boxy vocal or a kick’s sub; COLLIDE clears room for this track where another one is loud; SELF finds the resonances of the track it sits on. They do the finding, so you can do the deciding.
+Price: Coming soon.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Six bands, any of them dynamic
+Bell, low shelf, high shelf, notch, low cut and high cut. The cuts run at 12, 24, 36, 48 or 72 dB per octave and have a resonance control. Any bell or shelf can be dynamic: RANGE up to ±12 dB, with THRESHOLD, ATTACK and RELEASE, triggered by the band itself or by the sidechain KEY.
+
+## TARGET: name the part
+Tell ADALET the instrument and the part, and it learns where that part sits in the material from the hits and cuts it by AMOUNT. It is static and needs no sidechain. VOCAL: BOX, NASAL, HARSH, S, REVERB-READY. BASS: SUB, BODY, TOP. DRUMS: KICK BODY, SNARE BODY, HATS SHIMMER. KICK: SUB, BODY, CLICK. SNARE: BODY, CRACK, SNAP/AIR, REVERB-READY. HATS: CHICK, SHIMMER.
+
+## COLLIDE: two sounds stop masking each other
+Route a KEY track to the sidechain and COLLIDE cuts this track only where the KEY track is loud, so the two stop fighting for the same space and both come through.
+
+## SELF: resonances in this track
+SELF finds the resonances in the track it sits on and cuts them, so a ring you can hear but cannot place stops standing out.
+
+## It tells you what it heard
+While TARGET learns, the display says where it is: listening, how many hits it has heard, how many of three it has learned, then learned and cutting. When a hit cannot be used it says why, so you know to play the part of the song where the instrument is clearest. The bands sit ready at six different frequencies, and the control row under the display holds only the selected band.
+
+## Hear what it does
+Hold DELTA to hear only what is being cut. BYPASS is level-matched, so a comparison is not decided by loudness. A live spectrum analyzer shows POST by default, or PRE, PRE+POST or nothing, and the curve on screen is the engine’s own response.
+
+## Controls
+- Bands: Six: bell, low shelf, high shelf, notch, low cut, high cut. Cuts: 12, 24, 36, 48 or 72 dB/oct, with a resonance control.
+- RANGE · THRESHOLD · ATTACK · RELEASE: Make a bell or shelf dynamic. RANGE is up to ±12 dB. Triggered by the band itself or by the sidechain KEY.
+- TARGET · AMOUNT: Name the instrument and the part; AMOUNT sets how much of it is cut. Static, no sidechain.
+- COLLIDE: Cuts this track only where a KEY track routed to the sidechain is loud.
+- SELF: Finds resonances in this track and cuts them.
+- DELTA: Hold to hear only what is being cut.
+- BYPASS: Level-matched.
+- Analyzer: Live spectrum: OFF, PRE, POST (default) or PRE+POST.
+- LAB · ORBIT: Two faces, one set of settings.
+Zero latency. VST3 and AU on macOS, VST3 on Windows.
+
+---
+
+# Purchases and Refunds
+Source: https://subverselab.com/refunds (last updated 19 October 2026)
+
+This page applies to every paid SubverseLab product: plugins, apps, sample packs and preset packs. Free products cost nothing, so there is nothing to refund.
+
+## In short
+- Lemon Squeezy is the merchant of record: it takes the payment, charges the tax, sends the receipt and issues refunds.
+- You can ask for a refund within 18 days of the purchase: write to info@subverselab.com with your order number and the e-mail address you paid with. Lemon Squeezy issues the refund and decides each one case by case.
+- If a product does not install or run on a system its page lists, write to us first. Most problems are an install step or a setting; if it cannot be fixed, ask for a refund the same way.
+- A refund ends the licence: the downloads close and the credits that came with the order are taken back.
+
+## Buying
+- Every paid product is sold through Lemon Squeezy (lemonsqueezy.com). The price on the product page is in US dollars; tax is added at checkout where it applies, and Lemon Squeezy sends the receipt or invoice by e-mail. We never see your card details.
+- A launch price is shown with its end date on the product page, and the checkout charges the price it shows.
+- After you pay, sign in to subverselab.com with the e-mail address you paid with: the product appears on your Account page with its download. If you paid with another address, the order number lets you claim it on the Account page.
+- Every paid licence includes 2 years of updates from the purchase date. The version you have keeps working after that.
+
+## How to ask for a refund
+- Ask within 18 days of the purchase date. E-mail info@subverselab.com from any address, with the order number (it is on the Lemon Squeezy receipt) and the e-mail address used at checkout, and say why.
+- You can also find every order on Lemon Squeezy's own page, https://app.lemonsqueezy.com/my-orders, by signing in there with the checkout e-mail.
+- Refunds are issued through Lemon Squeezy and, under its buyer terms (https://www.lemonsqueezy.com/buyer-terms), are given at its discretion, case by case, and may be refused; Lemon Squeezy refuses a refund where it finds fraud or refund abuse.
+- The money goes back to the payment method you used. A partial refund is possible.
+
+## Digital products and the right of withdrawal
+- Our products are digital downloads. Under Lemon Squeezy's buyer terms, by downloading a product you agree that it is delivered at once, and the right of withdrawal ends when the download starts. Mandatory consumer rights in the country where you live are not affected.
+
+## If something does not work
+- Each product page lists the systems and formats it supports. If the product does not install or run on one of them, write to info@subverselab.com with your system, your DAW and what happens. Most problems are an install step or a setting, and we answer.
+- If technical problems prevent or unreasonably delay delivery, Lemon Squeezy's buyer terms give you a replacement or a refund of the price paid.
+
+## What a refund changes
+- The licence of a refunded order ends, and the product is no longer available to download from your Account page. Refunding an order that holds several plugins closes all of them.
+- Every purchase adds credits for the browser tools (100 per dollar before tax). A full refund takes back the credits that order added; a partial refund takes back the same share. Credits are never taken below a zero balance.
+
+## Sales tax and VAT
+- If you were charged sales tax or VAT and you are registered for it in the country of purchase, Lemon Squeezy may refund the tax amount where the law allows. Ask Lemon Squeezy within 60 days of the purchase, with a valid tax number for your country.
+
+## Chargebacks
+- Lemon Squeezy's buyer terms ask you to contact Lemon Squeezy before you open a chargeback or a dispute with your bank or card issuer. Writing to us first is usually the fastest way to get a problem solved.
+
+## Contact
+- Orders, refunds and licences: info@subverselab.com. The Terms of Use cover the licence itself.
+
+---
 
 # Arrangement GPS Guide
 Source: https://subverselab.com/learn/arrangement-gps
@@ -108,7 +685,7 @@ Playback requires a browser with Web Audio support and begins only after a user 
 
 ---
 
-# Subverse Mix Check Guide
+# Mix Check Guide
 Source: https://subverselab.com/learn/subverse-mix-check
 
 ## Overview
@@ -213,12 +790,12 @@ Most production advice you find is generic, because nobody else can hear your ac
 
 ---
 
-# Subverse Splitter Guide
+# Splitter Guide
 Source: https://subverselab.com/learn/subverse-splitter
 
 ## Overview
 
-Subverse Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
+Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
 
 - **Key and BPM** estimates tempo, musical key, Camelot code, and key confidence. It does not use the daily separation allowance.
 - **Vocal removal** returns the vocal and an instrumental version.
@@ -248,7 +825,7 @@ A run is reserved when separation starts and marked used only after the job comp
 
 ## How to use it
 
-1. Sign in on SubverseLab and open Subverse Splitter from its product page.
+1. Sign in on SubverseLab and open Splitter from its product page.
 2. Choose one of the three operations: Key and BPM, Vocal removal, or Stem separation.
 3. Drop an audio file onto the file area or choose one from your device.
 4. Select the Run button.
@@ -295,7 +872,7 @@ The browser uses compact protected previews for synchronized playback. Downloads
 
 ## Processing and privacy
 
-Uploaded audio is processed by the dedicated Subverse Splitter Cloud Run service. Audio, previews, and downloads stay in the accepting instance's temporary workspace and are not written to the product database. Completed workspaces expire automatically, normally within 30 minutes, and may be removed earlier when the bounded job store needs space.
+Uploaded audio is processed by the dedicated Splitter Cloud Run service. Audio, previews, and downloads stay in the accepting instance's temporary workspace and are not written to the product database. Completed workspaces expire automatically, normally within 30 minutes, and may be removed earlier when the bounded job store needs space.
 
 The main SubverseLab website supplies the existing member session to the tool through a short-lived, exact-origin Firebase handoff. The tool has no separate login form. Job status and every preview, WAV, and ZIP request are checked by the tool server against the signed-in member.
 
@@ -322,7 +899,7 @@ Stem separation is an estimate. Bleed, reverb, doubled vocals, dense mastering, 
 
 ---
 
-# Subverse Visualizer Guide
+# Visualizer Guide
 Source: https://subverselab.com/learn/subverse-visualizer
 
 ## What this does
@@ -426,7 +1003,7 @@ most common, and both are stated before anything long starts rather than after.
 
 ---
 
-# Subverse SynthPulse Guide
+# SynthPulse Guide
 Source: https://subverselab.com/learn/synthpulse
 
 ## Overview

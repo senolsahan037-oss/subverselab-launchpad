@@ -32,7 +32,9 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
             full size in the footer instead. What used to sit here was a
             generic squiggle that belonged to no SubverseLab identity at all. */}
         <svg viewBox="0 0 64 64" width="28" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="64" height="64" rx="14.08" fill="var(--color-primary)" />
+          {/* Fixed brand glyph colours (brand.py GLYPH_GROUND #C5A059, GLYPH_INK #0A0A0A), as in favicon.svg. The ground used
+              to follow --color-primary: ink green in the light theme, under ink bars, so the mark vanished (owner 22 Oct). */}
+          <rect width="64" height="64" rx="14.08" fill="#C5A059" />
           <rect x="5.60" y="24.32" width="6.72" height="15.36" rx="3.36" fill="#0A0A0A" />
           <rect x="17.12" y="16.13" width="6.72" height="31.74" rx="3.36" fill="#0A0A0A" />
           <rect x="28.64" y="8.45" width="6.72" height="47.10" rx="3.36" fill="#0A0A0A" />
@@ -56,13 +58,13 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
           placeholder="Search tools and guides"
           onChange={(e) => {
             onSearch?.(e.target.value);
-            if (e.target.value && location.pathname !== '/') navigate('/');
+            if (e.target.value && location.pathname !== '/tools') navigate('/tools');   // the tool search results live on /tools (2026-10-26)
           }}
           style={{
             width: '100%',
             padding: '10px 15px 10px 40px',
             borderRadius: 'var(--radius-pill)',
-            border: '1px solid var(--color-border)',
+            border: '1px solid var(--color-control-border)',
             backgroundColor: 'var(--color-surface)',
             color: 'var(--color-text)',
             outline: 'none'
@@ -76,8 +78,8 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
       
       {/* Navigation & Controls */}
       <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <Link to="/" style={{ 
-          color: activePage === '/' ? 'var(--color-primary)' : 'var(--color-text-muted)', 
+        <Link to="/tools" style={{ 
+          color: activePage.startsWith('/tools') ? 'var(--color-primary)' : 'var(--color-text-muted)', 
           textDecoration: 'none', 
           fontWeight: '600' 
         }}>Tools</Link>
@@ -88,22 +90,19 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
           fontWeight: '600'
         }}>Plugins</Link>
 
-        <Link to="/loom" style={{
-          color: activePage === '/loom' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+        {/* Loom moved to the footer; Samples and Presets up here (labels shortened on the owner's go; page titles keep "packs") (owner 2026-10-15). */}
+        <Link to="/sample-packs" style={{
+          color: activePage.startsWith('/sample-packs') ? 'var(--color-primary)' : 'var(--color-text-muted)',
           textDecoration: 'none',
           fontWeight: '600'
-        }}>Loom</Link>
+        }}>Samples</Link>
 
-        <Link to="/help" style={{
-          color: activePage === '/help' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+        {/* Help and Forum live in the footer (owner 2026-10-15). */}
+        <Link to="/preset-packs" style={{
+          color: activePage.startsWith('/preset-packs') ? 'var(--color-primary)' : 'var(--color-text-muted)',
           textDecoration: 'none',
           fontWeight: '600'
-        }}>Help</Link>
-
-        <Link to="/forum" style={{
-          color: activePage.startsWith('/forum') ? 'var(--color-primary)' : 'var(--color-text-muted)',
-          textDecoration: 'none', fontWeight: '600'
-        }}>Forum</Link>
+        }}>Presets</Link>
 
         <span
           style={{
@@ -138,7 +137,7 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: '34px', height: '34px', padding: 0,
             background: 'transparent', cursor: 'pointer',
-            border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--color-control-border)', borderRadius: 'var(--radius-sm)',
             color: 'var(--color-text-muted)'
           }}
         >
@@ -166,7 +165,7 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
                 style={{ 
                   width: '32px', height: '32px', 
                   borderRadius: '50%', 
-                  backgroundColor: 'var(--color-accent)', 
+                  backgroundColor: 'var(--color-accent)', color: 'var(--color-on-primary)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontWeight: 'bold', cursor: 'pointer' 
                 }}

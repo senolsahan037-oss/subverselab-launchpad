@@ -1,30 +1,89 @@
 # SubverseLab
 
-> Free, browser-based tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free to start; some require a free account. Where a tool has a daily limit, its own guide states it, and the credits that come with any plugin purchase (every dollar is 100 credits) pay for more.
+> Audio plug-ins and apps for macOS and Windows, sample packs, Ableton Live preset packs, and browser tools for music producers. The plug-ins, packs and the open-source Loom server are listed first, from the same data the store pages use; the browser tools and their guides follow. Every browser tool runs in the browser; nothing to install. Every tool is free to start; some require a free account. Where a tool has a daily limit, its own guide states it, and the credits that come with any plugin purchase (every dollar is 100 credits) pay for more.
 
-SubverseLab publishes independent, single-purpose production tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
+## Plug-ins and apps
+
+Plug-ins for macOS and Windows (VST3 and AU on macOS, VST3 on Windows; some are also standalone apps). Bought through Lemon Squeezy; the download appears on the buyer's Account page at https://subverselab.com/account. Paid plug-ins: Includes 2 years of updates; the version you have keeps working forever.
+
+- [TORNA](https://subverselab.com/plugins/torna): Graphic equalizer. Graphic equalizer plugin: twelve bands from 16 Hz to 32 kHz, ±12 dB, a LEFT and a RIGHT bank, and a spectrum analyzer, modelled part by part from a 1983 service schematic. For the mix bus and the master. Mac and Windows. Price: $12.
+- [JING FANG](https://subverselab.com/plugins/jingfang): Microtonal synthesizer. Microtonal synthesizer plugin: a 3-row keyboard on a 53-step grid (or any equal grid), a Tuning Lab that learns a tuning from a recording, Scala in and out. Price: $60 (regular $150), launch price until 1 December 2026.
+- [ELEK](https://subverselab.com/plugins/elek): Stem separation app. Stem separation app: split a track into vocals, drums, bass and other, remove the vocal, or read tempo and key. It runs on your computer; nothing is uploaded. Price: $7 (regular $25), launch price until 1 December 2026.
+- [SEDA](https://subverselab.com/plugins/seda): Analog delay. Bucket-brigade (BBD) analog delay plugin, 20 to 1200 ms, zero latency. LISTEN ducks the echo while you play and throws it at the end of the phrase. Mac and Windows. Price: $15.
+- [RU-8](https://subverselab.com/plugins/ru8): Drum machine. Drum machine plugin and app: synthesized pads that carry their own steps, kits that change the whole sound, A/B rhythms with fill and auto, and MIDI drag-out. Price: $25.
+- [KIYMA](https://subverselab.com/plugins/kiyma): Audio mincer. Free glitch and beat-repeat plugin: it chops the last phrase into steps and replays them in a new order, locked to the bar. Zero latency. Mac and Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
+- [KUBBE](https://subverselab.com/plugins/kubbe): Reverb. Algorithmic reverb plugin with three modes (Hammam, Cistern, Valley) and a decay display that is measured, not nominal. VST3 and AU for Mac, VST3 for Windows. $9. Price: $9.
+- [KASET](https://subverselab.com/plugins/kaset): Tape colour. Cassette tape colour plugin: pick a generation from Master to 4th Dub and a tape type; every copy loses top end and gains hiss and saturation. VST3/AU, Windows VST3. $9. Price: $9.
+- [KORO](https://subverselab.com/plugins/koro): Vocal doubler + harmonizer. Vocal doubler and harmonizer plugin. It detects the key live while the singer sings, keeps to safe intervals until it is sure, and never plays a wrong note. Price: $15.
+- [YANKI](https://subverselab.com/plugins/yanki): Tempo-synced tape echo. Tempo-synced tape echo plugin. It opens as a plain 1/8 echo at the host tempo; moods such as Dub Spiral and Worn Loop swell the repeats into a loop. Price: $9.
+- [HAVA](https://subverselab.com/plugins/hava): Top-end air + spring sheen. Exciter plugin for a bus or the master: a top-end air lift and a short spring sheen. A colour box with a short sheen tail (T60 0.63 s), not a reverb. Price: $12.
+- [MIHENK](https://subverselab.com/plugins/mihenk): Mastering app. Transparent mastering plugin and app. It measures peaks, loudness, spectrum and phase, lists findings with a measured reason, and masters to the loudness target you pick. Price: $49.
+- [TUTKAL](https://subverselab.com/plugins/tutkal): Bus compressor. Bus compressor plugin with three voicings: GLUE for the drum or mix bus, LA for vocals, PUMP for sidechain ducking in time with a kick. Price: $12.
+- [ALEV](https://subverselab.com/plugins/alev): 3-band saturator. Free three-band saturation plugin, loudness-matched so you hear the heat, not the volume. 8x oversampled, no fold-back. VST3 and AU for Mac, VST3 for Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
+- [TABAN](https://subverselab.com/plugins/taban): Reverse limiter. Free reverse limiter plugin: audio under the FLOOR is lifted to it, audio above it is left bit for bit. One fader, zero latency. VST3 and AU for Mac, VST3 for Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
+- [ADALET](https://subverselab.com/plugins/adalet): Dynamic EQ. ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows. Price: Coming soon.
+
+## Sample packs
+
+Made from scratch and measured file by file; royalty-free in your own music. Catalogue: https://subverselab.com/sample-packs
+
+- [SVL Mirage](https://subverselab.com/sample-packs/mirage): Anatolian and Middle Eastern melodic loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Kotoflux](https://subverselab.com/sample-packs/kotoflux): East Asian melodic loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Saffron](https://subverselab.com/sample-packs/saffron): Indian melodic loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Solstice](https://subverselab.com/sample-packs/solstice): Afro and Latin guitar and mallet loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Velvetroom](https://subverselab.com/sample-packs/velvetroom): soulful vintage keys and horn loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Nightgrid](https://subverselab.com/sample-packs/nightgrid): analog synthwave and cyberpunk loops with drums. 20 loops, 180 stems and 180 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Brickyard](https://subverselab.com/sample-packs/brickyard): hip hop drum kit (trap + boom bap). 154 one-shots, 63 loops and 74 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Kerbstone](https://subverselab.com/sample-packs/kerbstone): drill drum kit (UK + NY drill). 142 one-shots, 48 loops and 58 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Stepwell](https://subverselab.com/sample-packs/stepwell): UK garage / speed garage drums and bass. 130 one-shots, 42 loops and 50 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Lampglass](https://subverselab.com/sample-packs/lampglass): house drum kit (classic, deep, tech house). 123 one-shots, 46 loops and 54 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Slagworks](https://subverselab.com/sample-packs/slagworks): hard techno drums (145-155 BPM). 142 one-shots, 43 loops and 52 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Squall](https://subverselab.com/sample-packs/squall): FX, textures and atmospheres for any genre. 129 sounds, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Lowlight](https://subverselab.com/sample-packs/lowlight): melodic trap loops with drums. 12 loops, 77 stems and 77 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Ironmere](https://subverselab.com/sample-packs/ironmere): cinematic loops with drums. 12 loops, 88 stems and 88 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+- [SVL Palmglow](https://subverselab.com/sample-packs/palmglow): melodic house loops with drums. 12 loops, 84 stems and 84 MIDI files, 24-bit / 44.1 kHz WAV, stereo. Price: $5.
+
+## Preset packs
+
+For Ableton Live. Catalogue: https://subverselab.com/preset-packs
+
+- RU-8 Drum Pack (Ableton Live Drum Racks): The sound of RU-8, the SubverseLab drum machine, inside Ableton Live. A Drum Rack for every kit, one Drum Selector rack to switch between them on eight named macros, and RU-8’s grooves as MIDI clips that play the racks as they are. Load a rack, drop a groove, play. Price: $10.
+- Drum Racks (Ableton Live Audio Effect Racks): Racks that make drums hit: punch and click for the kick, a short kick for back-to-back patterns, crack and a gated room for the snare, air for the hats. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+- Bass Racks (Ableton Live Audio Effect Racks): Weight and control for the low end: grit for the 808, a clean sub, bite for small speakers, a tempo-synced pump and width with the lows kept mono. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+- Vocal Racks (Ableton Live Audio Effect Racks): Vocal chains ready to drop on a track: a lead chain, air and presence, a wide double, a delay throw and a radio voice. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+- Instrument Racks (Ableton Live Audio Effect Racks): Character for your instruments: warm keys, wide pads, a lead brought to the front, echoing plucks and lo-fi dust. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+- Bus & Master Racks (Ableton Live Audio Effect Racks): The glue at the end of the chain: drum bus glue and smash, mix bus glue, a tape bus and a master safety chain. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+- FX Racks (Ableton Live Audio Effect Racks): Moments for your arrangement: space for percussion, a filter riser for builds, a stutter, grain shimmer and a metallic ring. Built from Live’s own devices; each rack does one job, loads ready to use and has eight named macros. Free with a SubverseLab account.
+
+## Loom
+
+- [Loom](https://subverselab.com/loom): a free, open-source local MCP server for Ableton Live. It reads your own projects and library, answers with counts instead of guesses, and writes MIDI, device chains, automation and markers into a running Live session, reading every write back.
+
+SubverseLab also publishes single-purpose browser tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
 
 ## Tools
 
 - [Arrangement GPS](https://subverselab.com/tools/arrangement-gps): Generate a genre-aware arrangement starting point, preview its structure and learn how to rebuild the idea in a DAW.
 - [Sensei Drum Generator](https://subverselab.com/tools/sensei): Generate 8-bar MIDI drum patterns in any of 22 genre styles, thin them live with per-channel density knobs, preview them on a 16th-note step sequencer across six drum channels, and export the result…
-- [Subverse Mix Check](https://subverselab.com/tools/subverse-mix-check): Evidence-first audio measurement for your mix or master. Direct ITU-R BS.1770 LUFS, sample peak, crest factor, and one-third-octave spectral analysis, compared against a reference track or a genre…
-- [Subverse Splitter](https://subverselab.com/tools/subverse-splitter): Separate a track into drums, bass, vocals and other instruments, pull the vocal off a mix, or read a track's tempo and musical key — all in the browser, nothing to install. Separation uses the…
-- [Subverse Visualizer](https://subverselab.com/tools/subverse-visualizer): Turn a song and its cover into a YouTube video. Look at every style running on your own track first, taken from the busiest part of the song rather than the intro, then render the one you chose at…
-- [Subverse SynthPulse](https://subverselab.com/tools/synthpulse): Generate a 16-step synth pattern across four lead and two bass lanes, evolve it, shape the in-browser sound preview, and export the result as a standard MIDI file for any DAW. Patterns are ranked by…
+- [Mix Check](https://subverselab.com/tools/subverse-mix-check): Evidence-first audio measurement for your mix or master. Direct ITU-R BS.1770 LUFS, sample peak, crest factor, and one-third-octave spectral analysis, compared against a reference track or a genre…
+- [Splitter](https://subverselab.com/tools/subverse-splitter): Separate a track into drums, bass, vocals and other instruments, pull the vocal off a mix, or read a track's tempo and musical key — all in the browser, nothing to install. Separation uses the…
+- [Visualizer](https://subverselab.com/tools/subverse-visualizer): Turn a song and its cover into a YouTube video. Look at every style running on your own track first, taken from the busiest part of the song rather than the intro, then render the one you chose at…
+- [SynthPulse](https://subverselab.com/tools/synthpulse): Generate a 16-step synth pattern across four lead and two bass lanes, evolve it, shape the in-browser sound preview, and export the result as a standard MIDI file for any DAW. Patterns are ranked by…
 - [Time & Frequency Sync](https://subverselab.com/tools/time-frequency-sync): Calculate BPM-synced delay and reverb times, key-to-Hz harmonics and sample repitch math, and hear each value before you use it. Runs entirely in your browser — no upload, no server processing, no…
 
 ## Guides
 
 - [Arrangement GPS Guide](https://subverselab.com/learn/arrangement-gps): Arrangement GPS is an idea-to-project learning tool: it builds a full, playable arrangement blueprint from a genre and a few style choices, lets you audition it as a schematic preview, and then…
 - [Sensei Drum Generator Guide](https://subverselab.com/learn/sensei): Sensei creates an 8-bar, 4/4 drum pattern from a style and its generation controls. The sequencer shows all 8 bars at 16th-note resolution across six channels: Kick, Snare, Hi-hat, Open Hat, Crash…
-- [Subverse Mix Check Guide](https://subverselab.com/learn/subverse-mix-check): Mix Check is an evidence-first audio measurement console. You upload a mix or master, and it shows you what the signal actually measures — loudness, peak, spectrum, and mono compatibility — instead…
-- [Subverse Splitter Guide](https://subverselab.com/learn/subverse-splitter): Subverse Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
-- [Subverse Visualizer Guide](https://subverselab.com/learn/subverse-visualizer): You upload a song and its cover. The tool measures the audio, takes the three colours the video will use from the cover itself, and animates one to the other. What comes out is a 1920x1080 mp4 at 30…
-- [Subverse SynthPulse Guide](https://subverselab.com/learn/synthpulse): SynthPulse writes a 16-step synth pattern across six lanes: four lead voices and two bass voices. You choose a direction, the tool proposes a pattern, and you export it as a standard MIDI file. It…
+- [Mix Check Guide](https://subverselab.com/learn/subverse-mix-check): Mix Check is an evidence-first audio measurement console. You upload a mix or master, and it shows you what the signal actually measures — loudness, peak, spectrum, and mono compatibility — instead…
+- [Splitter Guide](https://subverselab.com/learn/subverse-splitter): Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
+- [Visualizer Guide](https://subverselab.com/learn/subverse-visualizer): You upload a song and its cover. The tool measures the audio, takes the three colours the video will use from the cover itself, and animates one to the other. What comes out is a 1920x1080 mp4 at 30…
+- [SynthPulse Guide](https://subverselab.com/learn/synthpulse): SynthPulse writes a 16-step synth pattern across six lanes: four lead voices and two bass voices. You choose a direction, the tool proposes a pattern, and you export it as a standard MIDI file. It…
 - [Time & Frequency Sync Guide](https://subverselab.com/learn/time-frequency-sync): Time and Frequency Sync is a high-precision calculator for music producers, beatmakers, and mixing engineers: BPM-synced delay times, acoustic reverb decay, harmonic frequency values, and sample…
 
 ## Optional
 
 - [Help and FAQ](https://subverselab.com/help): accounts, sign-in, downloads, and per-tool questions.
-- [Full guide text](https://subverselab.com/llms-full.txt): every guide above, in full, as plain text.
+- [Purchases and Refunds](https://subverselab.com/refunds): how buying works, how to ask for a refund (within 18 days of the purchase, info@subverselab.com, order number + checkout e-mail), Lemon Squeezy as merchant of record deciding refunds case by case, and what a refund changes (licence, downloads, credits).
+- [Terms of Use](https://subverselab.com/terms) and [Privacy Policy](https://subverselab.com/privacy).
+- [Full text](https://subverselab.com/llms-full.txt): every plug-in page and every guide above, in full, as plain text.

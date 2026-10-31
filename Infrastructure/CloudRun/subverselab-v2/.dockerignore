@@ -1,3 +1,11 @@
 node_modules
 dist
 .firebase
+docs
+# The pages import the shared catalogue schema (src/catalog, admin); the rest of api/ is its own service.
+api/*
+!api/catalogSchema.js
+preview
+*.log
+.devdata
+_legacy

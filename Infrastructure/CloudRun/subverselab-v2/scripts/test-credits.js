@@ -89,16 +89,19 @@ globalThis.__crTestOidc = async (token, audience) => {
 };
 
 const url = (f) => pathToFileURL(resolve(root, f)).href;
-const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
+const transformed = (await readFile(resolve(root, 'api/server.js'), 'utf8'))
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
-  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(root)};`)
-  .replace("from './launchLicence.js';", `from '${url('launchLicence.js')}';`)
-  .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
-  .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
-  .replace("from './credits.js';", `from '${url('credits.js')}';`)
-  .replace("from './inbox.js';", `from '${url('inbox.js')}';`)
-  .replace("from './stats.js';", `from '${url('stats.js')}';`)
+  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(resolve(root, 'api'))};`)
+  .replace("from './launchLicence.js';", `from '${url('api/launchLicence.js')}';`)
+  .replace("from './entitlements.js';", `from '${url('api/entitlements.js')}';`)
+  .replace("from './accountDeletion.js';", `from '${url('api/accountDeletion.js')}';`)
+  .replace("from './credits.js';", `from '${url('api/credits.js')}';`)
+  .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
+  .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
+  .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
+  .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('createCreditsService({ getAdmin: adminFirestore })', 'createCreditsService({ getAdmin: adminFirestore, verifyOidc: globalThis.__crTestOidc })')
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__crTestApp)')
@@ -109,8 +112,8 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
 assert.ok(transformed.includes('__crTestOidc'), 'server.js no longer builds the credits service the way this test expects');
 const server = await import(`data:text/javascript;base64,${Buffer.from(transformed).toString('base64')}`);
 // No test touches DNS: every domain has a mail server.
-(await import(pathToFileURL(resolve(root, 'entitlements.js')).href)).setMxResolver(async (domain) => [{ exchange: `mx.${domain}`, priority: 10 }]);
-const { orderAmount } = await import(url('credits.js'));
+(await import(pathToFileURL(resolve(root, 'api/entitlements.js')).href)).setMxResolver(async (domain) => [{ exchange: `mx.${domain}`, priority: 10 }]);
+const { orderAmount, createCreditsService, TESTER_MONTHLY_CREDITS } = await import(url('api/credits.js'));
 const WH_SECRET = 'credits-test-webhook-secret';
 process.env.LEMONSQUEEZY_WEBHOOK_SECRET = WH_SECRET;
 process.env.LS_FAMILY_PRODUCT_ID = '7777';
@@ -266,21 +269,33 @@ await test('order without a uid is parked under the e-mail; a refund before the 
   assert.deepEqual(Object.keys(D.get('pending_credits/guest@example.com').orders), ['541']);
 });
 
-await test('parked credits are claimed by a VERIFIED account with that e-mail only, once', async () => {
+await test('parked credits are claimed by the account with that e-mail (proven or not, owner 2026-10-18), once; another e-mail gets nothing', async () => {
   await hook(order('guest@example.com', { id: 550, total_usd: 900 }));
-  const unverified = login('mal', 'mal', 'guest@example.com', { email_verified: false });
-  const m = await call('get', '/api/credits/balance', { token: unverified });
-  assert.equal(m.status, 200); assert.equal(m.body.balance, 0);
-  assert.ok(D.has('pending_credits/guest@example.com'));
   const other = login('bob', 'bob', 'bob@example.com');
   assert.equal((await call('get', '/api/credits/balance', { token: other })).body.balance, 0);
   assert.ok(D.has('pending_credits/guest@example.com'));
-  const owner = login('guest', 'guest', 'Guest@Example.com');
-  const g = await call('get', '/api/credits/balance', { token: owner });
-  assert.equal(g.body.balance, 900);
+  const unverified = login('mal', 'mal', 'Guest@Example.com', { email_verified: false });
+  const m = await call('get', '/api/credits/balance', { token: unverified });
+  assert.equal(m.status, 200); assert.equal(m.body.balance, 900);
   assert.equal(D.has('pending_credits/guest@example.com'), false);
-  assert.equal((await call('get', '/api/credits/balance', { token: owner })).body.balance, 900);
-  assert.equal(ledger('guest').filter((l) => l.reason === 'purchase').length, 1);
+  assert.equal((await call('get', '/api/credits/balance', { token: unverified })).body.balance, 900);
+  const second = login('guest', 'guest', 'guest@example.com');
+  assert.equal((await call('get', '/api/credits/balance', { token: second })).body.balance, 0, 'a second account with the same e-mail gets nothing twice');
+  assert.equal(ledger('mal').filter((l) => l.reason === 'purchase').length, 1);
+});
+
+await test('claimPending with orderIds moves only those orders; the rest stays parked', async () => {
+  await hook(order('two@example.com', { id: 551, total_usd: 300 }));
+  await hook(order('two@example.com', { id: 552, total_usd: 200 }));
+  const svc = createCreditsService({ getAdmin: async () => ({ db: state.db }) });
+  assert.deepEqual(await svc.claimPending({ uid: 'two-a', email: 'two@example.com', orderIds: ['551'] }), { claimed: 300 });
+  assert.deepEqual(Object.keys(D.get('pending_credits/two@example.com').orders), ['552']);
+  assert.deepEqual(await svc.claimPending({ uid: 'two-a', email: 'two@example.com', orderIds: ['551'] }), { claimed: 0 });
+  assert.deepEqual(await svc.claimPending({ uid: 'two-a', email: 'two@example.com', orderIds: [] }), { claimed: 0 });
+  assert.equal(await bal('two-a'), 300);
+  assert.deepEqual(await svc.claimPending({ uid: 'two-a', email: 'two@example.com' }), { claimed: 200 });
+  assert.equal(D.has('pending_credits/two@example.com'), false);
+  assert.equal(await bal('two-a'), 500);
 });
 
 await test('a Google account claims parked credits through /api/purchases/status too', async () => {
@@ -292,17 +307,27 @@ await test('a Google account claims parked credits through /api/purchases/status
   assert.equal(await bal('google-g'), 300);
 });
 
-await test('/api/purchases/status: a non-proven password account (no verification mail any more) does not collect parked credits; the proven one does', async () => {
+await test('/api/purchases/status: a non-proven password account with the checkout e-mail collects parked credits (owner 2026-10-18)', async () => {
   await hook(order('park2@example.com', { id: 570, total_usd: 400 }));
   D.set('launch/counter', { claimed: 0, downloads: 0 });
   const np = login('np-park', 'np-park', 'park2@example.com', { email_verified: false });
   const out = await call('get', '/api/purchases/status', { token: np });
   assert.equal(out.status, 200); assert.equal(out.body.unverified, true);
-  assert.equal((await bal('np-park')) || 0, 0);
-  assert.ok(D.has('pending_credits/park2@example.com'));
-  const ok = login('park2', 'park2', 'park2@example.com');
-  assert.equal((await call('get', '/api/purchases/status', { token: ok })).body.unverified, false);
-  assert.equal(await bal('park2'), 400);
+  assert.equal(await bal('np-park'), 400);
+  assert.equal(D.has('pending_credits/park2@example.com'), false);
+});
+
+await test('/api/orders/claim: the order number moves the parked credits of that order to the claiming account, whatever its e-mail', async () => {
+  await hook(order('buyer@shop.test', { id: 580, total_usd: 1999, extra: { order_number: 4867700 } }));
+  await hook(order('buyer@shop.test', { id: 581, total_usd: 500, extra: { order_number: 4867701 } }));
+  const acct = login('claimer', 'claimer', 'someone-else@example.com', { email_verified: false });
+  const wrong = await call('post', '/api/orders/claim', { token: acct, body: { orderNumber: '4867799', email: 'buyer@shop.test' } });
+  assert.equal(wrong.status, 404); assert.equal((await bal('claimer')) || 0, 0);
+  const ok = await call('post', '/api/orders/claim', { token: acct, body: { orderNumber: '#4867700', email: 'Buyer@Shop.test' } });
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
+  assert.equal(await bal('claimer'), 1999);
+  assert.deepEqual(Object.keys(D.get('pending_credits/buyer@shop.test').orders), ['581'], 'the other order stays parked');
+  assert.equal(ledger('claimer').filter((l) => l.reason === 'purchase' && l.via === 'pending').length, 1);
 });
 
 await test('GET /api/credits/balance: needs a sign-in, returns balance, fixed costs and the last 20 lines', async () => {
@@ -435,6 +460,214 @@ await test('account deletion removes credits/{uid}, its ledger and parked credit
   const out = await call('post', '/api/account/delete', { token: tok, body: { confirm: 'DELETE' } });
   assert.equal(out.status, 200);
   assert.equal(D.has('credits/alice'), false); assert.equal(ledger('alice').length, 0); assert.equal(D.has('pending_credits/alice@example.com'), false);
+});
+
+// ---- Tester credits (Tester Agreement 4.5): 2,000 per calendar month, no carry-over, purchased credits intact -------
+let clock = '2026-10-14T09:00:00.000Z';
+const tsvc = createCreditsService({ getAdmin: async () => ({ db: state.db }), now: () => clock });
+const setTester = (email, status = 'active') => D.set(`launch2_testers/${email}`, { email, ...(status ? { status } : {}), approvedAt: '2026-10-01T00:00:00Z' });
+const testerLines = (uid) => ledger(uid).filter((l) => /^tester/.test(String(l.reason)) || l.reason === 'tester-grant' || l.reason === 'tester-expire');
+const invariant = (uid) => { const c = D.get(`credits/${uid}`); assert.equal(c.balance, c.granted - c.spent, `balance = granted - spent for ${uid}`); };
+
+await test('tester credits: the first spend of an active tester grants the month once (2,000) and spends from it', async () => {
+  clock = '2026-10-14T09:00:00.000Z';
+  setTester('t1@example.com');
+  const out = await tsvc.spend({ uid: 't1', tool: 'splitter', jobId: 'a', testerEmail: 't1@example.com' });
+  assert.deepEqual(out, { ok: true, status: 200, balance: 1950, cost: 50 });
+  assert.equal(TESTER_MONTHLY_CREDITS, 2000);
+  const grant = D.get('credit_ledger/tester_2026-10_t1');
+  assert.deepEqual({ delta: grant.delta, reason: grant.reason, uid: grant.uid, month: grant.month }, { delta: 2000, reason: 'tester-grant', uid: 't1', month: '2026-10' });
+  assert.deepEqual(D.get('credits/t1').tester, { month: '2026-10', remaining: 1950 });
+  assert.deepEqual({ granted: D.get('credits/t1').granted, spent: D.get('credits/t1').spent }, { granted: 2000, spent: 50 });
+  assert.equal(D.get('credit_ledger/spend_splitter_a').fromTester, 50);
+  invariant('t1');
+});
+
+await test('tester credits: the same month never grants twice (spends, reads, a repeated job, a lost slice)', async () => {
+  clock = '2026-10-14T09:00:00.000Z';
+  setTester('t2@example.com');
+  await tsvc.spend({ uid: 't2', tool: 'mixcheck', jobId: 'a', testerEmail: 't2@example.com' });
+  await tsvc.spend({ uid: 't2', tool: 'mixcheck', jobId: 'b', testerEmail: 't2@example.com' });
+  const dup = await tsvc.spend({ uid: 't2', tool: 'mixcheck', jobId: 'b', testerEmail: 't2@example.com' });
+  assert.equal(dup.duplicate, true);
+  const read = await tsvc.readBalance('t2', { testerEmail: 't2@example.com' });
+  assert.equal(read.balance, 1800);
+  assert.deepEqual(read.tester, { month: '2026-10', monthly: 2000, left: 1800 });
+  assert.equal(testerLines('t2').filter((l) => l.reason === 'tester-grant').length, 1);
+  // Even if the account's slice marker were lost, the ledger key stops a second grant for the month.
+  D.set('credits/t2', { balance: 1800, granted: 2000, spent: 200, updatedAt: clock });
+  await tsvc.spend({ uid: 't2', tool: 'splitter', jobId: 'c', testerEmail: 't2@example.com' });
+  assert.equal(testerLines('t2').filter((l) => l.reason === 'tester-grant').length, 1);
+  assert.equal(D.get('credits/t2').balance, 1750);
+  assert.equal(D.get('credits/t2').tester.month, '2026-10');
+  invariant('t2');
+  // Concurrent first spends grant once.
+  setTester('t2b@example.com');
+  await Promise.all(['x', 'y', 'z'].map((j) => tsvc.spend({ uid: 't2b', tool: 'splitter', jobId: j, testerEmail: 't2b@example.com' })));
+  assert.equal(testerLines('t2b').filter((l) => l.reason === 'tester-grant').length, 1);
+  assert.equal(D.get('credits/t2b').balance, 1850);
+  invariant('t2b');
+});
+
+await test('tester credits: next month the unused rest expires and a new 2,000 is granted; nothing carries over', async () => {
+  clock = '2026-10-20T09:00:00.000Z';
+  setTester('t3@example.com');
+  await tsvc.spend({ uid: 't3', tool: 'mixcheck', jobId: 'a', testerEmail: 't3@example.com' });
+  assert.equal(D.get('credits/t3').balance, 1900);
+  clock = '2026-11-02T09:00:00.000Z';
+  const out = await tsvc.spend({ uid: 't3', tool: 'splitter', jobId: 'b', testerEmail: 't3@example.com' });
+  assert.equal(out.balance, 1950, 'a full new month minus this spend: the 1,900 left over from October are gone');
+  const exp = D.get('credit_ledger/tester_expire_2026-10_t3');
+  assert.deepEqual({ delta: exp.delta, reason: exp.reason }, { delta: -1900, reason: 'tester-expire' });
+  assert.equal(D.get('credit_ledger/tester_2026-11_t3').delta, 2000);
+  assert.deepEqual(D.get('credits/t3').tester, { month: '2026-11', remaining: 1950 });
+  invariant('t3');
+  // A read in the next month alone does the same housekeeping, once.
+  clock = '2026-12-01T00:00:00.000Z';
+  const read = await tsvc.readBalance('t3', { testerEmail: 't3@example.com' });
+  assert.equal(read.balance, 2000);
+  assert.deepEqual(read.tester, { month: '2026-12', monthly: 2000, left: 2000 });
+  await tsvc.readBalance('t3', { testerEmail: 't3@example.com' });
+  assert.equal(testerLines('t3').length, 5, 'grant Oct, grant Nov, expire Oct, expire Nov, grant Dec');
+  invariant('t3');
+  // A year boundary: December to January.
+  clock = '2027-01-01T00:00:00.000Z';
+  assert.equal((await tsvc.readBalance('t3', { testerEmail: 't3@example.com' })).balance, 2000);
+  assert.ok(D.get('credit_ledger/tester_expire_2026-12_t3'));
+  invariant('t3');
+});
+
+await test('tester credits: credits bought with orders are never touched (spent last, kept at rollover, kept by a refund of tester credits)', async () => {
+  clock = '2026-10-14T09:00:00.000Z';
+  setTester('t4@example.com');
+  assert.equal((await tsvc.grantOrder({ email: 't4@example.com', uid: 't4', orderId: 'P1', credits: 500 })).result, 'granted');
+  await tsvc.spend({ uid: 't4', tool: 'mixcheck', jobId: 'a', testerEmail: 't4@example.com' });
+  // 2,500 total, 100 spent from the tester slice: 1,900 tester + 500 purchased.
+  assert.deepEqual({ b: D.get('credits/t4').balance, t: D.get('credits/t4').tester.remaining }, { b: 2400, t: 1900 });
+  invariant('t4');
+  // Tester credits used up: the purchased ones are spent next (a 30-credit slice left, 50-credit job).
+  D.set('credits/t4', { ...D.get('credits/t4'), balance: 530, granted: 2530, spent: 2000, tester: { month: '2026-10', remaining: 30 } });
+  const out = await tsvc.spend({ uid: 't4', tool: 'splitter', jobId: 'b', testerEmail: 't4@example.com' });
+  assert.equal(out.balance, 480);
+  assert.deepEqual(D.get('credits/t4').tester, { month: '2026-10', remaining: 0 });
+  assert.equal(D.get('credit_ledger/spend_splitter_b').fromTester, 30);
+  // A full refund of the order removes only purchased credits, never the tester slice (no tester credits left here: 480 purchased).
+  D.set('credits/t4', { ...D.get('credits/t4'), balance: 700, granted: 2730, spent: 2030, tester: { month: '2026-10', remaining: 200 } });
+  const refund = await tsvc.refundOrder({ email: 't4@example.com', orderId: 'P1', full: true });
+  assert.equal(refund.removed, 500, 'exactly the purchased 500 (700 - 200 tester)');
+  assert.equal(D.get('credits/t4').tester.remaining, 200);
+  assert.equal(D.get('credits/t4').balance, 200);
+  invariant('t4');
+  // Rollover keeps purchased credits: 300 purchased + 100 unused tester credits -> 300 + 2,000.
+  D.set('credits/t5', { balance: 400, granted: 2300, spent: 1900, tester: { month: '2026-10', remaining: 100 } });
+  setTester('t5@example.com');
+  clock = '2026-11-03T00:00:00.000Z';
+  const read = await tsvc.readBalance('t5', { testerEmail: 't5@example.com' });
+  assert.equal(read.balance, 2300, '300 purchased + the new 2,000');
+  assert.equal(D.get('credit_ledger/tester_expire_2026-10_t5').delta, -100);
+  invariant('t5');
+  // And once the tester ends, only the purchased 300 remain.
+  setTester('t5@example.com', 'ended');
+  assert.equal((await tsvc.readBalance('t5', { testerEmail: 't5@example.com' })).balance, 300);
+  invariant('t5');
+});
+
+await test('tester credits: release gives the tester part back in the same month, and drops it when the month has rolled over', async () => {
+  clock = '2026-10-14T09:00:00.000Z';
+  setTester('t6@example.com');
+  await tsvc.spend({ uid: 't6', tool: 'mixcheck', jobId: 'a', testerEmail: 't6@example.com' });
+  assert.equal(D.get('credits/t6').tester.remaining, 1900);
+  const rel = await tsvc.release({ tool: 'mixcheck', jobId: 'a' });
+  assert.equal(rel.balance, 2000);
+  assert.deepEqual(D.get('credits/t6').tester, { month: '2026-10', remaining: 2000 });
+  invariant('t6');
+  // A job spent in October from the tester slice, released in November after the rollover: the credits are gone like the rest.
+  await tsvc.spend({ uid: 't6', tool: 'mixcheck', jobId: 'b', testerEmail: 't6@example.com' });
+  clock = '2026-11-02T09:00:00.000Z';
+  await tsvc.readBalance('t6', { testerEmail: 't6@example.com' });
+  assert.equal(D.get('credits/t6').balance, 2000);
+  const late = await tsvc.release({ tool: 'mixcheck', jobId: 'b' });
+  assert.equal(late.balance, 2000, 'nothing returns: those credits had expired');
+  assert.deepEqual(D.get('credits/t6').tester, { month: '2026-11', remaining: 2000 });
+  invariant('t6');
+  // A purchased-credit job releases fully, as before.
+  D.set('credits/t7', { balance: 100, granted: 100, spent: 0 });
+  await tsvc.spend({ uid: 't7', tool: 'splitter', jobId: 'p', testerEmail: null });
+  assert.equal((await tsvc.release({ tool: 'splitter', jobId: 'p' })).balance, 100);
+  invariant('t7');
+});
+
+await test('tester credits: ended, revoked, unknown and unproven accounts get nothing; an ended tester loses the unused rest', async () => {
+  clock = '2026-10-14T09:00:00.000Z';
+  setTester('e1@example.com', 'ended');
+  const ended = await tsvc.spend({ uid: 'e1', tool: 'splitter', jobId: 'a', testerEmail: 'e1@example.com' });
+  assert.deepEqual([ended.ok, ended.status, ended.balance], [false, 402, 0]);
+  setTester('e2@example.com', 'revoked');
+  assert.equal((await tsvc.spend({ uid: 'e2', tool: 'splitter', jobId: 'a', testerEmail: 'e2@example.com' })).status, 402);
+  assert.equal((await tsvc.spend({ uid: 'e3', tool: 'splitter', jobId: 'a', testerEmail: 'nobody@example.com' })).status, 402, 'no tester record');
+  setTester('e4@example.com');
+  assert.equal((await tsvc.spend({ uid: 'e4', tool: 'splitter', jobId: 'a', testerEmail: null })).status, 402, 'an account whose e-mail is not proven gets no grant');
+  assert.equal((await tsvc.readBalance('e1', { testerEmail: 'e1@example.com' })).tester, null);
+  for (const uid of ['e1', 'e2', 'e3', 'e4']) assert.equal(testerLines(uid).length, 0, `no ledger line for ${uid}`);
+  assert.equal(D.has('credits/e1'), false, 'nothing is even created for them');
+  // An active tester who is then ended loses what was left of the month at the next spend / read.
+  setTester('e5@example.com');
+  await tsvc.spend({ uid: 'e5', tool: 'splitter', jobId: 'a', testerEmail: 'e5@example.com' });
+  setTester('e5@example.com', 'ended');
+  const after = await tsvc.spend({ uid: 'e5', tool: 'splitter', jobId: 'b', testerEmail: 'e5@example.com' });
+  assert.deepEqual([after.status, after.balance], [402, 0]);
+  assert.equal(D.get('credit_ledger/tester_expire_2026-10_e5').delta, -1950);
+  invariant('e5');
+  // Re-activated in the same month: the month is not granted again.
+  setTester('e5@example.com', 'active');
+  assert.equal((await tsvc.spend({ uid: 'e5', tool: 'splitter', jobId: 'c', testerEmail: 'e5@example.com' })).status, 402);
+  assert.equal(testerLines('e5').filter((l) => l.reason === 'tester-grant').length, 1);
+  // A legacy tester record without a status counts as active.
+  setTester('e6@example.com', null);
+  assert.equal((await tsvc.spend({ uid: 'e6', tool: 'splitter', jobId: 'f6', testerEmail: 'e6@example.com' })).balance, 1950);
+});
+
+await test('tester credits over HTTP: balance and spend routes grant for the active tester\'s own account only (no verified e-mail needed); the cost list is unchanged', async () => {
+  enableApi();
+  const month = new Date().toISOString().slice(0, 7);
+  D.set('launch2_testers/ht1@example.com', { email: 'ht1@example.com', status: 'active' });
+  D.set('launch2_testers/ht2@example.com', { email: 'ht2@example.com', status: 'active' });
+  const proven = login('ht1', 'ht1', 'ht1@example.com');
+  const bal1 = await call('get', '/api/credits/balance', { token: proven });
+  assert.equal(bal1.status, 200);
+  assert.equal(bal1.body.balance, 2000);
+  assert.deepEqual(bal1.body.tester, { month, monthly: 2000, left: 2000 });
+  assert.deepEqual(bal1.body.costs, { splitter: 50, visualizer: 50, mixcheck: 100, 'arrangement-gps': 25 });
+  const sp = await spend('mixcheck', 'job1', proven);
+  assert.deepEqual([sp.status, sp.body.balance], [200, 1900]);
+  assert.equal((await call('get', '/api/credits/balance', { token: proven })).body.tester.left, 1900);
+  assert.equal([...D.keys()].filter((k) => k.startsWith('credit_ledger/tester_')).length, 1);
+  // Owner 2026-10-14: no verified e-mail is needed. The record belongs to the uid that applied (copied on approval): an
+  // unverified password account gets the grant, a second account with the same e-mail gets nothing.
+  // Security audit 2026-10-17 F4: an UNBOUND record is not taken by an unproven account by itself (the admin binds it).
+  const unproven = login('ht2', 'ht2', 'ht2@example.com', { email_verified: false });
+  const bal0 = await call('get', '/api/credits/balance', { token: unproven });
+  assert.deepEqual([bal0.body.balance, bal0.body.tester], [0, null], 'unbound record + unproven account: no grant');
+  assert.equal(D.get('launch2_testers/ht2@example.com').uid, undefined);
+  D.set('launch2_testers/ht2@example.com', { email: 'ht2@example.com', status: 'active', uid: 'ht2' });   // as approval writes it
+  const bal2 = await call('get', '/api/credits/balance', { token: unproven });
+  assert.deepEqual([bal2.body.balance, bal2.body.tester.left], [2000, 2000]);
+  assert.equal(D.get('launch2_testers/ht2@example.com').uid, 'ht2');
+  assert.equal((await spend('splitter', 'job2', unproven)).body.balance, 1950);
+  const twin = login('ht2b', 'ht2b', 'ht2@example.com', { email_verified: true });
+  const bal3 = await call('get', '/api/credits/balance', { token: twin });
+  assert.deepEqual([bal3.body.balance, bal3.body.tester], [0, null]);
+  assert.equal((await spend('splitter', 'job3', twin)).status, 402);
+  // An ordinary account: no tester record, no grant, no transaction needed.
+  const plain = login('pl1', 'pl1', 'pl1@example.com');
+  assert.deepEqual((await call('get', '/api/credits/balance', { token: plain })).body.tester, null);
+  assert.equal(D.has('credits/pl1'), false);
+});
+
+await test('firestore.rules: tester_builds is closed to every client', async () => {
+  const rules = await readFile(resolve(root, 'firestore.rules'), 'utf8');
+  assert.match(rules, /match \/tester_builds\/\{document=\*\*\} \{\s*allow read, write: if false;/);
+  assert.match(rules, /match \/launch2_testers\/\{document=\*\*\} \{\s*allow read, write: if false;/);
 });
 
 const failed = results.filter((r) => !r).length;

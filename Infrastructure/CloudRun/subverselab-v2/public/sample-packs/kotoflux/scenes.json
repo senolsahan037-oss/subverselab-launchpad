@@ -1,0 +1,82 @@
+[
+ {
+  "t": 0,
+  "label": "Akiba Circuit: 140 BPM, A minor"
+ },
+ {
+  "t": 3.43,
+  "label": "Bamboo Shrine: 92 BPM, D minor"
+ },
+ {
+  "t": 8.65,
+  "label": "Edo Shadow: 112 BPM, E minor"
+ },
+ {
+  "t": 12.93,
+  "label": "Fuji Wind: 128 BPM, B minor"
+ },
+ {
+  "t": 16.68,
+  "label": "Gion Lantern: 138 BPM, G minor"
+ },
+ {
+  "t": 20.16,
+  "label": "Hakone Mist: 88 BPM, A minor"
+ },
+ {
+  "t": 25.61,
+  "label": "Harajuku Pulse: 122 BPM, B minor"
+ },
+ {
+  "t": 29.55,
+  "label": "Inari Fox: 136 BPM, D minor"
+ },
+ {
+  "t": 33.08,
+  "label": "Kabuki Steel: 144 BPM, D minor"
+ },
+ {
+  "t": 36.41,
+  "label": "Kamo River: 102 BPM, C minor"
+ },
+ {
+  "t": 41.12,
+  "label": "Kyoto Rain: 132 BPM, A minor"
+ },
+ {
+  "t": 44.75,
+  "label": "Lijiang Peak: 98 BPM, A minor"
+ },
+ {
+  "t": 49.65,
+  "label": "Moonlit Koi: 108 BPM, C minor"
+ },
+ {
+  "t": 54.1,
+  "label": "Nara Lantern: 126 BPM, E minor"
+ },
+ {
+  "t": 57.91,
+  "label": "Neon Pagoda: 124 BPM, B minor"
+ },
+ {
+  "t": 61.78,
+  "label": "Osaka Drift: 96 BPM, G minor"
+ },
+ {
+  "t": 66.78,
+  "label": "Shibuya Grid: 142 BPM, E minor"
+ },
+ {
+  "t": 70.16,
+  "label": "Snow Temple: 84 BPM, B minor"
+ },
+ {
+  "t": 75.87,
+  "label": "Suzhou Canal: 90 BPM, G minor"
+ },
+ {
+  "t": 81.2,
+  "label": "Tsukiji Dawn: 134 BPM, A minor"
+ }
+]

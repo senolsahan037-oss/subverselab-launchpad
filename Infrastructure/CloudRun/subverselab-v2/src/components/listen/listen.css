@@ -1,0 +1,114 @@
+/* "Hear it first" hero (ListenHero, /lab/<slug> prototypes). The hero takes the colour of the button being heard
+   (Denise-style colour world, set inline from src/data/listen.js). It follows the theme (owner 28 Oct): in dark the
+   room colour is the ground, in light only a wash of it (--room-amt) over the cream page, with ink text. The --pl-*
+   colours come from the theme tokens in index.css. */
+.lh {
+  --room-ink: color-mix(in srgb, var(--room-accent) var(--room-ink-amt), var(--color-text));
+    position: relative;
+  color: var(--pl-cream);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--room-mid) var(--room-amt), var(--color-bg)) 0%,
+    color-mix(in srgb, var(--room-deep) var(--room-amt), var(--color-bg)) 100%);
+  transition: background-color .6s ease;
+  padding: 28px 0 56px;
+  overflow: hidden;
+}
+.lh::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(90% 70% at 70% 10%, var(--room-glow, rgba(95, 227, 199, .12)), transparent 65%);
+  pointer-events: none;
+  transition: opacity .6s ease;
+}
+.lh-inner { position: relative; max-width: var(--page-max); }
+.lh .plugin-back, .lh .plugin-kicker { color: var(--pl-muted); }
+.lh .plugin-kicker { color: var(--pl-gold); }
+.lh .plugin-title { color: var(--pl-cream); margin-bottom: 4px; }
+.lh-headline {
+  font-family: 'Oswald', var(--font-heading, sans-serif);
+  font-size: clamp(1.5rem, 3.2vw, 2.4rem);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: 1.1;
+  margin: 0 0 28px;
+}
+.lh-headline span { color: var(--room-ink); transition: color .6s ease; }
+
+.lh-stage { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.lh-panel { position: relative; margin: 0; aspect-ratio: 1600 / 629; border-radius: 10px; overflow: hidden;
+  box-shadow: var(--shadow-card-hover); }
+.lh-panel img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .45s ease, filter .45s ease; }
+.lh-panel img.on { opacity: 1; }
+.lh-panel img.bypass { filter: saturate(.25) brightness(.7); }
+.lh-bypass { position: absolute; top: 12px; right: 12px; font: 700 .72rem/1 'Inter', sans-serif; letter-spacing: .14em;
+  padding: 6px 9px; border-radius: 4px; background: rgba(0, 0, 0, .55); color: var(--pl-cream); }
+
+.lh-player { background: var(--pl-tint); border: 0; box-shadow: var(--shadow-card); border-radius: 12px; padding: 18px; backdrop-filter: blur(6px); }
+.lh-top { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+.lh-play { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--room-accent); color: #0B1A18; display: grid; place-items: center;
+  box-shadow: 0 0 0 0 var(--room-accent); transition: background .6s ease, transform .15s ease; }
+.lh-play:hover { transform: scale(1.05); }
+.lh-play:focus-visible { outline: 3px solid var(--pl-cream); outline-offset: 3px; }
+.lh-play.is-playing { animation: lh-pulse 1.6s ease-out infinite; }
+@keyframes lh-pulse { 0% { box-shadow: 0 0 0 0 rgba(242, 239, 231, .35); } 100% { box-shadow: 0 0 0 18px rgba(242, 239, 231, 0); } }
+.lh-tri { width: 0; height: 0; margin-left: 5px; border-left: 18px solid currentColor; border-top: 11px solid transparent; border-bottom: 11px solid transparent; }
+.lh-pause { width: 18px; height: 22px; border-left: 6px solid currentColor; border-right: 6px solid currentColor; }
+.lh-spin { width: 22px; height: 22px; border: 3px solid rgba(11, 26, 24, .3); border-top-color: #0B1A18; border-radius: 50%; animation: lh-rot .8s linear infinite; }
+@keyframes lh-rot { to { transform: rotate(360deg); } }
+
+.lh-vfd { flex: 1; background: #050B0A; border-radius: 8px; padding: 10px 14px; box-shadow: inset 0 0 0 1px rgba(95, 227, 199, .15); }
+.lh-vfd-label { display: block; font: 600 .68rem/1 'Inter', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: rgba(242, 239, 231, .7); margin-bottom: 6px; }
+.lh-vfd-num { display: block; font: 700 2rem/1 'JetBrains Mono', ui-monospace, Menlo, monospace; color: var(--room-accent);
+  text-shadow: 0 0 12px var(--room-accent); font-variant-numeric: tabular-nums; transition: color .6s ease; }
+
+.lh-buttons { display: grid; gap: 6px; margin-bottom: 14px; }
+.lh-button { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 6px; border-radius: 6px; cursor: pointer;
+  font: 700 .8rem/1 'Inter', sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  background: #E9E2CF; color: #1B2B28; border: 0; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .18); transition: background .2s, transform .1s; }
+.lh-button kbd { font: 600 .65rem/1 'JetBrains Mono', monospace; opacity: .6; }
+.lh-button:active { transform: translateY(1px); }
+.lh-button.active { background: #E2C47C; box-shadow: inset 0 2px 0 rgba(0, 0, 0, .2), 0 0 14px rgba(226, 196, 124, .45); }
+.lh-button:focus-visible { outline: 3px solid var(--pl-cream); outline-offset: 2px; }
+
+.lh-strip { position: relative; background: #050B0A; border-radius: 8px; padding: 6px; margin-bottom: 10px; }
+.lh-strip canvas { display: block; width: 100%; height: 96px; }
+.lh-echoes { position: relative; height: 34px; margin: 6px 4px 0; border-top: 1px dashed rgba(175, 192, 242, .35); }
+.lh-echoes span { position: absolute; top: 0; transform: translateX(-50%); font: 600 .62rem/1 'JetBrains Mono', monospace; color: var(--room-ink); padding-top: 6px; }
+.lh-echoes span::before { content: ''; position: absolute; top: -5px; left: 50%; width: 2px; height: 8px; background: var(--room-accent); }
+.lh-echoes em { position: absolute; right: 0; bottom: 0; font-style: normal; font-size: .62rem; color: var(--pl-muted); }
+
+.lh-progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.lh-progress { flex: 1; height: 8px; padding: 0; border: 0; border-radius: 4px; background: var(--tint-softer); cursor: pointer; overflow: hidden; }
+.lh-progress span { display: block; height: 100%; background: var(--room-accent); transition: background .6s ease; }
+.lh-time { font: 600 .75rem/1 'JetBrains Mono', monospace; color: var(--pl-muted); font-variant-numeric: tabular-nums; }
+.lh-line { margin: 0 0 6px; font-size: 1rem; line-height: 1.45; }
+.lh-note, .lh-error { margin: 0; font-size: .82rem; color: var(--pl-muted); }
+.lh-error { color: var(--pl-gold); }
+
+.lh-buy { margin-top: 28px; }
+.lh-buy .plugin-cta-row { margin: 10px 0 0; }
+
+.lh-offer { margin: 0; font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; color: var(--pl-gold); }
+.lh-offer span { font-family: 'Inter', sans-serif; font-size: .8rem; letter-spacing: 0; text-transform: none; color: var(--pl-muted); }
+.lh-trust { margin: 10px 0 0; font-size: .8rem; line-height: 1.5; color: var(--pl-muted); max-width: 760px; }
+
+@media (max-width: 860px) {
+  .lh-stage { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .lh-vfd-num { font-size: 1.6rem; }
+  /* On a phone the buttons take their own width and wrap, so a room with long names (RU-8's kits) never runs off screen. */
+  .lh-buttons { display: flex; flex-wrap: wrap; }
+  .lh-button { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lh, .lh::before, .lh-panel img, .lh-play, .lh-headline span, .lh-progress span, .lh-vfd-num { transition: none; }
+  .lh-play.is-playing { animation: none; }
+}
+
+/* Buttons that come from the room (Download for owners, outline buttons, the family line) use the hero tokens. */
+.lh .btn-outline { color: var(--pl-cream); border-color: var(--pl-line); background: transparent; }
+.lh .btn-outline:hover { border-color: var(--pl-cream); background: var(--pl-tint); }
+.lh .btn-primary { background: var(--pl-btn); color: var(--pl-btn-ink); border-color: var(--pl-btn); }
+
+.lh .plugin-cta-note, .lh [role='status'] { color: var(--pl-muted); }

@@ -3,11 +3,11 @@
 // for a plugin (most of the launch traffic) find the rest of the tool system.
 // One line each, the same wording as the homepage cards.
 export const FREE_TOOLS = [
-  ['arrangement-gps', 'Arrangement GPS', 'A genre-aware arrangement starting point you can rebuild in your DAW.'],
-  ['sensei', 'Sensei Drum Generator', '8-bar MIDI drum patterns in 22 genre styles, exported as MIDI.'],
-  ['subverse-mix-check', 'Subverse Mix Check', 'LUFS, true peak and spectrum of your mix, against a reference.'],
-  ['subverse-splitter', 'Subverse Splitter', 'Stems, vocal removal and key/BPM analysis in the browser.'],
-  ['subverse-visualizer', 'Subverse Visualizer', 'Song and cover into a 1080p YouTube video.'],
-  ['synthpulse', 'Subverse SynthPulse', '16-step synth patterns, exported as MIDI.'],
-  ['time-frequency-sync', 'Time & Frequency Sync', 'BPM-synced delay and reverb times, key-to-Hz and repitch math.'],
+  ['arrangement-gps', 'Arrangement GPS', 'A genre-aware arrangement map to start from, ready to rebuild in your DAW.'],
+  ['sensei', 'Sensei Drum Generator', '8-bar drum patterns in 22 genre styles, straight to MIDI.'],
+  ['subverse-mix-check', 'Mix Check', 'Your mix’s LUFS, sample peak and spectrum, side by side with a reference.'],
+  ['subverse-splitter', 'Splitter', 'Pull stems, remove a vocal or read key and BPM, in the browser.'],
+  ['subverse-visualizer', 'Visualizer', 'Turn a song and its cover into a 1080p video for YouTube.'],
+  ['synthpulse', 'SynthPulse', '16-step synth patterns, ready to drop into your DAW as MIDI.'],
+  ['time-frequency-sync', 'Time & Frequency Sync', 'Delay and reverb times for your BPM, key-to-Hz and repitch maths.'],
 ];

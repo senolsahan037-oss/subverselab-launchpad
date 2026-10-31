@@ -1,4 +1,4 @@
-# Subverse Mix Check - User Guide
+# Mix Check - User Guide
 
 ## Overview
 Mix Check is an evidence-first audio measurement console. It reports what the uploaded signal actually measures and compares it only against a supplied reference or measured genre profile. It does not produce a quality score or pretend to replace listening.

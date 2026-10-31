@@ -142,7 +142,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
       <PageMeta title={`${title} | SubverseLab`} noIndex />
       <h2 style={{ marginBottom: '12px' }}>{title}</h2>
       <p style={{ color: 'var(--color-text-muted)', marginBottom: '32px' }}>{message}</p>
-      <Link to="/" className="btn btn-outline">← Back to Tools</Link>
+      <Link to="/tools" className="btn btn-outline">← Back to Tools</Link>
     </div>
   );
 
@@ -184,7 +184,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
   if (requiresMember && !user && !hasPublicShell) {
     const hasGuide = publishedGuideSlugs?.has?.(product.id);
     return (
-      <div className="container" style={{ maxWidth: '760px', padding: '64px 20px 96px' }}>
+      <div className="container" style={{ maxWidth: 'var(--read-max)', padding: '64px 20px 96px' }}>
         <PageMeta
           title={`${product.title} | SubverseLab`}
           description={product.description}
@@ -192,7 +192,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
           image={product.coverImage}
           robots="noindex,follow"
         />
-        <Link to="/" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>← Back to Tools</Link>
+        <Link to="/tools" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>← Back to Tools</Link>
         <h1 style={{ fontSize: '2.2rem', fontWeight: '800', margin: '20px 0 8px' }}>{product.title}</h1>
         {product.subtitle && (
           <p style={{ color: 'var(--color-primary)', fontWeight: '600', margin: '0 0 20px' }}>{product.subtitle}</p>
@@ -247,7 +247,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
         padding: '12px 24px', borderBottom: '1px solid var(--color-border)',
         display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap'
       }}>
-        <Link to="/" className="btn btn-outline">← Back to Tools</Link>
+        <Link to="/tools" className="btn btn-outline">← Back to Tools</Link>
         <strong style={{ color: 'var(--color-text)' }}>{product.title}</strong>
       </div>
       {!frameReady && (
@@ -259,7 +259,7 @@ export default function ToolRoom({ packs, packsLoading, publishedGuideSlugs, use
           {wakeSeconds >= 12 && (
             <div className="tool-wake-actions">
               <button className="btn btn-primary" onClick={() => { setFrameReady(false); setWakeSeconds(0); setFrameAttempt((value) => value + 1); }}>Retry</button>
-              <Link to="/" className="btn btn-outline">Back to Tools</Link>
+              <Link to="/tools" className="btn btn-outline">Back to Tools</Link>
             </div>
           )}
         </div>

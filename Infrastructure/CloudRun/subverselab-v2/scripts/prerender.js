@@ -34,20 +34,27 @@
 // fresh as the last subverselab-v2 deploy. Content synced straight to
 // Firestore (the normal path — see Rules/05_SYNC.md) won't get its own
 // prerendered page until this service is next rebuilt.
-import { writeFileSync, mkdirSync, readFileSync } from 'fs';
+import { writeFileSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
-import { FREE_TOOLS } from '../src/data/tools.js';
+import { stripToolPrefix } from '../src/utils/toolName.js';
 import {
-  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, SAMPLE_PACKS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, CHECKOUT,
-  FAMILY_NAME, FAMILY_PRICE, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, FAMILY_STARTS_AT, isFamilyLive,
-  ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS,
-  priceText, currentPrice, launchPriceActive, launchNote, ACTIVATION_SHORT,
-  ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor,
+  PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, SAMPLE_PACKS, PRESET_PACKS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, CHECKOUT,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, isFamilyOfferOver, LAUNCH2_NAME,
+  ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS, SHOWCASE_NEW_SLUGS,
+  priceText, currentPrice, launchPriceActive, launchNote, ACTIVATION_SHORT, ACTIVATION_NO_KEY,
+  ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor, RU8_ON_SALE, JINGFANG_ON_SALE, STORE_PLUGINS, DOWNLOAD_ROOM_PLUGINS,
 } from '../src/data/plugins.js';
+import { byLatestRelease } from '../src/data/productDates.js';
+// Store order (root CLAUDE.md, owner 2026-10-28): every product list newest release first (src/data/productDates.js).
+const newestFirst = (slugs) => byLatestRelease(slugs);
 import { MANUALS } from '../src/data/pluginManuals.js';
-import { HOME, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
+import { visiblePacks, packPath, packTitle, packDescription, plateRows, specList, contentsLine, formatLine, folderLabel, mmss, HONESTY_LINE } from '../src/data/packFacts.js';
+import { packOffer, priceLabel } from '../src/data/samplePackPrices.js';
+import { PRESET_PACK_LIST } from '../src/data/presetPacks.js';
+import { HOME, TOOLS, LEARN_INDEX, HELP } from '../src/data/siteMeta.js';
+import { liveNews } from '../src/data/news.js';
 import { LEGAL_PAGES, LEGAL_UPDATED, LEGAL_EMAIL } from '../src/data/legalContent.js';
 import { FORUM_SEED_TOPICS } from '../src/data/forumSeed.js';
 
@@ -194,8 +201,7 @@ function buildHead({ title, description, canonical, image, icon, type = 'website
   const t = escapeHtml(title);
   if (bare) {
     return `<title${RH}>${t}</title>${robots ? `\n    <meta${RH} name="robots" content="${escapeHtml(robots)}" />` : ''}
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2EFE7" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#032825" />`;
+    <meta name="theme-color" content="#F2EFE7" />`;
   }
   const d = escapeHtml(description);
   const ogImage = image || DEFAULT_OG_IMAGE;
@@ -221,8 +227,7 @@ function buildHead({ title, description, canonical, image, icon, type = 'website
     ${canonical ? `<link${RH} rel="canonical" href="${canonical}" />` : ''}${
     robots ? `\n    <meta${RH} name="robots" content="${escapeHtml(robots)}" />` : ''
   }
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F2EFE7" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#032825" />
+    <meta name="theme-color" content="#F2EFE7" />
     <meta${RH} property="og:site_name" content="SubverseLab" />
     <meta${RH} property="og:title" content="${t}" />
     <meta${RH} property="og:description" content="${d}" />
@@ -287,7 +292,7 @@ function softwareApplicationSchema(product, canonical) {
     applicationCategory: 'MultimediaApplication',
     operatingSystem: product.id === 'subverse-splitter' ? 'macOS, Windows' : 'Any (web browser)',
     ...(product.coverImage ? { image: product.coverImage } : {}),
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
     publisher: { '@type': 'Organization', name: 'SubverseLab', url: `${SITE_URL}/` },
   };
 }
@@ -322,7 +327,7 @@ function breadcrumbSchema(trail) {
 // ── Page bodies ────────────────────────────────────────────────────────────
 
 // The call to action a product declares for itself — "Analyze a Mix" rather
-// than "Open Subverse Mix Check". Naming the job is what turns a link into
+// than "Open Mix Check". Naming the job is what turns a link into
 // a reason to click, and keeping the prerendered copy identical to the button
 // the app renders means a crawler and a visitor read the same invitation.
 function primaryAction(product) {
@@ -330,7 +335,47 @@ function primaryAction(product) {
   return label || `Open ${product.title}`;
 }
 
-function buildHomeBody(products, articleBySlug) {
+// MIHENK-style panel tour (plugin.tour): the same steps as PanelTour.jsx, as plain HTML for crawlers.
+function tourHtml(pl) {
+  if (!pl.tour) return '';
+  const steps = pl.tour.steps.map((st, i) => `<li><h3>${i + 1}. ${escapeHtml(st.heading)}</h3><p>${escapeHtml(st.text)}</p></li>`).join('');
+  const practical = (pl.tour.practical || []).map((t) => `<li>${escapeHtml(t)}</li>`).join('');
+  return `\n      <h2>${escapeHtml(pl.tour.heading)}</h2>\n      <p>${escapeHtml(pl.tour.lead)}</p>\n      <ol>${steps}</ol>${practical ? `\n      <h3>In practice</h3><ul>${practical}</ul>` : ''}`;
+}
+
+// "A", "A and B", "A, B and C" — the free plug-ins named from the data, never a hand-kept list.
+const listText = (names) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+
+// The homepage is the news since 2026-10-26 (owner); the tool list moved to /tools (buildToolsBody).
+function buildHomeBody() {
+  return page(`
+      <h1>SubverseLab: Plugins and Tools for Music Producers</h1>
+      <p>SubverseLab builds plugins for macOS and Windows (VST3 and AU; ${escapeHtml(listText(newestFirst(SHOWCASE_FREE_SLUGS).map((slug) => FREE_PLUGINS.find((x) => x.slug === slug).displayName)))} ${SHOWCASE_FREE_SLUGS.length === 1 ? 'is' : 'are'} free) and browser tools for arranging, generating, measuring, mixing and separating music. The tools run in the browser with nothing to install and are free to start; some ask for a free account. Where a tool has a daily limit, the credits that come with any plugin purchase pay for more.</p>
+      ${siteNav()}
+      <section>
+        <h2>News</h2>
+        ${liveNews().map((n) => `<article><h3>${escapeHtml([n.kicker, n.date].filter(Boolean).join(' · '))}</h3><p><strong>${escapeHtml(n.title)}</strong> ${escapeHtml(n.line)}</p>${n.to ? `<p><a href="${n.to}">${escapeHtml(n.cta)}</a></p>` : ''}</article>`).join('')}
+      </section>
+      <section>
+        <h2>Audio plugins</h2>
+        <p>VST3 and AU plugins from SubverseLab. Each is sold on its own.</p>
+        <ul>${newestFirst(SHOWCASE_SLUGS).map((slug) => { const pl = ALL_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} ($${PRICES[slug]})</li>`; }).join('')}</ul>
+        <p>Also free, forever:</p>
+        <ul>${newestFirst(SHOWCASE_FREE_SLUGS).map((slug) => { const pl = FREE_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (free)</li>`; }).join('')}</ul>
+        <p>Sold on their own:</p>
+        <ul>${newestFirst([...SHOWCASE_NEW_SLUGS, ...SHOWCASE_SOLO_SLUGS]).map((slug) => { const pl = SOLO_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(priceText(slug))})</li>`; }).join('')}</ul>
+        <p>Coming soon:</p>
+        <ul>${newestFirst(SHOWCASE_SOON_SLUGS).map((slug) => { const pl = LINE2_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(line2AvailableLine(pl))})</li>`; }).join('')}</ul>
+        <p><a href="/plugins">See all plugins</a></p>
+      </section>
+      <section>
+        <h2>Guides</h2>
+        <p>Every tool has a written guide explaining what it does, how to use it, and what its limits are. <a href="/learn">Browse all guides</a> or read the <a href="/help">help and FAQ</a>.</p>
+      </section>`);
+}
+
+// /tools (2026-10-26): the browser tools, which used to sit on the homepage.
+function buildToolsBody(products, articleBySlug) {
   const toolSections = products.map((p) => {
     const guide = articleBySlug.get(p.id);
     const links = [
@@ -347,26 +392,11 @@ function buildHomeBody(products, articleBySlug) {
   }).join('');
 
   return page(`
-      <h1>SubverseLab: Plugins and Tools for Music Producers</h1>
-      <p>SubverseLab builds plugins for macOS and Windows (VST3 and AU; TABAN and ALEV are free) and browser tools for arranging, generating, measuring, mixing and separating music. The tools run in the browser with nothing to install and are free to start; some ask for a free account. Where a tool has a daily limit, the credits that come with any plugin purchase pay for more.</p>
+      <h1>Browser tools for music producers</h1>
+      <p>Sketch an arrangement, write a drum pattern, check your mix against a reference or split a song into stems, right in your browser. Each one does one job, with nothing to install, and every one is free to start; some ask for a free account. Where a tool has a daily limit, the credits that come with any plugin purchase pay for more.</p>
       ${siteNav()}
-      <section>
-        <h2>Out now: seven audio plugins</h2>
-        <p>VST3 and AU plugins from SubverseLab. Buy each on its own or all seven in the ${escapeHtml(FAMILY_NAME)} for $${FAMILY_PRICE} (regular price $${FAMILY_REGULAR_PRICE}${familyOfferEndLabel() ? `, launch price until ${escapeHtml(familyOfferEndLabel())}` : ''}).</p>
-        <ul>${SHOWCASE_SLUGS.map((slug) => { const pl = ALL_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} ($${PRICES[slug]})</li>`; }).join('')}</ul>
-        <p>Also free, forever:</p>
-        <ul>${SHOWCASE_FREE_SLUGS.map((slug) => { const pl = FREE_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (free)</li>`; }).join('')}</ul>
-        <p>A stem separation app, sold on its own:</p>
-        <ul>${SHOWCASE_SOLO_SLUGS.map((slug) => { const pl = SOLO_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(priceText(slug))})</li>`; }).join('')}</ul>
-        <p>Coming soon:</p>
-        <ul>${SHOWCASE_SOON_SLUGS.map((slug) => { const pl = LINE2_PLUGINS.find((x) => x.slug === slug); return `<li><a href="${pl.path}">${escapeHtml(pl.displayName)}</a>: ${escapeHtml(pl.tagline)} (${escapeHtml(line2AvailableLine(pl))})</li>`; }).join('')}</ul>
-        <p><a href="/plugins">See all plugins</a></p>
-      </section>
-      <h2>The tools</h2>${toolSections}
-      <section>
-        <h2>Guides</h2>
-        <p>Every tool has a written guide explaining what it does, how to use it, and what its limits are. <a href="/learn">Browse all guides</a> or read the <a href="/help">help and FAQ</a>.</p>
-      </section>`);
+      ${toolSections}
+      <p><a href="/learn">Every tool has a guide</a> &middot; <a href="/plugins">Plugins</a> &middot; <a href="/">News</a></p>`);
 }
 
 function buildLearnIndexBody(articles) {
@@ -425,7 +455,7 @@ function renderFaqSection(title, items) {
 function buildHelpPageBody() {
   return page(`
       <h1>Help and FAQ</h1>
-      <p>Common questions about accounts, downloads, and how each tool works.</p>
+      <p>Questions before you buy, or stuck after? Here is how accounts, buying, downloads and credits work, and how each tool works.</p>
       ${siteNav()}
       ${renderFaqSection('General', GENERAL_FAQ)}
       ${renderFaqSection('Tools', TOOL_FAQ)}
@@ -438,7 +468,7 @@ function buildHelpPageBody() {
 async function main() {
   const templatePath = join(ROOT, 'dist', 'index.html');
   const template = readFileSync(templatePath, 'utf8');
-  const fetched = await fetchContent();
+  const fetched = stripToolPrefix(await fetchContent());
   const localMixGuide = readFileSync(join(ROOT, 'src', 'data', 'mix-check-guide.md'), 'utf8');
   const articles = fetched.articles.map((a) => a.slug === 'subverse-mix-check' ? {
     ...a,
@@ -461,10 +491,17 @@ async function main() {
 
   // Plugin and launch pages carry the free-tools links too, so crawlers that
   // land there (most launch traffic) can reach every tool page.
-  const toolsHtml = `<section><h2>Browser tools for producers</h2><ul>${FREE_TOOLS.map(([slug, name, line]) => `<li><a href="/tools/${slug}">${escapeHtml(name)}</a> — ${escapeHtml(line)}</li>`).join('')}</ul></section>`;
-  function writePage(routePath, head, bodyHtml) {
-    if (bodyHtml && /^(plugins|launch)/.test(routePath) && !/manual/.test(routePath)) bodyHtml += toolsHtml;
-    const html = bodyHtml ? renderPageWithBody(template, head, bodyHtml) : renderPage(template, head);
+  // The "Browser tools for producers" strip left /plugins, the rooms and the Download Room on 31 Oct (owner: the header links to
+  // /tools, it need not appear everywhere); the prerendered pages follow.
+  // `data` (optional) goes into the page as <script type="application/json" id="svl-page-data">, outside #root, so the
+  // React page can paint from it at once instead of waiting on Firestore. A data block is never executed, so the CSP
+  // script hashes in server.js are not involved.
+  function writePage(routePath, head, bodyHtml, data) {
+    let html = bodyHtml ? renderPageWithBody(template, head, bodyHtml) : renderPage(template, head);
+    if (data) {
+      const json = JSON.stringify(data).replace(/</g, '\\u003c');
+      html = html.replace('</body>', `<script type="application/json" id="svl-page-data">${json}</script>\n  </body>`);
+    }
     const dir = join(ROOT, 'dist', routePath);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'index.html'), html);
@@ -479,20 +516,21 @@ async function main() {
       '@type': 'WebSite',
       name: 'SubverseLab',
       url: `${SITE_URL}/`,
-      description: 'Browser tools for music producers, free to start.',
-    },
-    {
-      '@context': 'https://schema.org',
-      '@type': 'ItemList',
-      name: 'SubverseLab production tools',
-      itemListElement: products.map((p, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        name: p.title,
-        url: `${SITE_URL}/tools/${p.slug || p.id}`,
-      })),
+      description: 'Audio plugins, packs and browser tools for music producers.',
     },
   ];
+  // The tool list moved with the tools to /tools (2026-10-26).
+  const toolsList = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'SubverseLab production tools',
+    itemListElement: products.map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: p.title,
+      url: `${SITE_URL}/tools/${p.slug || p.id}`,
+    })),
+  };
   writeFileSync(
     templatePath,
     renderPageWithBody(
@@ -503,9 +541,17 @@ async function main() {
         canonical: `${SITE_URL}/`,
         jsonLd: homeSchema,
       }),
-      buildHomeBody(products, articleBySlug)
+      buildHomeBody()
     )
   );
+
+  // Browser tools (/tools, its own page since 2026-10-26).
+  writePage('tools', buildHead({
+    title: TOOLS.title,
+    description: TOOLS.description,
+    canonical: `${SITE_URL}${TOOLS.path}`,
+    jsonLd: [toolsList],
+  }), buildToolsBody(products, articleBySlug));
 
   // Guide index.
   writePage('learn', buildHead({
@@ -560,7 +606,7 @@ async function main() {
         operatingSystem: 'macOS',
         url: `${SITE_URL}/loom`,
         codeRepository: 'https://github.com/senolsahan037-oss/loom',
-        author: { '@type': 'Person', name: 'Şenol Şahan' },
+        author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
         publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
       },
       breadcrumbSchema([
@@ -604,39 +650,29 @@ async function main() {
   const pluginsCrumb = { name: 'Plugins', url: `${SITE_URL}${PLUGINS_INDEX.path}` };
   const homeCrumb = { name: 'Home', url: `${SITE_URL}/` };
 
-  // The static HTML is the state AT BUILD TIME: before FAMILY_STARTS_AT no
-  // family block; from it the plugin family next to the single prices. The React
-  // pages decide again in the visitor's browser; rebuild after the switch to
-  // refresh what crawlers see.
-  const FAMILY_LIVE = isFamilyLive();
-  console.log(`prerender: plugin family ${FAMILY_LIVE ? 'LIVE' : `not live yet (starts ${FAMILY_STARTS_AT})`}`);
-  const bundleLine = FAMILY_LIVE
-    ? `<h2>${escapeHtml(FAMILY_NAME)} &mdash; $${FAMILY_PRICE}</h2>
-      <p>${escapeHtml(FAMILY_PLUGINS.map((p) => p.displayName).join(', '))}. Launch price until ${escapeHtml(familyOfferEndLabel())}, regular price $${FAMILY_REGULAR_PRICE}. ${escapeHtml(UPDATES_LINE)} <a href="${LAUNCH2.path}">The plugin family</a> &middot; <a href="${LAUNCH.path}">Kubbe and Kaset launch</a>.</p>
-      <p>Each on its own: ${escapeHtml(FAMILY_PLUGINS.map((p) => `${p.displayName} $${PRICES[p.slug]}`).join(' · '))}.</p>`
-    : '';
-  // One price block per product page (decisions 2026-10-10): price, family, the date and regular price once, updates once.
-  const ownLine = (pl) => FAMILY_LIVE
-    ? `$${PRICES[pl.slug]} on its own, or all seven for $${FAMILY_PRICE}. Launch price until ${escapeHtml(familyOfferEndLabel())} (regular $${FAMILY_REGULAR_PRICE}). ${escapeHtml(UPDATES_LINE)}`
-    : `$${PRICES[pl.slug]} on its own. ${escapeHtml(UPDATES_LINE)}`;
-  const BUY_SENTENCE = 'Sold through Lemon Squeezy; the download and your licence key appear on your Account page within a minute.';
+  // The plugin family ran 5 Oct - 1 Nov 2026 and is retired (FAMILY_RETIRED, owner 2026-10-28): every product is sold on its own.
+  const ownLine = (pl) => `$${PRICES[pl.slug]}. ${escapeHtml(UPDATES_LINE)}`;
+  // One route for every room (PluginRoom.jsx, owner decision 2026-10-15).
+  const BUY_SENTENCE = 'Sold through Lemon Squeezy. After you pay, sign in with the e-mail you paid with: the download appears on this page and on your Account page, with your licence key.';
   writePage('plugins', buildHead({
     title: PLUGINS_INDEX.title,
     description: PLUGINS_INDEX.description,
     canonical: `${SITE_URL}${PLUGINS_INDEX.path}`,
     jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb])],
   }), `<h1>Plugins</h1>
-      <p>Audio plugins you install in your own DAW. ${escapeHtml(FORMATS)}.</p>
-      ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
-      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      ${bundleLine}
+      <p>Plugins and apps for macOS and Windows, each made for one job in your track. Open one to meet it: the real panel, what every control does, and how to make it yours.</p>
+      ${STORE_PLUGINS.map((pl) => (FAMILY_PLUGINS.includes(pl)
+    ? `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
+      <p>${escapeHtml(pl.tagline)}</p>`
+    : LINE2_PLUGINS.includes(pl)
+      ? `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(line2AvailableLine(pl))}</h2>
+      <p>${escapeHtml(pl.description)}</p>`
+      : FREE_PLUGINS.includes(pl)
+        ? `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; free</h2>
+      <p>${escapeHtml(pl.description)}</p>`
+        : `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(priceText(pl.slug))}</h2>
+      <p>${escapeHtml(pl.description)}</p>`)).join('\n      ')}
       <p>${escapeHtml(TRUST_LINE)}</p>
-      ${LINE2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(line2AvailableLine(pl))}</h2>
-      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      ${SOLO_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(priceText(pl.slug))}</h2>
-      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      ${FREE_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; free</h2>
-      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <nav><a href="/">Tools</a> &middot; <a href="/loom">Loom</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   for (const pl of PLUGINS) {
@@ -654,25 +690,24 @@ async function main() {
           operatingSystem: 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
-          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD' },
-          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+          author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
       ],
     }), `<h1>${escapeHtml(pl.name)}</h1>
-      <p>${escapeHtml(pl.tagline)}. $${PRICES[pl.slug]} &middot; ${escapeHtml(FORMATS)}.</p>
+      <p>${escapeHtml(pl.tagline.replace(/\.$/, ''))}. $${PRICES[pl.slug]} &middot; ${escapeHtml(FORMATS)}.</p>
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
-      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}${tourHtml(pl)}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Buying and downloading</h2>
       <p>${ownLine(pl)}</p>
       <p>${escapeHtml(trustLineFor(pl.slug))}</p>
       <p>${BUY_SENTENCE} ${escapeHtml(ACTIVATION_LINE)}</p>
-      <p>The free first ${LAUNCH.codesTotal.toLocaleString('en-US')} are claimed. <a href="${LAUNCH.path}">Kubbe and Kaset launch page</a>.</p>
       <p><a href="${pl.manualPage}">${escapeHtml(pl.name)} manual</a> &middot; <a href="${pl.manual}">PDF</a></p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
@@ -728,7 +763,7 @@ async function main() {
       <p>The free first ${LAUNCH.codesTotal.toLocaleString('en-US')} are claimed &mdash; thank you. Kubbe and Kaset are $${PRICES.kubbe} each. ${escapeHtml(UPDATES_LINE)}</p>
       ${PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      <p>${FAMILY_LIVE ? `Or the ${escapeHtml(FAMILY_NAME)}: seven products, ${escapeHtml(FAMILY_OFFER_TERMS)}. ` : ''}${escapeHtml(FORMATS)}.</p>
+      <p>${escapeHtml(FORMATS)}.</p>
       <p>${escapeHtml(TRUST_LINE)}</p>
       <h2>Download Room</h2>
       <ol><li><strong>Buy.</strong> Buy with Lemon Squeezy.</li><li><strong>Sign in.</strong> Sign in on this page with the e-mail you paid with.</li><li><strong>Download.</strong> Download Kubbe and Kaset for macOS or Windows.</li><li><strong>Install.</strong> ${escapeHtml(ACTIVATION_LINE)}</li></ol>
@@ -737,6 +772,10 @@ async function main() {
       <h2>Getting the plugins</h2>
       <p>Buy, then sign in on subverselab.com/launch with the same e-mail and download. ${escapeHtml(ACTIVATION_LINE)}</p>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // The manual line of a room: the web manual and the PDF, as PluginRoom.jsx shows them.
+  const manualHtml = (pl) => (!pl.manual ? '' : `<h2>Manual</h2>
+      <p>${pl.manualPage ? `<a href="${pl.manualPage}">${escapeHtml(pl.displayName)} manual</a> &middot; <a href="${pl.manual}">PDF</a>` : `<a href="${pl.manual}">${escapeHtml(pl.displayName)} manual (PDF)</a>`}</p>`);
 
   // Launch 2: KORO, YANKI, HAVA, MIHENK and TUTKAL, sold on their own and in the family, own counter.
   // Same rule as above: no codes-left number is written here.
@@ -755,26 +794,25 @@ async function main() {
           operatingSystem: 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
-          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD' },
-          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+          author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.name, url: `${SITE_URL}${pl.path}` }]),
       ],
     }), `<h1>${escapeHtml(pl.name)}</h1>
-      <p>${escapeHtml(pl.tagline)} ${FAMILY_LIVE ? `$${PRICES[pl.slug]} &middot;` : `Out ${escapeHtml(pl.releaseLabel)} &middot;`} ${escapeHtml(pl.formats)}.</p>
+      <p>${escapeHtml(pl.tagline)} $${PRICES[pl.slug]} &middot; ${escapeHtml(pl.formats)}.</p>
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
-      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}${tourHtml(pl)}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
-      <h2>${FAMILY_LIVE ? 'Buying and downloading' : 'Price and download'}</h2>
-      ${FAMILY_LIVE
-        ? `<p>${ownLine(pl)}</p>
+      <h2>Buying and downloading</h2>
+      <p>${ownLine(pl)}</p>
       <p>${escapeHtml(trustLineFor(pl.slug))}</p>
-      <p>${BUY_SENTENCE} ${escapeHtml(LAUNCH2.askHow)}. <a href="${LAUNCH2.path}">How the family offer works</a>.</p>`
-        : `<p>${escapeHtml(pl.displayName)} is out ${escapeHtml(pl.releaseLabel)}. The price is shown from that day. <a href="${LAUNCH2.path}">Launch page</a>.</p>`}
+      <p>${BUY_SENTENCE} ${escapeHtml(ACTIVATION_LINE)}</p>
+      ${manualHtml(pl)}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
@@ -791,12 +829,12 @@ async function main() {
           '@type': 'SoftwareApplication',
           name: `SubverseLab ${pl.displayName}`,
           applicationCategory: 'MultimediaApplication',
-          operatingSystem: 'macOS, Windows',
+          operatingSystem: pl.os || 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
           // No price until the checkout exists (owner 12 Oct).
           ...(CHECKOUT[pl.slug] ? { offers: { '@type': 'Offer', price: String(PRICES[pl.slug]), priceCurrency: 'USD', availability: 'https://schema.org/InStock' } } : {}),
-          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
@@ -806,12 +844,13 @@ async function main() {
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
-      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}${tourHtml(pl)}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Price and availability</h2>
-      <p>${escapeHtml(line2AvailableLine(pl))}. ${escapeHtml(UPDATES_LINE)}</p>
-      <p>${escapeHtml(TRUST_LINE)}</p>
+      <p>${escapeHtml(line2AvailableLine(pl))}. ${escapeHtml(pl.updatesNote ?? UPDATES_LINE)}</p>
+      <p>${escapeHtml(trustLineFor(pl.slug))}</p>
+      ${manualHtml(pl)}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
@@ -829,11 +868,11 @@ async function main() {
           '@type': 'SoftwareApplication',
           name: `SubverseLab ${pl.displayName}`,
           applicationCategory: 'MultimediaApplication',
-          operatingSystem: 'macOS',
+          operatingSystem: 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
           offers: { '@type': 'Offer', price: String(currentPrice(pl.slug)), priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
-          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
@@ -843,13 +882,14 @@ async function main() {
       <p>${escapeHtml(pl.intro)}</p>
       <h2>${escapeHtml(pl.modesLabel)}</h2>
       ${pl.modes.map((m) => `<h3>${escapeHtml(m.name)}</h3>\n      <p>${escapeHtml(m.text)}</p>`).join('\n      ')}
-      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}${tourHtml(pl)}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <p>${escapeHtml(pl.controlsNote)}</p>
       <h2>Price and download</h2>
-      <p>${launchPriceActive(pl.slug) ? `<s>$${PRICES[pl.slug]}</s> $${currentPrice(pl.slug)} &mdash; ${escapeHtml(launchNote(pl.slug))}` : `$${PRICES[pl.slug]}`}. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(ACTIVATION_SHORT)}</p>
+      <p>${launchPriceActive(pl.slug) ? `<s>$${PRICES[pl.slug]}</s> $${currentPrice(pl.slug)} &mdash; ${escapeHtml(launchNote(pl.slug))}` : `$${PRICES[pl.slug]}`}. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(pl.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT)}</p>
       <p>${escapeHtml(trustLineFor(pl.slug))}</p>
+      ${manualHtml(pl)}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
@@ -869,8 +909,8 @@ async function main() {
           operatingSystem: 'macOS, Windows',
           url: `${SITE_URL}${pl.path}`,
           image: `${SITE_URL}${pl.og}`,
-          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-          author: { '@type': 'Person', name: 'Şenol Şahan' },
+          offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+          author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
           publisher: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
         },
         breadcrumbSchema([homeCrumb, pluginsCrumb, { name: pl.displayName, url: `${SITE_URL}${pl.path}` }]),
@@ -878,37 +918,30 @@ async function main() {
     }), `<h1>${escapeHtml(pl.displayName)}</h1>
       <p>${escapeHtml(pl.tagline)} Free, forever &middot; ${escapeHtml(pl.formats)}.</p>
       <p>${escapeHtml(pl.intro)}</p>
-      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}
+      ${pl.sections.map((sec) => `<h2>${escapeHtml(sec.heading)}</h2>\n      <p>${escapeHtml(sec.text)}</p>`).join('\n      ')}${tourHtml(pl)}
       <h2>The controls</h2>
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <h2>Get it free</h2>
-      <p>The checkout asks for an e-mail address, no card. The download then appears on your account page. ${escapeHtml(ACTIVATION_LINE_FREE)}</p>
+      <p>Sign in first so the order lands on your account; the checkout asks only for an e-mail address, no card. The download then appears on this page and on your Account page. ${escapeHtml(ACTIVATION_LINE_FREE)}</p>
       <p>${escapeHtml(TRUST_LINE_FREE)}</p>
-      <p><a href="${pl.manual}">${escapeHtml(pl.displayName)} manual (PDF)</a></p>
+      ${manualHtml(pl)}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
+  const roomPrice = (pl) => (pl.free ? 'free' : `$${currentPrice(pl.slug)}`);
   writePage('launch2', buildHead({
     title: LAUNCH2.title,
     description: LAUNCH2.description,
     canonical: `${SITE_URL}${LAUNCH2.path}`,
-    image: `${SITE_URL}${FAMILY_LIVE ? FAMILY_IMAGE : LAUNCH2_PLUGINS[0].og}`,
-    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: FAMILY_LIVE ? FAMILY_NAME : 'KORO, YANKI, HAVA and MIHENK', url: `${SITE_URL}${LAUNCH2.path}` }])],
-  }), FAMILY_LIVE
-    ? `<h1>${escapeHtml(FAMILY_NAME)} &mdash; seven products, $${FAMILY_PRICE}</h1>
-      <p>${escapeHtml(LAUNCH2.offerNow)}. Launch price until ${escapeHtml(familyOfferEndLabel())} &middot; regular $${FAMILY_REGULAR_PRICE}. ${escapeHtml(UPDATES_LINE)}</p>
-      <p>Every plugin is also sold on its own. ${escapeHtml(LAUNCH2.askHow)}.</p>
-      <p>${escapeHtml(TRUST_LINE)}</p>
-      ${FAMILY_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; $${PRICES[pl.slug]} on its own</h2>
+    image: `${SITE_URL}${LAUNCH2.image}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, pluginsCrumb, { name: LAUNCH2_NAME, url: `${SITE_URL}${LAUNCH2.path}` }])],
+  }), `<h1>${escapeHtml(LAUNCH2_NAME)} &mdash; Download Room</h1>
+      <p>${escapeHtml(LAUNCH2.offerNow)}. ${escapeHtml(UPDATES_LINE)}</p>
+      <p>${escapeHtml(LAUNCH2.askHow)}.</p>
+      ${DOWNLOAD_ROOM_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a> &mdash; ${roomPrice(pl)}</h2>
       <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
-      <p>All seven together: $${FAMILY_PRICE}.</p>
       <h2>Download Room</h2>
       <ol>${LAUNCH2.steps.map(([h, t]) => `<li><strong>${escapeHtml(h)}.</strong> ${escapeHtml(t)}</li>`).join('')}</ol>
-      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`
-    : `<h1>KORO, YANKI, HAVA and MIHENK &mdash; out October 5</h1>
-      <p>Four new SubverseLab products, out October 5. Price and checkout open with the release.</p>
-      ${LAUNCH2_PLUGINS.map((pl) => `<h2><a href="${pl.path}">${escapeHtml(pl.name)}</a></h2>
-      <p>${escapeHtml(pl.description)}</p>`).join('\n      ')}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
   writePage('testers', buildHead({
@@ -927,18 +960,63 @@ async function main() {
       <ul><li>Install the plugins.</li><li>Use them in real sessions.</li><li>Report what breaks, and on which operating system and DAW.</li><li>Tell us where you heard about SubverseLab.</li></ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
 
+  // Sample packs: the catalogue and one page per pack, every fact from src/data/samplePacks.js (scripts/import-sample-packs.js).
+  const packs = visiblePacks();
+  const packLine = (p) => {
+    const o = packOffer(p);
+    return `${escapeHtml(p.kindLine)}. ${escapeHtml(contentsLine(p))}, ${escapeHtml(formatLine(p))}.${o.buyable ? ` ${escapeHtml(priceLabel(o.price))}.` : ' Available soon.'}`;
+  };
   writePage('sample-packs', buildHead({
     title: SAMPLE_PACKS.title,
     description: SAMPLE_PACKS.description,
     canonical: `${SITE_URL}${SAMPLE_PACKS.path}`,
     jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Sample packs', url: `${SITE_URL}${SAMPLE_PACKS.path}` }])],
-  }), `<h1>Sample packs: under construction</h1>
-      <p>We are building the SubverseLab pack store the way we built our plugins: our own sound first, measured and finished, then the producers we believe in.</p>
-      <p>Producers who want to publish their packs with us can apply on this page.</p>
-      <p>Every pack is checked and packaged by SubverseLab before it is published. You keep the rights to your sounds; nothing is exclusive.</p>
-      <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }), `<h1>Sample packs</h1>
+      <p>Drum kits, loops, FX and MIDI made at SubverseLab, mixed and finished so they sit in a beat as they are. Press play on any cover: every preview is made only from the files in that pack, so what you hear is what you get.</p>
+      <ul>${packs.map((p) => `<li><a href="${packPath(p)}">${escapeHtml(p.name)}</a>: ${packLine(p)}</li>`).join('')}</ul>
+      <p>Buy a pack once and it is yours: no subscription. Producers who want to publish their packs with us can apply on this page.</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/preset-packs">Preset packs</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  for (const p of packs) {
+    const o = packOffer(p);
+    writePage(`sample-packs/${p.slug}`, buildHead({
+      title: packTitle(p),
+      description: packDescription(p),
+      canonical: `${SITE_URL}${packPath(p)}`,
+      image: `${SITE_URL}${p.cover.jpg}`,
+      jsonLd: [
+        breadcrumbSchema([homeCrumb, { name: 'Sample packs', url: `${SITE_URL}${SAMPLE_PACKS.path}` }, { name: p.name, url: `${SITE_URL}${packPath(p)}` }]),
+        { '@context': 'https://schema.org', '@type': 'Product', name: p.fullName, description: packDescription(p), image: `${SITE_URL}${p.cover.jpg}`, url: `${SITE_URL}${packPath(p)}`,
+          brand: { '@type': 'Organization', name: 'SubverseLab', url: SITE_URL },
+          ...(o.buyable ? { offers: { '@type': 'Offer', price: String(o.price), priceCurrency: 'USD', availability: 'https://schema.org/InStock' } } : {}) },
+      ],
+    }), `<h1>${escapeHtml(p.name)}</h1>
+      <p>${packLine(p)}</p>
+      <ul>${specList(p).map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+      <h2>Listen</h2>
+      <p>A ${Math.round(p.snippet.seconds)}-second preview. ${escapeHtml(HONESTY_LINE)}</p>
+      <ol>${p.scenes.map((sc) => `<li>${escapeHtml(mmss(sc.t))} ${escapeHtml(sc.label)}</li>`).join('')}</ol>
+      <h2>Technical details</h2>
+      <dl>${plateRows(p).map(([k, v]) => `<dt>${escapeHtml(k)}</dt><dd>${escapeHtml(v)}</dd>`).join('')}</dl>
+      <h2>Inside the folder</h2>
+      <ul>${p.docs.map((d) => `<li>${escapeHtml(d)}</li>`).join('')}${p.folders.map((f) => `<li>${escapeHtml(folderLabel(f.folder))}/ (${f.count} files)</li>`).join('')}</ul>
+      ${p.licence ? `<h2>Licence summary${p.licence.draft ? ' (draft)' : ''}</h2><ol>${p.licence.clauses.map((c) => `<li>${c.title ? `<strong>${escapeHtml(c.title)}.</strong> ` : ''}${escapeHtml(c.text)}</li>`).join('')}</ol>` : ''}
+      <nav><a href="/sample-packs">Sample packs</a> &middot; <a href="/plugins">Plugins</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
 
-  // Forum (public, in the nav): its own title/description/canonical instead of the homepage shell's. /forum/<id> stays client-only.
+  writePage('preset-packs', buildHead({
+    title: PRESET_PACKS.title,
+    description: PRESET_PACKS.description,
+    canonical: `${SITE_URL}${PRESET_PACKS.path}`,
+    jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Preset packs', url: `${SITE_URL}${PRESET_PACKS.path}` }])],
+  }), `<h1>Preset packs</h1>
+      <p>Ableton Live racks made and checked by SubverseLab. Drop one on a track and it is already doing its job; the named macros take it from there.</p>
+      ${PRESET_PACK_LIST.map((pk) => `<h2>${escapeHtml(pk.name)}</h2>
+      <p>${escapeHtml(pk.kind)}. ${escapeHtml(pk.summary)}</p>
+      <ul>${pk.inside.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+      <p>Requirements: ${escapeHtml(pk.requirements.join('; '))}. ${pk.free ? 'Free with a SubverseLab account' : packOffer(pk.id).buyable ? escapeHtml(priceLabel(packOffer(pk.id).price)) : 'Available soon'}.</p>`).join('\n      ')}
+      <nav>${RU8_ON_SALE ? '<a href="/plugins/ru8">RU-8</a> &middot; ' : ''}<a href="/sample-packs">Sample packs</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // Forum (public, in the footer): its own title/description/canonical instead of the homepage shell's. /forum/<id> stays client-only.
   writePage('forum', buildHead({
     title: 'Forum | SubverseLab',
     description: 'Questions and answers about SubverseLab plugins and browser tools, from producers and from us.',
@@ -946,8 +1024,27 @@ async function main() {
     jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Forum', url: `${SITE_URL}/forum` }])],
   }), `<h1>SubverseLab Forum</h1>
       <p>Ask a clear question, share what you tried, and add an answer when you know one.</p>
-      <ul>${FORUM_SEED_TOPICS.map((t) => `<li>${escapeHtml(t.title)}</li>`).join('')}</ul>
+      <ul>${FORUM_SEED_TOPICS.map((t) => `<li><a href="/forum/${t.id}">${escapeHtml(t.title)}</a></li>`).join('')}</ul>
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // The seed topics (src/data/forumSeed.js) are static, so each gets its own document. Before this, /forum/<id> was
+  // served the homepage shell, whose canonical is the homepage: Search Console reported /forum/seed-topic-3 as
+  // "Duplicate, Google chose different canonical than user" (22 Oct 2026). Topics people post stay client-only.
+  for (const t of FORUM_SEED_TOPICS) {
+    const canonical = `${SITE_URL}/forum/${t.id}`;
+    writePage(`forum/${t.id}`, buildHead({
+      title: `${t.title} | SubverseLab Forum`,
+      description: toMetaDescription(t.body),
+      canonical,
+      type: 'article',
+      jsonLd: [breadcrumbSchema([homeCrumb, { name: 'Forum', url: `${SITE_URL}/forum` }, { name: t.title, url: canonical }])],
+    }), `<h1>${escapeHtml(t.title)}</h1>
+      <p>${escapeHtml(t.category)} &middot; ${escapeHtml(t.authorName)}</p>
+      <p>${escapeHtml(t.body)}</p>
+      <h2>Answers</h2>
+      ${t.replies.length ? `<ul>${t.replies.map((r) => `<li>${escapeHtml(r.body)}</li>`).join('')}</ul>` : '<p>No answers yet.</p>'}
+      <nav><a href="/forum">Forum</a> &middot; <a href="/plugins">Plugins</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
 
   // Private pages: never the homepage title or canonical, never indexed (robots.txt already disallows them).
   writePage('account', buildHead({ title: 'Account | SubverseLab', robots: 'noindex, nofollow', bare: true }),
@@ -977,7 +1074,7 @@ async function main() {
       canonical: `${SITE_URL}${doc.path}`,
       jsonLd: [breadcrumbSchema([homeCrumb, { name: doc.h1, url: `${SITE_URL}${doc.path}` }])],
     }), `<h1>${escapeHtml(doc.h1)}</h1>
-      <p>Last updated: ${LEGAL_UPDATED}</p>
+      <p>Last updated: ${doc.updated || LEGAL_UPDATED}</p>
       <p>${escapeHtml(doc.intro)}</p>
       ${doc.sections.map((sec) => `<h2>${escapeHtml(sec.h)}</h2>
       ${sec.blocks.map((b) => (Array.isArray(b) ? `<ul>${b.map((li) => `<li>${legalMail(li)}</li>`).join('')}</ul>` : `<p>${legalMail(b)}</p>`)).join('\n      ')}`).join('\n      ')}
@@ -1006,7 +1103,15 @@ async function main() {
           { name: a.title, url: canonical },
         ]),
       ],
-    }), buildArticleBody(a, product));
+    }), buildArticleBody(a, product), {
+      // ArticlePage paints from this. Google's renderer (Search Console live test, 22 Oct 2026) never got the
+      // Firestore answer and saw an empty page, which Search Console reported as "Soft 404" for these guides.
+      article: {
+        slug: a.slug, title: a.title, body: a.body || '', answer: a.answer || '', category: a.category || '',
+        keywords: a.keywords || [], metaTitle: a.metaTitle || '', metaDescription: a.metaDescription || '',
+        type: a.type || '', updatedAt: a.updatedAt && !Number.isNaN(Date.parse(a.updatedAt)) ? new Date(a.updatedAt).toISOString() : null,
+      },
+    });
   }
 
   // Tool Room pages for every remote tool. Member-gated ones are included
@@ -1037,6 +1142,11 @@ async function main() {
   }
 
   console.log(`prerender: wrote ${written} route(s) plus the homepage`);
+  // JING FANG's images live in public/plugins/jingfang/ for the local preview (npm run dev); they ship only once it is on sale.
+  if (!JINGFANG_ON_SALE) {
+    rmSync(join(ROOT, 'dist', 'plugins', 'jingfang'), { recursive: true, force: true });
+    console.log('prerender: JING FANG is not on sale, dist/plugins/jingfang removed');
+  }
 }
 
 main().catch((err) => {

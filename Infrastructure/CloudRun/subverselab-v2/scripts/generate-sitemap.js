@@ -5,9 +5,15 @@
 // freshness is tied to deploys. Content added straight to Firestore (the
 // normal path for this site — see Rules/05_SYNC.md) won't appear here until
 // subverselab-v2 is next rebuilt and deployed.
+import { visiblePacks, packPath } from '../src/data/packFacts.js';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { fetchContent, isoDate, ROOT, SITE_URL } from './lib/fetchContent.js';
+import { stripToolPrefix } from '../src/utils/toolName.js';
+import { REFUNDS } from '../src/data/legalContent.js';
+import { RU8_ON_SALE, JINGFANG_ON_SALE } from '../src/data/plugins.js';
+import { MANUALS } from '../src/data/pluginManuals.js';
+import { llmsProductIndex, llmsProductSections } from './lib/llmsProducts.js';
 
 function urlEntry(loc, lastmod, priority) {
   return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <priority>${priority}</priority>\n  </url>`;
@@ -85,8 +91,8 @@ function group(userAgent) {
 function buildRobots() {
   const groups = ['*', ...AI_CRAWLERS].map(group).join('\n\n');
 
-  return `# SubverseLab — free tools for music producers
-# Full guide text for every tool is available at ${SITE_URL}/llms-full.txt
+  return `# SubverseLab — plug-ins, sample packs and tools for music producers
+# Full text of every product page and tool guide is available at ${SITE_URL}/llms-full.txt
 #
 # Every group repeats the Disallow lines on purpose. robots.txt groups do not
 # inherit from one another — a crawler obeys only its own most specific group.
@@ -114,9 +120,10 @@ function buildLlmsTxt(articles, products) {
 
   return `# SubverseLab
 
-> Free, browser-based tools for music producers — drum and MIDI generation, arrangement planning, mix measurement, BPM/frequency math, and stem separation. Every tool runs in the browser; nothing to install. Every tool is free to start; some require a free account. Where a tool has a daily limit, its own guide states it, and the credits that come with any plugin purchase (every dollar is 100 credits) pay for more.
+> Audio plug-ins and apps for macOS and Windows, sample packs, Ableton Live preset packs, and browser tools for music producers. The plug-ins, packs and the open-source Loom server are listed first, from the same data the store pages use; the browser tools and their guides follow. Every browser tool runs in the browser; nothing to install. Every tool is free to start; some require a free account. Where a tool has a daily limit, its own guide states it, and the credits that come with any plugin purchase (every dollar is 100 credits) pay for more.
 
-SubverseLab publishes independent, single-purpose production tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
+${llmsProductIndex()}
+SubverseLab also publishes single-purpose browser tools. Each tool has a written guide describing exactly what it does, how to use it, and what its limits are. The tools do not fabricate measurements or scores: where a tool reports a number, that number is measured from the audio or derived from a stated formula.
 
 ## Tools
 
@@ -129,26 +136,43 @@ ${guideLines}
 ## Optional
 
 - [Help and FAQ](${SITE_URL}/help): accounts, sign-in, downloads, and per-tool questions.
-- [Full guide text](${SITE_URL}/llms-full.txt): every guide above, in full, as plain text.
+- [Purchases and Refunds](${SITE_URL}/refunds): how buying works, how to ask for a refund (within 18 days of the purchase, info@subverselab.com, order number + checkout e-mail), Lemon Squeezy as merchant of record deciding refunds case by case, and what a refund changes (licence, downloads, credits).
+- [Terms of Use](${SITE_URL}/terms) and [Privacy Policy](${SITE_URL}/privacy).
+- [Full text](${SITE_URL}/llms-full.txt): every plug-in page and every guide above, in full, as plain text.
 `;
 }
 
+// The refund policy in full, from the same data as the /refunds page.
+function refundsText() {
+  return [`# ${REFUNDS.h1}`, `Source: ${SITE_URL}${REFUNDS.path} (last updated ${REFUNDS.updated})`, '', REFUNDS.intro,
+    ...REFUNDS.sections.flatMap((sc) => ['', `## ${sc.h}`, ...sc.blocks.map((b) => `- ${b}`)])].join('\n');
+}
+
 function buildLlmsFullTxt(articles) {
+  const products = llmsProductSections();
   const sections = articles
     .filter((a) => a.slug)
     .map((a) => `# ${a.title}\nSource: ${SITE_URL}/learn/${a.slug}\n\n${String(a.body || a.answer || '').trim()}`)
     .join('\n\n---\n\n');
 
-  return `# SubverseLab — complete tool guides
+  return `# SubverseLab — products and tool guides
 
-> Full text of every published SubverseLab guide. Index: ${SITE_URL}/llms.txt
+> Every plug-in and app as its page describes it, then the full text of every published browser-tool guide. Index: ${SITE_URL}/llms.txt
+
+${products}
+
+---
+
+${refundsText()}
+
+---
 
 ${sections}
 `;
 }
 
 async function main() {
-  const { articles, products } = await fetchContent();
+  const { articles, products } = stripToolPrefix(await fetchContent());
 
   const entries = [
     urlEntry(`${SITE_URL}/`, new Date().toISOString().slice(0, 10), '1.0'),
@@ -159,11 +183,12 @@ async function main() {
     // the site far more than it is navigated to from inside it.
     urlEntry(`${SITE_URL}/loom`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/forum`, new Date().toISOString().slice(0, 10), '0.7'),
+    urlEntry(`${SITE_URL}/tools`, new Date().toISOString().slice(0, 10), '0.7'),   // its own page since 2026-10-26
     urlEntry(`${SITE_URL}/plugins`, new Date().toISOString().slice(0, 10), '0.7'),
     urlEntry(`${SITE_URL}/plugins/kubbe`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/kaset`, new Date().toISOString().slice(0, 10), '0.8'),
-    urlEntry(`${SITE_URL}/plugins/kubbe/manual`, new Date().toISOString().slice(0, 10), '0.6'),
-    urlEntry(`${SITE_URL}/plugins/kaset/manual`, new Date().toISOString().slice(0, 10), '0.6'),
+    // Every owner's manual page (src/data/pluginManuals.js MANUALS, the same list App.jsx routes and prerender.js writes).
+    ...MANUALS.map((m) => urlEntry(`${SITE_URL}${m.path}`, new Date().toISOString().slice(0, 10), '0.6')),
     urlEntry(`${SITE_URL}/launch`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/koro`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/yanki`, new Date().toISOString().slice(0, 10), '0.8'),
@@ -172,14 +197,22 @@ async function main() {
     urlEntry(`${SITE_URL}/plugins/tutkal`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/taban`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/alev`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/kiyma`, new Date().toISOString().slice(0, 10), '0.8'),
+    ...(RU8_ON_SALE ? [urlEntry(`${SITE_URL}/plugins/ru8`, new Date().toISOString().slice(0, 10), '0.8')] : []),
+    ...(JINGFANG_ON_SALE ? [urlEntry(`${SITE_URL}/plugins/jingfang`, new Date().toISOString().slice(0, 10), '0.8')] : []),   // only once on sale   // RU-8 only once on sale
     urlEntry(`${SITE_URL}/plugins/adalet`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/seda`, new Date().toISOString().slice(0, 10), '0.8'),
+    urlEntry(`${SITE_URL}/plugins/torna`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/elek`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/launch2`, new Date().toISOString().slice(0, 10), '0.8'),
     // /testers is noindex until the owner opens the call (prerender.js); no sitemap entry for a noindex page.
     urlEntry(`${SITE_URL}/sample-packs`, new Date().toISOString().slice(0, 10), '0.5'),
+    urlEntry(`${SITE_URL}/preset-packs`, new Date().toISOString().slice(0, 10), '0.5'),
+    // One URL per pack shown in the store (src/data/packFacts.js visiblePacks; scripts/import-sample-packs.js).
+    ...visiblePacks().map((p) => urlEntry(`${SITE_URL}${packPath(p)}`, new Date().toISOString().slice(0, 10), '0.6')),
     urlEntry(`${SITE_URL}/privacy`, '2026-10-02', '0.3'),
     urlEntry(`${SITE_URL}/terms`, '2026-10-02', '0.3'),
+    urlEntry(`${SITE_URL}/refunds`, '2026-10-19', '0.3'),
   ];
 
   // Published guides — the real, fully public, keyword-rich SEO content.

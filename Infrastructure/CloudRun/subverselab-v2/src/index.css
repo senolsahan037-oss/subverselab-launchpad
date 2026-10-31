@@ -3,13 +3,12 @@
    (Assets/Brand/_kit) — DIN ships only with macOS, Oswald is the closest
    industrial-condensed equivalent available as a web font. Headings only;
    Inter still carries all running text. This, the emblem, the fader-rule
-   divider and the shared gold accent are the whole of the brand connection —
-   the product UI stays dark on purpose. */
+   divider and the shared gold accent are the whole of the brand connection. */
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&display=swap');
 
 /* ============================================================
-   HIGH STEREO DESIGN SYSTEM — SubverseLab v2
-   Palette: Deep Black · Gold · Dark Teal
+   SubverseLab v2 — light theme cream (#F2EFE7) with ink (#032825), dark theme dark green; gold (#C5A059) rationed.
+   Colours and page widths are tokens on :root / :root[data-theme="dark"]; nothing else sets them.
    ============================================================ */
 :root {
   /* ── Light: the brand palette (Assets/Brand/_kit) ─────────────────────────
@@ -27,6 +26,12 @@
      ink-green on cream; teal is for tool/browser context only; the mint
      (--pl-vfd) is the plugins' device-display colour and is not a chip colour. */
 
+  /* Page widths, the one place they are set (owner 28 Oct: no wide empty bands either side).
+     --page-max: every page and layout column; --read-max: running text only (legal, help, manuals), kept to a
+     readable line length. A component never sets its own pixel max-width for a page column. */
+  --page-max: min(92vw, 1600px);
+  --read-max: 820px;
+
   /* Core Colors */
   --color-bg:           #F2EFE7;
   --color-surface:      #EAE6DC;
@@ -40,28 +45,58 @@
   --color-on-primary:   #F2EFE7;
 
   /* The brand accent, rationed */
-  --color-gold:         #8C6F35;
+  --color-gold:         #735927;
   --color-gold-bright:  #C5A059;
 
   /* Teal Accent */
-  --color-accent:       #1F6F65;
+  --color-accent:       #1B655C;
   --color-accent-dark:  #CFE0DC;
   --color-accent-light: #2A9D8F;
 
   /* Text */
   --color-text:         #033733;
-  --color-text-muted:   #4E706C;
-  --color-text-dim:     #7A938F;
+  /* Muted/dim were darkened 2026-10-15: #4E706C passed on --color-bg but
+     fell to 4.37:1 on --color-surface and 4.01:1 on --color-surface-2. */
+  --color-text-muted:   #3D5E59;
+  --color-text-dim:     #4E706C;
 
   /* Borders */
   --color-border:       rgba(3, 55, 51, 0.16);
   --color-border-hover: rgba(3, 55, 51, 0.38);
+  /* Edges of things you press or type into (inputs, filter pills, ghost buttons). The hairline
+     --color-border measured 1.34:1 there in the 22 Oct scan; WCAG 1.4.11 asks for 3:1. */
+  --color-control-border: rgba(3, 55, 51, 0.62);
 
   /* Surfaces that used to be baked-in white/black tints */
   --tint-soft:          rgba(3, 55, 51, 0.05);
   --tint-softer:        rgba(3, 55, 51, 0.09);
   --scrim:              rgba(242, 239, 231, 0.85);
   --shadow-color:       rgba(3, 55, 51, 0.14);
+  /* Boxes are lifted by a shadow, never framed by a line (owner 28 Oct: "kalın sarı çizgi yerine gölge, her iki modda").
+     Lines (--color-border) are only dividers inside a box or between rows. */
+  --shadow-card:        0 1px 2px rgba(3, 55, 51, 0.06), 0 8px 24px rgba(3, 55, 51, 0.10);
+  --shadow-card-hover:  0 2px 4px rgba(3, 55, 51, 0.08), 0 14px 34px rgba(3, 55, 51, 0.16);
+
+  /* Product heroes (.plugin-hero, .lh, .panel-tour) follow the theme (owner 28 Oct: light/dark balance). The --pl-*
+     names are kept so the hero rules did not have to change; only the product's own device displays (VFD cells, key
+     readouts, waveform strips) stay dark in both themes, like the panel screenshots themselves. */
+  --pl-panel:  #EAE6DC;
+  --pl-deep:   #F2EFE7;
+  --pl-cream:  #033733;
+  --pl-muted:  #3D5E59;
+  --pl-gold:   #735927;
+  --pl-tint:   rgba(3, 55, 51, 0.04);
+  --pl-line:   rgba(3, 55, 51, 0.55);
+  --pl-btn:    #033733;
+  --pl-btn-ink:#F2EFE7;
+  --pl-btn-hover: #0A524B;
+  --pl-vfd-text: #1B655C;
+  --pl-glow:   none;
+  --room-amt:  13%;
+  --room-ink-amt: 55%;
+  --tour-bg:   #EAE6DC;
+  --musehub-light: block;   /* which of MuseHub's two badges shows (MuseHubButton.jsx) */
+  --musehub-dark:  none;
 
   /* Status */
   --color-danger:       #A8321F;
@@ -79,58 +114,10 @@
 
 /* ── Dark ──────────────────────────────────────────────────────────────────
    Only the tokens are redefined; no component ever styles itself from inside
-   a theme block, so every rule keeps working in all three states (explicit
-   light, explicit dark, and the unstamped default where only the OS setting
-   decides). The guard makes an explicit light choice beat a dark OS.       */
-/* ── Dark ──────────────────────────────────────────────────────────────────
-   Only the tokens are redefined; no component ever styles itself from inside
-   a theme block, so every rule keeps working in all three states.
-
-   Those three states are the reason this appears twice. An explicit choice
-   stamps data-theme on <html>; the default "system" setting stamps nothing,
-   and then only prefers-color-scheme separates light from dark. The media
-   query is guarded with :not([data-theme="light"]) so someone who explicitly
-   picks light still gets light on a dark OS.                                */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-  /* The brand's own inverted surface (#032825, INK_GROUND in brand.py) — not
-     a neutral near-black. Both themes are then made of the same two colours,
-     cream and dark green, which is what makes the dark mode read as the same
-     company rather than as a generic dark template. */
-  --color-bg:           #032825;
-  --color-surface:      #063730;
-  --color-surface-2:    #0A463D;
-  --color-surface-3:    #0E554A;
-
-  --color-primary:      #D9B978;
-  --color-primary-light:#E8CE95;
-  --color-primary-dark: #B8954F;
-  --color-on-primary:   #032825;
-
-  --color-gold:         #D9B978;
-  --color-gold-bright:  #E8CE95;
-
-  --color-accent:       #3BBFAF;
-  --color-accent-dark:  #0E4740;
-  --color-accent-light: #6BD6C9;
-
-  --color-text:         #F2EFE7;
-  --color-text-muted:   #8FAAA5;
-  --color-text-dim:     #5F827D;
-
-  --color-border:       rgba(217, 185, 120, 0.20);
-  --color-border-hover: rgba(217, 185, 120, 0.48);
-
-  --tint-soft:          rgba(242, 239, 231, 0.06);
-  --tint-softer:        rgba(242, 239, 231, 0.13);
-  --scrim:              rgba(3, 40, 37, 0.85);
-  --shadow-color:       rgba(0, 20, 18, 0.55);
-
-  --color-danger:       #E4705E;
-  --color-success:      #3BBFAF;
-  }
-}
-
+   a theme block. Dark is an explicit choice only (the toggle stamps
+   data-theme="dark" on <html>). Owner 2026-10-22: light is the default for
+   everyone, whatever the OS says — a whole session on the dark green tires
+   the eyes. Until then a dark OS got the dark theme by default.            */
 :root[data-theme="dark"] {
   /* The brand's own inverted surface (#032825, INK_GROUND in brand.py) — not
      a neutral near-black. Both themes are then made of the same two colours,
@@ -154,18 +141,40 @@
   --color-accent-light: #6BD6C9;
 
   --color-text:         #F2EFE7;
-  --color-text-muted:   #8FAAA5;
-  --color-text-dim:     #5F827D;
+  --color-text-muted:   #ABC3BE;
+  --color-text-dim:     #8FAAA5;
 
-  --color-border:       rgba(217, 185, 120, 0.20);
-  --color-border-hover: rgba(217, 185, 120, 0.48);
+  /* Neutral, not gold: a gold hairline round every box was the "kalın sarı çizgi" (owner 28 Oct). */
+  --color-border:       rgba(242, 239, 231, 0.10);
+  --color-border-hover: rgba(242, 239, 231, 0.22);
+  --color-control-border: rgba(242, 239, 231, 0.42);
 
   --tint-soft:          rgba(242, 239, 231, 0.06);
   --tint-softer:        rgba(242, 239, 231, 0.13);
   --scrim:              rgba(3, 40, 37, 0.85);
   --shadow-color:       rgba(0, 20, 18, 0.55);
+  --shadow-card:        0 1px 2px rgba(0, 0, 0, 0.30), 0 12px 32px rgba(0, 10, 9, 0.45);
+  --shadow-card-hover:  0 2px 4px rgba(0, 0, 0, 0.35), 0 18px 44px rgba(0, 10, 9, 0.55);
 
-  --color-danger:       #E4705E;
+  --pl-panel:  #1B413E;
+  --pl-deep:   #0F2A28;
+  --pl-cream:  #F2EFE7;
+  --pl-muted:  rgba(242, 239, 231, 0.72);
+  --pl-gold:   #E2C47C;
+  --pl-tint:   rgba(0, 0, 0, 0.18);
+  --pl-line:   rgba(242, 239, 231, 0.55);
+  --pl-btn:    #E2C47C;
+  --pl-btn-ink:#10211F;
+  --pl-btn-hover: #EDD39A;
+  --pl-vfd-text: #5FE3C7;
+  --pl-glow:   0 0 10px rgba(95, 227, 199, 0.45);
+  --room-amt:  100%;
+  --room-ink-amt: 100%;
+  --tour-bg:   #022421;
+  --musehub-light: none;
+  --musehub-dark:  block;
+
+  --color-danger:       #F09080;
   --color-success:      #3BBFAF;
 }
 
@@ -199,7 +208,7 @@ body {
 .forum-topic p, .forum-meta { color: var(--color-text-muted); font-size: .82rem; }
 .forum-topic strong { color: var(--color-accent); }
 .forum-form { display: flex; flex-direction: column; gap: 12px; }
-.forum-form input, .forum-form select, .forum-form textarea { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); padding: 12px 14px; }
+.forum-form input, .forum-form select, .forum-form textarea { width: 100%; border: 1px solid var(--color-control-border); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); padding: 12px 14px; }
 .forum-form textarea { min-height: 130px; resize: vertical; }
 .forum-back { display: inline-block; color: var(--color-accent); margin-bottom: 22px; }
 .forum-post { white-space: pre-wrap; line-height: 1.8; margin: 18px 0 28px; }
@@ -234,7 +243,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .container {
-  max-width: 1200px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 0 40px;
   width: 100%;
@@ -244,7 +253,7 @@ a { color: inherit; text-decoration: none; }
    GLASS PANEL
    ============================================================ */
 .glass-panel {
-  background: rgba(17, 17, 17, 0.85);
+  background: var(--color-surface);   /* was a fixed near-black from the old dark theme: dark-green text on it was unreadable in the light theme (KVR, 21 Oct) */
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   backdrop-filter: blur(10px);
@@ -253,14 +262,6 @@ a { color: inherit; text-decoration: none; }
 
 .glass-panel:hover {
   border-color: var(--color-border-hover);
-}
-
-/* Legacy alias */
-.glass-card { 
-  background: rgba(17, 17, 17, 0.85);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  backdrop-filter: blur(10px);
 }
 
 /* ============================================================
@@ -304,7 +305,7 @@ a { color: inherit; text-decoration: none; }
 
 .btn-teal {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-primary);
   border-color: var(--color-accent);
 }
 .btn-teal:hover {
@@ -315,7 +316,7 @@ a { color: inherit; text-decoration: none; }
 .btn-ghost {
   background: var(--tint-soft);
   color: var(--color-text);
-  border-color: var(--tint-softer);
+  border-color: var(--color-control-border);
 }
 .btn-ghost:hover { background: var(--tint-softer); }
 
@@ -332,18 +333,6 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--color-border-hover);
 }
 .btn-secondary:hover { background: var(--tint-soft); }
-
-/* ============================================================
-   NAVBAR
-   ============================================================ */
-.navbar-wrapper {
-  position: sticky;
-  top: 0;
-  z-index: 200;
-  background: rgba(5, 5, 5, 0.85);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--color-border);
-}
 
 /* ============================================================
    HERO — COMPACT
@@ -364,41 +353,6 @@ a { color: inherit; text-decoration: none; }
   pointer-events: none;
 }
 
-.hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(42, 157, 143, 0.1);
-  border: 1px solid rgba(42, 157, 143, 0.3);
-  border-radius: var(--radius-pill);
-  padding: 6px 14px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-accent);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 24px;
-}
-
-.hero-title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
-  font-weight: 900;
-  letter-spacing: -1px;
-  line-height: 1.1;
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero-subtitle {
-  font-size: 1.1rem;
-  color: var(--color-text-muted);
-  max-width: 580px;
-  margin: 0 auto 36px;
-}
-
 /* ============================================================
    FILTERS
    ============================================================ */
@@ -412,7 +366,7 @@ a { color: inherit; text-decoration: none; }
 .filter-btn {
   padding: 6px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   background: transparent;
   color: var(--color-text-muted);
   font-size: 0.8rem;
@@ -521,7 +475,7 @@ a { color: inherit; text-decoration: none; }
    cannot appear off-palette. */
 .badge-presets           { background: rgba(197,160,89,0.25); color: var(--color-primary); }
 .badge-workflow          { background: rgba(197,160,89,0.25); color: var(--color-primary); }
-.badge-browser-tool      { background: rgba(42,157,143,0.22); color: var(--color-accent); }
+.badge-browser-tool      { background: rgba(42,157,143,0.22); color: var(--color-text); }
 
 /* Audio overlay */
 .audio-overlay {
@@ -607,17 +561,6 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
 }
 
-.free-badge {
-  background: rgba(42,157,143,0.2);
-  color: var(--color-accent);
-  border: 1px solid rgba(42,157,143,0.4);
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-size: 0.8rem;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
 .original-price {
   text-decoration: line-through;
   color: var(--color-text-dim);
@@ -690,31 +633,6 @@ a { color: inherit; text-decoration: none; }
 }
 .modal-close:hover { color: var(--color-text); }
 
-.auth-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 24px;
-  background: var(--color-surface-2);
-  border-radius: var(--radius-sm);
-  padding: 4px;
-}
-
-.auth-tab {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  transition: all 0.2s ease;
-}
-.auth-tab.active {
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-}
-
 .auth-desc {
   font-size: 0.88rem;
   color: var(--color-text-muted);
@@ -740,7 +658,7 @@ a { color: inherit; text-decoration: none; }
   width: 100%;
   padding: 12px 14px;
   background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   font-size: 0.95rem;
@@ -761,8 +679,8 @@ a { color: inherit; text-decoration: none; }
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(10, 10, 10, 0.96);
-  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card-hover);
   backdrop-filter: blur(16px);
   padding: 14px 40px;
   display: flex;
@@ -779,12 +697,6 @@ a { color: inherit; text-decoration: none; }
 /* ============================================================
    DASHBOARD / USER PANEL
    ============================================================ */
-.dashboard-header {
-  padding: 60px 0 40px;
-  border-bottom: 1px solid var(--color-border);
-  margin-bottom: 40px;
-}
-
 .stat-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -806,25 +718,6 @@ a { color: inherit; text-decoration: none; }
   color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.8px;
-}
-
-/* ============================================================
-   MISC UTILITIES
-   ============================================================ */
-.text-primary  { color: var(--color-primary); }
-.text-accent   { color: var(--color-accent);  }
-.text-muted    { color: var(--color-text-muted); }
-.text-gradient {
-  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.divider {
-  height: 1px;
-  background: var(--color-border);
-  margin: 24px 0;
 }
 
 /* ============================================================
@@ -857,7 +750,6 @@ a { color: inherit; text-decoration: none; }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-primary-dark); }
 
-
 /* ── Brand connection ──────────────────────────────────────────────────── */
 
 :root {
@@ -878,37 +770,87 @@ h1, h2 {
   letter-spacing: 0.01em;
 }
 
-/* The fader/tick rule from the emblem, as a section divider. Same device the
-   social and share-card layouts use, which is what makes a SubverseLab page
-   read as an instrument panel rather than a generic dark template. */
-.brand-rule {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 28px;
-}
-.brand-rule::before {
-  content: '';
-  width: 26px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--color-primary);
-  flex-shrink: 0;
-}
-.brand-rule::after {
-  content: '';
-  flex: 1;
-  height: 10px;
-  background-image: repeating-linear-gradient(
-    to right,
-    var(--color-border) 0 2px,
-    transparent 2px 12px
-  );
-}
-
 /* The footer emblem is an alpha-only PNG painted with the active text colour,
    so one asset is correct in both themes instead of one pre-tinted file per
    theme that someone has to remember to keep in sync. */
+/* Footer strips (FooterStrips.jsx): host and store logos drift slowly and faintly through the footer's middle; not links. */
+/* The strips take the footer's full width under the two columns (owner 31 Oct), a thin rule above them. */
+.footer-strips-row { margin-top: 56px; }   /* no rule: the line breathes with the columns above it */
+.footer-strips {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 0;
+}
+.footer-strip { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.footer-strip-window {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+.footer-strip-track { display: flex; width: max-content; animation: footer-strip-drift 90s linear infinite; }
+.footer-strip-run { display: flex; align-items: center; gap: 64px; padding-right: 64px; }
+.footer-strip-dot { display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--color-text); opacity: .35; margin: 0 8px; flex: 0 0 auto; }
+.footer-strip-repeat { display: contents; }
+@keyframes footer-strip-drift { to { transform: translate3d(-50%, 0, 0); } }
+.footer-strip-host {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  color: var(--color-text);
+  opacity: 0.32;
+}
+.footer-strip-icon { display: block; flex: 0 0 auto; filter: grayscale(1); }
+.footer-strip-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text);
+  opacity: 0.32;
+}
+.footer-strip-mark {
+  display: block;
+  flex: 0 0 auto;
+  background-color: var(--color-text);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+.footer-strip-name { font-size: 1.35rem; font-weight: 700; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .footer-strip-track { animation: none; }
+  .footer-strip-run[aria-hidden="true"], .footer-strip-repeat { display: none; }
+  .footer-strip-window { -webkit-mask-image: none; mask-image: none; }
+  .footer-strip-run { flex-wrap: wrap; row-gap: 12px; }
+  .footer-strip-track { width: auto; }
+}
+
+/* Footer link columns (Footer.jsx FOOTER_COLUMNS): three short lists on the right, as tall as the brand column. */
+.footer-cols { display: flex; gap: 56px; flex-wrap: wrap; justify-content: flex-end; }
+.footer-col { display: flex; flex-direction: column; gap: 10px; min-width: 120px; }
+.footer-col-title { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text); margin-bottom: 4px; }
+.footer-link { font: inherit; font-size: .9rem; font-weight: 600; color: var(--color-text-muted); text-decoration: none; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; transition: color .2s; }
+.footer-link:hover, .footer-link:focus-visible { color: var(--color-primary); }
+@media (max-width: 760px) { .footer-cols { justify-content: flex-start; gap: 32px 40px; } }
+/* Footer social icons (Footer.jsx SOCIAL): a row under the copyright, opposite the page links, in the footer's ink, gold on hover. */
+.footer-social { display: flex; gap: 14px; margin-top: 18px; }
+.footer-social-link {
+  display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--color-surface-2); color: var(--color-text-muted); transition: color .2s, background .2s;
+}
+.footer-social-link:hover, .footer-social-link:focus-visible { color: var(--color-gold-bright); }
+.footer-social-mark {
+  display: block; width: 20px; height: 20px; background: currentColor;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: contain; mask-size: contain;
+}
 .footer-emblem {
   width: 70px;
   height: 50px;
@@ -935,15 +877,6 @@ h1, h2 {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-
-/* Auth dialog picks up the display face so the sign-in flow reads in the same
-   voice as the rest of the site. */
-.auth-tab {
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 /* ── Product card actions ──────────────────────────────────────────────────
@@ -1106,20 +1039,17 @@ h1, h2 {
    The plugin hero keeps the plugins’ own anodised green in both themes: it is
    the product's face, like a photo, not part of the page chrome.
    ============================================================ */
+/* The --pl-* palette is also given to .plugin-btn, which appears outside the
+   hero (room sections, /launch): there it had no background at all. */
+:root { --pl-vfd: #5FE3C7; }   /* the device display colour, the same in both themes */
 .plugin-hero {
-  --pl-panel: #1B413E;
-  --pl-deep:  #0F2A28;
-  --pl-cream: #F2EFE7;
-  --pl-muted: rgba(242, 239, 231, 0.72);
-  --pl-gold:  #E2C47C;
-  --pl-vfd:   #5FE3C7;
   background:
     radial-gradient(120% 80% at 50% 0%, rgba(95, 227, 199, 0.08), transparent 60%),
     linear-gradient(180deg, var(--pl-panel) 0%, var(--pl-deep) 100%);
   color: var(--pl-cream);
   padding: 28px 0 44px;
 }
-.plugin-hero-inner { max-width: 1080px; }
+.plugin-hero-inner { max-width: var(--page-max); }
 .plugin-back { color: var(--pl-muted); text-decoration: none; font-size: 0.9rem; }
 .plugin-back:hover { color: var(--pl-cream); }
 .plugin-kicker {
@@ -1138,7 +1068,7 @@ h1, h2 {
 .plugin-offer {
   display: flex; align-items: center; justify-content: space-between; gap: 18px 28px;
   flex-wrap: wrap; padding: 18px 22px; border-radius: 12px;
-  border: 1px solid rgba(226, 196, 124, 0.45); background: rgba(0, 0, 0, 0.18);
+  border: 0; background: var(--pl-tint); box-shadow: var(--shadow-card);
 }
 .plugin-offer-head {
   margin: 0 0 4px; font-family: var(--font-display); font-size: clamp(1.15rem, 2.6vw, 1.6rem);
@@ -1155,20 +1085,24 @@ h1, h2 {
   font-size: 1.6rem; font-weight: 700; color: var(--pl-vfd);
   text-shadow: 0 0 10px rgba(95, 227, 199, 0.45); font-variant-numeric: tabular-nums;
 }
-.plugin-count-label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pl-muted); }
+.plugin-count-label { font-size: 0.65rem; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(242, 239, 231, 0.72); }
 .plugin-count { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.8rem; color: var(--color-accent); }
 .plugin-hero .plugin-count-out {
-  color: #C5A059; border: 1px solid #C5A059; border-radius: 999px; padding: 3px 10px;
+  color: var(--pl-gold); border: 1px solid var(--pl-gold); border-radius: 999px; padding: 3px 10px;
   font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
 }
+/* Page buttons inside the hero use the hero's palette (theme tokens above). */
+.plugin-hero .btn-outline { color: var(--pl-cream); border-color: var(--pl-line); background: transparent; }
+.plugin-hero .btn-outline:hover { border-color: var(--pl-cream); background: var(--pl-tint); }
+.plugin-hero .btn-primary { background: var(--pl-btn); color: var(--pl-btn-ink); border-color: var(--pl-btn); }
 .plugin-cta-row { display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; margin: 22px 0 30px; }
 .plugin-btn {
-  background: var(--pl-gold); color: #10211F; border: none; font-weight: 800;
+  background: var(--pl-btn); color: var(--pl-btn-ink); border: none; font-weight: 800;
   padding: 12px 22px;
 }
-.plugin-btn:hover { background: #EDD39A; color: #10211F; }
+.plugin-btn:hover { background: var(--pl-btn-hover); color: var(--pl-btn-ink); }
 .plugin-cta-note { color: var(--pl-muted); font-size: 0.9rem; }
-.plugin-panel { margin: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); }
+.plugin-panel { margin: 0; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-card-hover); }
 .plugin-panel img { display: block; width: 100%; height: auto; }
 .plugin-places { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
 .plugin-place {
@@ -1186,9 +1120,11 @@ h1, h2 {
 .plugin-demos { display: flex; gap: 20px; flex-wrap: wrap; }
 .plugin-demo { margin: 0; flex: 1 1 240px; max-width: 320px; }
 .plugin-demo iframe { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; background: #0d1f1a; }
+.plugin-demo video { display: block; width: 100%; height: auto; border-radius: 10px; background: #0d1f1a; }
 .plugin-demo-vertical iframe { aspect-ratio: 9 / 16; }
+.plugin-demo-wide video { max-width: 820px; }
 .plugin-demo-wide { flex: 1 1 100%; max-width: 100%; }
-.plugin-demo figcaption { margin-top: 8px; font-size: 0.9rem; color: var(--color-text-muted, inherit); opacity: 0.85; }
+.plugin-demo figcaption { margin-top: 8px; font-size: 0.9rem; color: var(--color-text-muted, inherit); }
 .plugin-lead { font-size: 1.1rem; line-height: 1.75; color: var(--color-text); margin: 0 0 40px; }
 .plugin-section { margin-bottom: 40px; }
 .plugin-section h2 { font-size: 1.25rem; font-weight: 800; margin: 0 0 12px; }
@@ -1201,91 +1137,39 @@ h1, h2 {
 }
 .plugin-control strong { display: block; margin-bottom: 3px; }
 .plugin-control span { color: var(--color-text-muted); font-size: 0.92rem; line-height: 1.5; }
-.plugin-steps { padding-left: 22px; margin: 0; }
-.plugin-steps li { margin-bottom: 8px; }
-.plugin-steps strong { color: var(--color-text); }
 
-/* Plugins index card */
-.plugin-card {
-  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  border: 1px solid var(--color-border); border-radius: var(--radius-lg, 16px);
-  overflow: hidden; text-decoration: none; color: inherit; background: var(--color-surface);
-  transition: border-color 0.2s, transform 0.2s;
-}
-.plugin-card:hover { border-color: var(--color-border-hover); transform: translateY(-2px); }
-.plugin-card-media { background: #1B413E; display: flex; align-items: center; padding: 18px; }
-.plugin-card-media img { width: 100%; height: auto; border-radius: 6px; display: block; }
-.plugin-card-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
-.plugin-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .plugin-card-badge {
   font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--color-gold); border: 1px solid var(--color-gold); border-radius: 999px; padding: 3px 10px;
 }
-.plugin-card-title { margin: 0; font-size: 1.6rem; font-weight: 900; }
-.plugin-card-title span { display: block; font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); letter-spacing: 0.04em; margin-top: 2px; }
-.plugin-card-text { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
-.plugin-card-link { margin-top: auto; font-weight: 800; color: var(--color-primary); }
-@media (max-width: 720px) {
-  .plugin-card { grid-template-columns: 1fr; }
-}
 
-/* Home page launch strip */
-.plugin-strip {
-  display: flex; align-items: center; gap: 14px 20px; flex-wrap: wrap;
-  margin-bottom: 20px; padding: 14px 18px; border-radius: 12px; text-decoration: none;
-  background: linear-gradient(90deg, #1B413E, #0F2A28); color: #F2EFE7;
-  border: 1px solid rgba(226, 196, 124, 0.4);
-}
-.plugin-strip:hover { border-color: #E2C47C; }
-.plugin-strip-tag {
-  font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase;
-  color: #10211F; background: #E2C47C; border-radius: 4px; padding: 3px 8px;
-}
-.plugin-strip-name { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 0.14em; }
-.plugin-strip-text { flex: 1; min-width: 200px; font-size: 0.9rem; color: rgba(242, 239, 231, 0.85); }
-.plugin-strip-text b { color: #E2C47C; }
-.plugin-strip .plugin-count { color: #C5A059; }
 .plugin-trust { margin: 0 0 18px; color: var(--color-text-muted); font-size: 0.82rem; line-height: 1.55; max-width: 760px; }
 .plugin-hero .plugin-trust { color: var(--pl-muted); }
-.plugin-strip-go { font-weight: 800; white-space: nowrap; }
 
 a.plugin-cta-note { text-decoration: none; }
 a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
-.plugin-section a { color: var(--color-accent); }
+.plugin-section a:not(.btn) { color: var(--color-accent); }
 .plugin-buy-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 /* A checkout that does not exist yet: visibly a button, visibly not live. */
-.btn.plugin-buy-closed, .btn.plugin-buy-closed:hover { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn.plugin-buy-closed, .btn.plugin-buy-closed:hover { background: transparent; color: inherit; border: 1px dashed currentColor; cursor: not-allowed; transform: none; opacity: 1; }
 .btn.plugin-buy-closed { white-space: normal; text-align: center; max-width: 100%; }
-.plugin-card-list { display: grid; gap: 20px; }
-.plugin-card-item { display: grid; gap: 10px; }
-.plugin-card-buy { display: flex; gap: 10px 12px; flex-wrap: wrap; align-items: center; }
-.plugin-card-buy-note { flex-basis: 100%; font-size: 0.82rem; color: var(--color-text-muted); }
-.plugin-bundle {
-  display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap;
-  margin-top: 24px; padding: 20px 24px; border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg); background: var(--color-surface);
-}
-.plugin-bundle h2 { margin: 0 0 4px; font-size: 1.2rem; font-weight: 900; }
-.plugin-bundle p { margin: 0; color: var(--color-text-muted); }
-.plugin-bundle p + p { margin-top: 6px; }
-.plugin-bundle .family-singles { font-size: 0.9rem; }
 
 /* /launch */
 .launch-title span { color: var(--pl-gold); font-size: 0.6em; vertical-align: middle; }
 .launch-codes { display: inline-flex; align-items: center; gap: 12px; }
 .launch-codes-num {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 1.9rem; font-weight: 700;
-  color: var(--pl-vfd); font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(95, 227, 199, 0.45);
+  color: var(--pl-vfd-text); font-variant-numeric: tabular-nums; text-shadow: var(--pl-glow);
 }
 .launch-codes-label { display: flex; flex-direction: column; color: var(--pl-cream); font-weight: 700; font-size: 0.95rem; }
 .launch-codes-label small { color: var(--pl-muted); font-weight: 400; font-size: 0.75rem; }
-.launch-duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.launch-duo { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 18px; }   /* every product in the room, as many columns as fit */
 .launch-duo-item {
   display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: var(--pl-cream);
-  padding: 12px; border-radius: 12px; border: 1px solid rgba(226, 196, 124, 0.25); background: rgba(0, 0, 0, 0.16);
+  padding: 12px; border-radius: 12px; border: 0; background: var(--pl-tint); box-shadow: var(--shadow-card);
 }
-.launch-duo-item:hover { border-color: var(--pl-gold); }
-.launch-duo-item img { width: 100%; height: auto; border-radius: 6px; display: block; margin-bottom: 6px; }
+.launch-duo-item:hover { box-shadow: var(--shadow-card-hover); }
+.launch-duo-item img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; border-radius: 6px; display: block; margin-bottom: 6px; }
 .launch-duo-name { font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 0.14em; }
 .launch-duo-text { color: var(--pl-muted); font-size: 0.88rem; }
 .launch-steps { list-style: none; padding: 0; margin: 0 0 16px; display: grid; gap: 12px; }
@@ -1299,10 +1183,9 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
   flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-weight: 900; background: var(--color-primary); color: var(--color-on-primary);
 }
-.launch-prices { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.launch-prices { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin-bottom: 14px; }
 /* Price cards: the product's panel is the background, a dark-green overlay keeps every line readable
    in both themes (text colours are fixed here on purpose, not theme tokens). */
-.launch-prices { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
 .launch-price {
   position: relative; isolation: isolate; overflow: hidden; min-height: 230px;
   display: flex; flex-direction: column; gap: 6px; padding: 16px;
@@ -1325,75 +1208,47 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .launch-price strong { color: #F2EFE7; letter-spacing: 0.04em; }
 .launch-price span { color: #DCE5E0; font-size: 0.9rem; }
 .launch-price .launch-price-num { font-size: 1.8rem; font-weight: 900; color: #F2EFE7; }
-.launch-price .launch-price-was { font-size: 1.1rem; font-weight: 400; text-decoration: line-through; color: #DCE5E0; margin-right: 0.2em; }
+
 .launch-price .btn { margin-top: auto; background: transparent; color: #F2EFE7; border: 1px solid #F2EFE7; }
 .launch-price .btn:hover:not(:disabled) { background: #F2EFE7; color: #032825; }
 .launch-price .btn:disabled { color: #DCE5E0; border-color: rgba(242, 239, 231, 0.6); opacity: 1; }
-.launch-price-bundle { border-color: #D9B978; }
-.launch-price-bundle .btn { background: #D9B978; color: #032825; border-color: #D9B978; }
-.launch-price-bundle .btn:hover:not(:disabled) { background: #E8CE95; color: #032825; }
-@media (max-width: 720px) {
-  .launch-duo { grid-template-columns: 1fr; }
-}
+
 
 /* /account — My plugins */
 .acct-panel { padding: 28px; }
 .acct-panel p { color: var(--color-text-muted); line-height: 1.6; margin: 0 0 16px; }
 .acct-note { color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.6; margin-top: 16px; }
-.acct-note a, .acct-help a, .acct-licence-meta a { color: var(--color-accent); }
+.acct-note a, .acct-help a:not(.btn){ color: var(--color-accent); }
 .acct-plugin-list { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); }
 .acct-plugin {
   display: flex; flex-direction: column; min-width: 0; overflow: hidden;
   border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface);
 }
-.acct-plugin-media { background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.acct-plugin-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
 .acct-plugin-body { padding: 18px 20px 20px; display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .acct-plugin-note { margin: 0 0 4px; }
 .acct-plugin-body h4 { margin: 0 0 8px; font-size: 1.3rem; font-weight: 900; }
 .acct-plugin-body h4 span { display: block; font-size: 0.8rem; font-weight: 700; color: var(--color-text-muted); }
-.acct-licence { padding: 12px 0; border-top: 1px solid var(--color-border); }
-.acct-key-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
 .acct-key {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.9rem; padding: 6px 10px;
   border-radius: 6px; background: var(--color-surface-2); border: 1px solid var(--color-border);
   overflow-wrap: anywhere;
 }
 .btn.acct-small-btn { padding: 6px 12px; font-size: 0.82rem; }
-.acct-licence-meta { display: flex; gap: 8px 16px; flex-wrap: wrap; margin-top: 8px; font-size: 0.85rem; color: var(--color-text-muted); }
-.acct-status { font-weight: 800; }
-.acct-status-active { color: var(--color-success); }
-.acct-status-disabled, .acct-status-expired { color: var(--color-danger); }
+
 .acct-downloads { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 10px; }
-.acct-manual { font-size: 0.88rem; color: var(--color-accent); margin: 0; }
+
 .acct-help { margin-top: 24px; }
 .acct-help h4 { margin: 0 0 6px; font-weight: 800; }
 .acct-help p { margin: 0; color: var(--color-text-muted); line-height: 1.6; }
 
 /* Account page layout: header, summary row, licence keys */
 .acct-page { padding-bottom: 80px; }
-.acct-header {
-  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
-  padding: 48px 0 32px; border-bottom: 1px solid var(--color-border); margin-bottom: 28px;
-}
-.acct-id { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.acct-avatar {
-  flex: none; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent)); color: #000; font-size: 1.4rem; font-weight: 800;
-}
-.acct-id-text { min-width: 0; }
-.acct-id-text h2 { font-size: 1.5rem; font-weight: 800; margin: 0 0 2px; }
-.acct-email { margin: 0; font-size: 0.95rem; color: var(--color-text); overflow-wrap: anywhere; }
-.acct-method { margin: 2px 0 0; font-size: 0.82rem; color: var(--color-text-muted); }
-.acct-header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.acct-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 40px; }
-.acct-summary > div { padding: 16px 18px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
-.acct-summary dt { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-muted); margin: 0 0 4px; }
-.acct-summary dd { margin: 0; font-size: 1.8rem; font-weight: 900; line-height: 1.1; }
+
 .acct-section { margin-bottom: 48px; }
 .acct-h { font-size: 1.2rem; font-weight: 800; margin: 0 0 16px; }
-.acct-keys { margin: 0 0 28px; }
-.acct-keys h4 { margin-bottom: 10px; }
+
 .acct-key-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); overflow: hidden; }
 .acct-key-item {
   display: grid; grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) auto; gap: 6px 14px; align-items: center;
@@ -1404,11 +1259,7 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .acct-key-item .acct-key { display: block; min-width: 0; }
 .acct-key-meta { grid-column: 1 / -1; margin: 0; font-size: 0.82rem; color: var(--color-text-muted); }
 @media (max-width: 640px) {
-  .acct-header { padding: 32px 0 24px; }
-  .acct-summary { gap: 8px; }
-  .acct-summary > div { padding: 12px; }
-  .acct-summary dd { font-size: 1.4rem; }
-  .acct-summary dt { font-size: 0.68rem; letter-spacing: 0.06em; }
+
   .acct-key-item { grid-template-columns: minmax(0, 1fr) auto; }
   .acct-key-name { grid-column: 1 / -1; }
   .acct-credits-recent li { flex-wrap: wrap; }
@@ -1419,7 +1270,7 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
    ============================================================ */
 .plugin-downloads { display: flex; gap: 10px; flex-wrap: wrap; }
 .manual-hero .plugin-title { font-size: clamp(2.2rem, 6vw, 3.6rem); }
-.manual-body { max-width: 860px; padding: 48px 20px 96px; }
+.manual-body { max-width: var(--read-max); padding: 48px 20px 96px; }
 .manual-toc {
   border: 1px solid var(--color-border); border-radius: var(--radius-md);
   background: var(--color-surface); padding: 16px 20px; margin-bottom: 40px;
@@ -1472,9 +1323,9 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 
 /* /launch — gated Download Room */
 .launch-claim-wrap { display: flex; align-items: center; gap: 18px 28px; flex-wrap: wrap; margin: 22px 0 14px; }
-.launch-claim, .launch-key-card {
+.launch-claim{
   flex: 1 1 420px; min-width: 0; padding: 18px 22px; border-radius: 12px;
-  border: 1px solid rgba(226, 196, 124, 0.45); background: rgba(0, 0, 0, 0.22); color: var(--pl-cream);
+  border: 0; background: var(--pl-tint); box-shadow: var(--shadow-card); color: var(--pl-cream);
 }
 .launch-claim p { margin: 0 0 12px; color: var(--pl-muted); line-height: 1.55; }
 .launch-claim p strong { color: var(--pl-cream); }
@@ -1482,20 +1333,6 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
   margin: 0 0 6px; font-family: var(--font-display); font-size: 1.25rem; letter-spacing: 0.06em;
   text-transform: uppercase; color: var(--pl-gold);
 }
-.launch-claim-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.launch-claim .launch-claim-error { margin: 12px 0 0; color: #F2A38F; }
-.launch-key-label { margin: 0 0 10px; font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--pl-gold); }
-.launch-key-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.launch-key {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: clamp(1.1rem, 4.4vw, 1.9rem); font-weight: 700;
-  letter-spacing: 0.06em; color: var(--pl-vfd); text-shadow: 0 0 10px rgba(95, 227, 199, 0.45);
-  padding: 10px 14px; border-radius: 8px; background: #081B19; border: 1px solid rgba(95, 227, 199, 0.25);
-  user-select: all; overflow-wrap: anywhere;
-}
-.launch-key-steps { margin: 16px 0 10px; padding-left: 20px; color: var(--pl-cream); line-height: 1.7; }
-.launch-key-steps a, .launch-key-links a, .launch-insta a { color: var(--pl-gold); }
-.launch-key-links { margin: 0; color: var(--pl-muted); font-size: 0.9rem; }
-.launch-insta { margin: 0 0 30px; color: var(--pl-muted); font-size: 0.9rem; }
 
 /* ============================================================
    COOKIE BANNER (analytics consent)
@@ -1526,11 +1363,6 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 }
 @media (prefers-reduced-motion: reduce) { .cookie-banner { animation: none; } }
 
-/* Delete my account (Account page) */
-.acct-danger { margin-top: 48px; padding: 20px; border: 1px solid var(--color-danger); border-radius: var(--radius-lg); }
-.acct-danger h3 { margin: 0 0 10px; font-size: 1.2rem; font-weight: 800; }
-.acct-danger p, .acct-danger li { color: var(--color-text-muted); line-height: 1.6; font-size: 0.92rem; }
-.acct-danger ul { margin: 0 0 14px; padding-left: 20px; }
 .acct-danger-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
 .acct-danger-row .input-field { max-width: 240px; }
 .acct-claim-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
@@ -1544,74 +1376,18 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .tools-strip-list { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
 .tools-strip-list li { line-height: 1.5; }
 
-/* Family block: struck regular price + launch-price line (owner 2026-10-05) */
-.family-offer .family-regular { text-decoration: line-through; opacity: 0.55; font-weight: 400; margin-right: 0.25em; }
-.family-offer .family-launch-badge { display: inline-block; margin: 2px 0 10px; padding: 3px 10px; border: 1px solid currentColor; border-radius: 999px; font-size: 0.9em; }
-
-/* Homepage showcase hero (owner 2026-10-05): rotating "Out now" carousel. Fixed dark-green colours on purpose. */
-.showcase { background: radial-gradient(120% 90% at 70% 40%, #0E554A 0%, #063730 45%, #032825 100%); color: #F2EFE7; position: relative; }
-.showcase-inner { max-width: 1280px; margin: 0 auto; padding: 36px 56px 28px; min-height: clamp(520px, 85vh, 920px); display: flex; flex-direction: column; justify-content: center; gap: 14px; }
-.showcase-eyebrow { margin: 0; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #E8CE95; }
-.showcase-stage { display: grid; }
-.showcase-slide { grid-area: 1 / 1; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.6s ease, visibility 0s linear 0.6s; }
-.showcase-slide.is-active { opacity: 1; visibility: visible; transition: opacity 0.6s ease, visibility 0s; }
-.showcase-static .showcase-slide, .showcase-static .showcase-slide.is-active { transition: none; }
-.showcase-name { margin: 0; font-family: var(--font-display); font-size: clamp(2.6rem, 6.2vw, 5.4rem); line-height: 1; letter-spacing: 0.06em; color: #F2EFE7; }
-.showcase-kind { margin: 10px 0 0; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #E8CE95; }
-.showcase-line { margin: 12px 0 0; font-size: clamp(1rem, 1.6vw, 1.25rem); line-height: 1.45; color: #DCE5E0; max-width: 34ch; }
-.showcase-price { margin: 18px 0 0; font-size: clamp(2rem, 3.6vw, 3rem); font-weight: 900; color: #F2EFE7; }
-.showcase-price s { font-size: 0.55em; font-weight: 400; color: #DCE5E0; margin-right: 0.2em; }
-.showcase-note { margin: 4px 0 0; font-size: 0.95rem; color: #DCE5E0; }
-.showcase-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
-.showcase .btn { padding: 13px 22px; font-size: 1rem; }
-.showcase .showcase-buy { background: #D9B978; color: #032825; border: 1px solid #D9B978; }
-.showcase .showcase-buy:hover:not(:disabled) { background: #E8CE95; color: #032825; }
-.showcase .showcase-buy:disabled { opacity: 1; color: #032825; }
-.showcase .showcase-see { background: transparent; color: #F2EFE7; border: 1px solid #F2EFE7; }
-.showcase .showcase-see:hover { background: #F2EFE7; color: #032825; }
-.showcase-media { display: flex; align-items: center; justify-content: center; }
-.showcase-media img { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; border-radius: 12px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); }
-.showcase-controls { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 8px; }
-.showcase-arrow { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(242, 239, 231, 0.7); background: transparent; color: #F2EFE7; font-size: 1.7rem; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 0 4px; }
-.showcase-arrow:hover { background: #F2EFE7; color: #032825; }
-.showcase-dots { display: flex; gap: 4px; }
-.showcase-dot { width: 28px; height: 28px; border: 0; background: transparent; cursor: pointer; position: relative; padding: 0; }
-.showcase-dot::after { content: ''; position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: rgba(242, 239, 231, 0.4); transition: background 0.2s, transform 0.2s; }
-.showcase-dot.is-active::after { background: #E8CE95; transform: scale(1.3); }
-.showcase :focus-visible { outline: 3px solid #E8CE95; outline-offset: 3px; }
-.showcase-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
-@media (max-width: 860px) {
-  .showcase-inner { padding: 24px 16px 20px; min-height: 0; gap: 10px; }
-  .showcase-slide { grid-template-columns: 1fr; gap: 18px; }
-  .showcase-media { order: -1; }
-  .showcase-media img { max-height: 38vh; }
-  .showcase-name { font-size: clamp(2.4rem, 13vw, 3.4rem); }
-  .showcase-actions .btn { flex: 1 1 100%; justify-content: center; }
-  .showcase-line { max-width: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .showcase-slide, .showcase-slide.is-active { transition: none; }
-}
-
-.showcase-scroll { align-self: center; display: inline-flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 10px; padding: 6px 12px; color: #DCE5E0; text-decoration: none; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; }
-.showcase-scroll:hover { color: #F2EFE7; }
-.showcase-chevron { animation: showcaseBob 1.8s ease-in-out infinite; }
-@keyframes showcaseBob { 0%, 100% { transform: translateY(0); opacity: 0.7; } 50% { transform: translateY(6px); opacity: 1; } }
 @keyframes packReveal { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .card-grid.reveal-armed .pack-card { opacity: 0; }
 .card-grid.reveal-go .pack-card { animation: packReveal 0.55s cubic-bezier(0.25, 0.8, 0.25, 1) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
 @media (prefers-reduced-motion: reduce) {
-  .showcase-chevron { animation: none; }
+
   .card-grid.reveal-armed .pack-card { opacity: 1; }
   .card-grid.reveal-go .pack-card { animation: none; }
 }
-.showcase .showcase-name-family { font-size: clamp(2rem, 4.2vw, 3.6rem); line-height: 1.05; }
-@media (max-width: 860px) { .showcase .showcase-name-family { font-size: clamp(1.9rem, 9vw, 2.6rem); } }
 
 /* Tool credits card on /account */
 .acct-credits { padding: 24px; }
-.acct-credits-balance { font-size: 1.1rem; margin: 0 0 8px; color: var(--color-text-muted); }
-.acct-credits-balance strong { font-size: 2.2rem; font-weight: 900; color: var(--color-text); margin-right: 6px; }
+
 .acct-credits-costs, .acct-credits-recent { list-style: none; margin: 16px 0 0; padding: 0; }
 .acct-credits-costs li, .acct-credits-recent li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-top: 1px solid var(--color-border); font-size: 0.92rem; }
 .acct-credits-recent li span:first-child { color: var(--color-text-muted); min-width: 110px; }
@@ -1633,13 +1409,13 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .inbox-bell { position: relative; display: flex; }
 .inbox-bell-btn {
   position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0;
-  background: transparent; cursor: pointer; border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: transparent; cursor: pointer; border: 1px solid var(--color-control-border); border-radius: var(--radius-sm);
   color: var(--color-text-muted);
 }
 .inbox-bell-btn:hover, .inbox-bell-btn[aria-expanded="true"] { color: var(--color-text); }
 .inbox-badge {
   position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
-  border-radius: 9px; background: var(--color-danger); color: #fff; font-size: 0.7rem; font-weight: 800; line-height: 18px; text-align: center;
+  border-radius: 9px; background: var(--color-danger); color: var(--color-bg); font-size: 0.7rem; font-weight: 800; line-height: 18px; text-align: center;
 }
 .inbox-panel {
   position: absolute; top: calc(100% + 10px); right: 0; z-index: 200; width: min(380px, calc(100vw - 24px)); max-height: min(70vh, 520px); overflow-y: auto;
@@ -1664,4 +1440,442 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
   /* The bell sits mid-row on a phone; anchor its panel to the viewport so it cannot run off the screen. */
   .inbox-bell { position: static; }
   .inbox-panel { position: fixed; top: 64px; right: 12px; left: 12px; width: auto; }
+}
+
+/* ── Tester panel (/testers, approved view) ─────────────────────────────────
+   Its own space, shown on /account for a tester: a band and a side menu. The band follows the theme
+   (owner 28 Oct: no full-width dark bands in the light theme, no gold lines round boxes). */
+.tp-band { background: var(--tour-bg); color: var(--color-text); padding: 40px 0 32px; box-shadow: var(--shadow-card); }
+.tp-band-inner { max-width: 960px; }
+.tp-welcome { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; margin: 0 0 12px; color: var(--color-text); }
+.tp-welcome span { color: var(--color-gold); font-weight: 700; }
+.tp-vision { max-width: 62ch; margin: 0; line-height: 1.6; color: var(--color-text-muted); }
+.tp-layout { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 32px; padding-top: 32px; padding-bottom: 96px; max-width: var(--page-max); }
+.tp-nav { display: flex; flex-direction: column; gap: 4px; align-self: start; position: sticky; top: 90px; border-left: 1px solid var(--color-border-hover); padding-left: 12px; }
+.tp-tab { background: none; border: 0; text-align: left; font: inherit; font-weight: 700; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--color-text); text-decoration: none; display: flex; justify-content: space-between; align-items: center; }
+.tp-tab:hover { background: var(--color-surface-2); }
+.tp-tab-on { background: var(--color-primary); color: var(--color-on-primary); }
+
+.tp-count { background: #c5a059; color: #033733; border-radius: 999px; font-size: 0.75rem; font-weight: 900; padding: 1px 8px; }
+.tp-main { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.tp-card { background: var(--color-surface); border: 0; border-radius: 10px; padding: 22px 24px; }
+.tp-card h3 { margin: 0 0 10px; font-size: 1.15rem; font-weight: 800; }
+.tp-card h3 small { font-weight: 400; color: var(--color-text-muted); font-size: 0.8rem; }
+.tp-card h4 { margin: 18px 0 8px; }
+.tp-card p { margin: 0 0 10px; }
+.tp-big strong { font-size: 2.2rem; font-weight: 900; margin-right: 6px; }
+.tp-list { margin: 0 0 10px; padding-left: 18px; }
+.tp-link { background: none; border: 0; padding: 0; font: inherit; text-decoration: underline; cursor: pointer; color: var(--color-link, inherit); }
+.tp-ok { color: var(--color-accent); }
+.tp-task { border-top: 1px solid var(--color-border); padding: 12px 0; }
+.tp-task-row { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 10px; align-items: start; }
+.tp-thread { display: grid; gap: 10px; margin-bottom: 16px; }
+.tp-msg { padding: 10px 14px; border-radius: 8px; max-width: 85%; }
+.tp-msg small { display: block; color: var(--color-text-muted); margin-bottom: 4px; }
+.tp-msg-me { background: var(--color-surface-2); justify-self: end; }
+.tp-msg-staff { background: var(--tint-softer); box-shadow: var(--shadow-card); }
+.tp-report { border-top: 1px solid var(--color-border); padding: 10px 0; }
+.tp-report small { display: block; color: var(--color-text-muted); margin-bottom: 4px; }
+
+@media (max-width: 720px) {
+  .tp-layout { grid-template-columns: minmax(0, 1fr); }
+  .tp-nav { position: static; flex-direction: row; flex-wrap: wrap; border-left: 0; padding-left: 0; }
+  .tp-task-row { grid-template-columns: minmax(0, 1fr); }
+  .tp-msg { max-width: 100%; }
+}
+
+.tp-brief { border-left: 1px solid var(--color-border-hover); padding-left: 14px; margin-bottom: 14px; }
+.tp-brief h4 { margin: 10px 0 4px; }
+.tp-key code { font-size: 1rem; letter-spacing: 0.04em; user-select: all; }
+.tp-proscons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+.tp-proscons ul { margin: 0 0 10px; padding-left: 18px; }
+@media (max-width: 720px) { .tp-proscons { grid-template-columns: minmax(0, 1fr); } }
+.tp-account.acct-page { padding: 0; min-height: 0; }
+.tp-paste { border-top: 1px solid var(--color-border); margin-top: 18px; padding-top: 6px; }
+
+/* ── /plugins grid and rooms (owner decision 2026-10-15, "Option B") ─────────
+   Cards are links only; the one button a card can show is Download, for an
+   owner. Filter chips use the page tokens, so they read in both themes. */
+.plugin-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.plugin-filter-chip {
+  font: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  padding: 6px 14px; border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-hover); background: transparent; color: var(--color-text);
+}
+.plugin-filter-chip:hover { background: var(--tint-soft); }
+.plugin-filter-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.plugin-filter-chip:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.room-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.room-card-item { display: grid; gap: 10px; align-content: start; }
+.room-card {
+  /* One fixed size for every closed card (owner 2026-10-15): the image fills the card, the info sits on the image.
+     Always dark, like the plugin hero, so it reads the same in both themes. */
+  position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--radius-lg); overflow: hidden;
+  background: #0F2A28; border: 1px solid var(--color-border); text-decoration: none; color: #F2EFE7;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.room-card:hover { border-color: var(--color-border-hover); transform: translateY(-3px); box-shadow: 0 18px 36px var(--shadow-color); }
+.room-card:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.room-card-bg { position: absolute; inset: -8%; background-size: cover; background-position: center; filter: blur(14px) brightness(.45) saturate(1.1); transform: scale(1.05); }
+.room-card-panel { position: absolute; left: 6%; right: 6%; top: 7%; width: 88%; height: 56%; object-fit: contain; border-radius: 6px;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, .5)); transition: transform .3s ease; }
+.room-card:hover .room-card-panel { transform: scale(1.03); }
+.room-card-info { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 18px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  background: linear-gradient(180deg, rgba(8, 20, 19, 0) 0%, rgba(8, 20, 19, .82) 38%, rgba(8, 20, 19, .96) 100%); }
+.room-card-info .plugin-card-badge { background: rgba(226, 196, 124, .16); color: #E2C47C; border-color: rgba(226, 196, 124, .45); }
+.room-card-title { font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.5rem; font-weight: 700; letter-spacing: .04em; line-height: 1.1; color: #F2EFE7; }
+.room-card-text { font-size: .86rem; line-height: 1.4; color: rgba(242, 239, 231, .86); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.room-card-download { justify-content: center; }
+
+
+/* ============================================================
+   /plugins as boxes (owner 2026-10-31): each product is its clear box (public/plugins/<slug>/box.webp) sitting on the page
+   ground with a soft drop shadow, as the TORNA news frame does; name, kind and price under it. No card, no frame. A plug-in
+   without a box picture (added from /admin) gets a box drawn in CSS from its panel: cream front, dark side, model on both.
+   ============================================================ */
+.box-grid { display: grid; gap: 28px 32px; grid-template-columns: repeat(auto-fill, minmax(min(100%, max(380px, 30%)), 1fr)); margin-top: 8px; }   /* at most three boxes in a row (owner 31 Oct, sizes): 512 px boxes on a 1920 screen, 407 px at 1440 */
+/* The room the rising panel view needs above a box scales with the box: the panel stops 38 % of the frame height (874/1461 of
+   the width) above the frame, i.e. 22.7 % of the item width, so the item carries it as padding-top (owner 31 Oct: the panel
+   must not reach the buy key of the row above, at any column count). */
+.box-item { display: flex; flex-direction: column; align-items: center; min-width: 0; padding-top: 23%; }
+/* One shelf height for every box: the link is the landscape box's frame (1461 x 874); a portrait carton (KIYMA) stands inside
+   it at the same height, centred, instead of towering over its row. */
+.box-link { position: relative; display: block; width: 100%; aspect-ratio: 1461 / 874; text-decoration: none; color: inherit; border-radius: 10px; }
+.box-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 6px; }
+.box-img { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; z-index: 2; display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; filter: drop-shadow(0 22px 34px rgba(3, 55, 51, 0.22)); transition: transform .35s cubic-bezier(.2,.8,.2,1), filter .35s ease; }
+.box-link:hover .box-img:not(.box-lid):not(.box-body), .box-link:focus-visible .box-img:not(.box-lid):not(.box-body) { transform: translateY(-8px) scale(1.015); filter: drop-shadow(0 34px 44px rgba(3, 55, 51, 0.3)); }
+@media (prefers-reduced-motion: reduce) { .box-img, .box-link:hover .box-img { transition: none; transform: none; } }
+.box-lines { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; margin-top: 18px; padding: 0 8px; }
+.box-name { margin: 0; font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.35rem; font-weight: 700; letter-spacing: .06em; line-height: 1.1; }
+.box-name a { color: var(--color-text); text-decoration: none; }
+.box-name a:hover { color: var(--color-primary); }
+.box-kind { font-size: .9rem; color: var(--color-text-muted); line-height: 1.4; }
+.box-price { margin-top: 6px; font-weight: 800; color: var(--color-gold); font-size: .95rem; }
+.box-price s { color: var(--color-text-muted); font-weight: 600; margin-right: 4px; }
+.box-buy-row { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.box-until { font-size: .72rem; color: var(--color-text-muted); }
+.box-buy { padding: 9px 16px; font-size: .84rem; }
+.box-buy.plugin-buy-owned { font-size: .8rem; }
+.box-launch { font-size: .74rem; color: var(--color-text-muted); }
+.box-buy-row .plugin-buy-pending { font-size: .8rem; text-align: center; }
+/* The hover view (owner 31 Oct): a second panel view slides up out of the box like a record out of its sleeve. The panel
+   sits behind the box image (z-order) inside the carton's opaque front, and on hover / focus it rises past the lid's edge:
+   the top two thirds of the panel show above the box, the foot (with its lockup) stays inside. Hidden on touch screens
+   (no hover); under reduced motion it is simply shown in place. */
+/* Under the box image in z-order, and clipped at the box's foot: a tall panel hanging inside the box must never show below
+   it (owner 31 Oct: "paneller kutunun altında çıkıyor görünümü"). Open above and to the sides, closed at the bottom. */
+/* The panel layer is cut just inside the box foot: the body foot sits at 99.4 % of the frame (measured on the renders) and rises
+   4 px on hover, so the cut is 0.6 % + 7 px up from the frame bottom. Nothing is cut above the frame (y < 0) or at the sides:
+   the panel itself is narrower than the front face (81 % vs 82.3 %), so its edges never meet the box's antialiased edges.
+   A clear box (ALEV) shows the panel through its walls by design. */
+.box-pops { position: absolute; inset: 0; pointer-events: none; z-index: 1; clip-path: inset(-140% -20% calc(0.6% + 7px) -20%); }
+/* The box opens (owner 31 Oct): the lid is its own layer, hinged at the frame's top edge (the lid's back edge), and swings
+   up and back on hover (rotateX about that edge, in perspective); the body stays and lifts a hair; the panel view rises from
+   inside, between body and lid. Lid behind the view, view behind the body: when the view passes the lid's region it reads
+   as in front of the opened lid, as it would be. Reduced motion: the lid opens without the swing, the view is simply shown. */
+.box-lid { z-index: 0; transform-origin: 50% 0; transform: perspective(1400px) rotateX(0deg); transition: transform .75s cubic-bezier(.3,.8,.2,1) .04s, filter .5s ease; }
+.box-body { z-index: 2; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+@media (hover: hover) {
+  .box-link:hover .box-lid, .box-link:focus-visible .box-lid { transform: perspective(1400px) rotateX(-58deg); filter: brightness(1.06); }
+  .box-link:hover .box-body, .box-link:focus-visible .box-body { transform: translateY(-4px); }
+  .box-link:hover .box-img:not(.box-lid):not(.box-body) { transform: translateY(-8px) scale(1.015); }
+}
+@media (hover: none) { .box-lid { transform: perspective(1400px) rotateX(-22deg); } }
+@media (prefers-reduced-motion: reduce) { .box-lid, .box-body { transition: none; } .box-link:hover .box-lid { transform: perspective(1400px) rotateX(-40deg); } }
+/* The view is the whole device (owner 31 Oct): the panel at its own proportions, never cropped, as wide as the box's opening
+   (82 % of the frame, centred on the front face), and it never comes all the way out: its top stops 38 % of the frame above
+   the lid, whatever its height, so every product rises the same distance and the rest of a tall panel stays inside the box
+   (the body hides it). At rest it hangs inside, invisible; the rise is a `top` move with a 7° lean back in perspective.
+   No bezel: the panel as it is, with a hairline rim and the shadow it throws down into the box. */
+.box-device { position: absolute; left: 58.5%; top: 24%; width: 81%; box-sizing: border-box; display: block;
+  /* The housing (owner 31 Oct, "device feel"): the front plate sits inside an enclosure in the product's own edge colour
+     (`--shell`, plugins.js BOX_SHELL), a little thicker below, with a lit top face that shows because the device leans back. */
+  padding: 1.1% 1.1% 1.6%; background: var(--shell, #0b2522); border-radius: 5px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 1px 0 0 rgba(255,255,255,.07), inset -1px 0 0 rgba(0,0,0,.3), inset 0 -1px 0 rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.45), 0 22px 34px rgba(3, 55, 51, 0.38);
+  opacity: 0; transform: translateX(-50%) rotateX(0deg); transform-origin: 50% 100%;
+  transition: top .8s cubic-bezier(.2,.8,.2,1) .08s, transform .8s cubic-bezier(.2,.8,.2,1) .08s, opacity .2s ease .08s; }   /* the 80 ms delay: a pointer passing over does not flick it */
+.box-device::before { content: ''; position: absolute; left: 0; right: 0; top: -1.2%; height: 1.4%; min-height: 4px; border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.1)), var(--shell, #0b2522); }   /* the top face of the housing */
+.box-device::after { content: ''; position: absolute; inset: 0; border-radius: 5px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 18%, rgba(0,0,0,0) 80%, rgba(0,0,0,.18)); }   /* light from above on the enclosure */
+.box-pop { display: block; width: 100%; height: auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05); }   /* the front plate, set 1 px into the housing */
+/* The lid's edge throws a thin shade on the device where it leaves the box, so it reads as coming out from inside. */
+.box-pops::after { content: ''; position: absolute; left: 17%; width: 83%; top: 0; height: 6%; background: linear-gradient(180deg, rgba(3,55,51,.32), rgba(3,55,51,0)); opacity: 0; transition: opacity .3s ease .1s; z-index: 1; pointer-events: none; }
+@media (hover: hover) {
+  .box-link:hover .box-device, .box-link:focus-visible .box-device { opacity: 1; top: -38%; transform: perspective(1200px) translateX(-50%) rotateX(7deg); }
+  .box-link:hover .box-pops::after, .box-link:focus-visible .box-pops::after { opacity: 1; }
+}
+/* No pointer (phones, tablets): the device stands a little out of the box all the time, so there is something to see; a tap opens the room. */
+@media (hover: none) { .box-device { opacity: 1; top: -12%; transition: none; } }
+@media (prefers-reduced-motion: reduce) { .box-device { transition: opacity .2s ease; } .box-link:hover .box-device { top: -38%; transform: translateX(-50%); } }
+.box-item:hover, .box-item:focus-within { z-index: 3; position: relative; }
+/* "by <publisher>" under a product's kind line: a producer's or label's product (live catalogue, owner 31 Oct). */
+.st-by { display: block; font-size: 0.82rem; color: var(--color-text-muted); letter-spacing: 0.02em; }
+.st-by a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.st-hero .st-by { margin: -4px 0 10px; }
+/* The CSS box: the same proportions as the rendered one (front 50 x 48 of a 100 x 100 frame, side 16 wide, top 10 high). */
+.box-drawn { position: relative; z-index: 2; display: block; width: 100%; height: 100%; filter: drop-shadow(0 22px 34px rgba(3, 55, 51, 0.22)); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.box-link:hover .box-drawn { transform: translateY(-8px) scale(1.015); }
+.box-drawn-side { position: absolute; left: 0; top: 17%; width: 18%; height: 83%; background: linear-gradient(90deg, #01201d, #022b27); clip-path: polygon(0 0, 100% 20%, 100% 100%, 0 83%); display: flex; align-items: center; justify-content: center; }
+.box-drawn-side span { writing-mode: vertical-rl; transform: rotate(180deg); color: #F2EFE7; font-family: 'Oswald', var(--font-heading, sans-serif); letter-spacing: .3em; font-size: clamp(.7rem, 1.6vw, 1rem); text-transform: uppercase; }
+.box-drawn-front { position: absolute; left: 18%; top: 17%; width: 82%; height: 83%; background: linear-gradient(135deg, #faf8f2, #ece8dc); box-shadow: inset 0 0 0 2px transparent; }
+.box-drawn-front::before { content: ''; position: absolute; inset: 4%; border: 2px solid #033733; pointer-events: none; }
+.box-drawn-front::after { content: ''; position: absolute; left: 18%; top: -17%; width: 82%; height: 17%; background: linear-gradient(180deg, #ffffff, #efece3); transform-origin: left bottom; transform: skewX(-42deg); }
+.box-drawn-model { position: absolute; right: 8%; top: 8%; font-size: clamp(.55rem, 1.2vw, .75rem); letter-spacing: .25em; color: #033733; font-weight: 700; text-transform: uppercase; }
+.box-drawn-front img { position: absolute; left: 12%; top: 20%; width: 76%; height: 40%; object-fit: contain; background: #0E100F; border-radius: 6px; padding: 1%; box-sizing: border-box; }
+.box-drawn-name { position: absolute; left: 0; right: 0; top: 64%; text-align: center; font-family: 'Oswald', var(--font-heading, sans-serif); font-weight: 700; letter-spacing: .18em; color: #033733; font-size: clamp(1rem, 2.6vw, 1.6rem); }
+.box-drawn-kind { position: absolute; left: 0; right: 0; top: 78%; text-align: center; color: #033733; font-size: clamp(.6rem, 1.3vw, .8rem); }
+
+/* Room: "already bought?" as a text button under the single action. */
+.plugin-link-btn {
+  font: inherit; font-size: 0.9rem; background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--color-accent); text-decoration: underline;
+}
+.plugin-already { margin: 12px 0 0; }
+/* Long unbroken tokens in room copy (file names like Track_Vocals_144BPM_Bmin_ELEK.wav) ran 35 px past a 320 px screen. */
+.plugin-section p, .plugin-lead, .plugin-control span { overflow-wrap: break-word; }
+
+/* ============================================================
+   Closed tool cards on the homepage (owner 2026-10-15: one fixed size, the info on the card, like the /plugins cards).
+   Owner 2026-10-22: no fixed dark card any more — the card ground sits close to the page ground in both themes
+   (--color-surface on --color-bg), a crop of the tool's real screen filling the top of the card,
+   the text in the theme's own colours. The blurred, darkened copy of the image and the dark fade are gone.
+   ============================================================ */
+.card-grid .pack-card { aspect-ratio: 1 / 1; display: block; background: var(--color-surface); color: var(--color-text); }
+.card-grid .pack-card .pack-image-container { position: absolute; left: 0; right: 0; top: 0; padding-top: 0; height: 58%; background: var(--color-surface-2); border-bottom: 1px solid var(--color-border); }
+.card-grid .pack-card .pack-image-bg { display: none; }
+.card-grid .pack-card .pack-image { top: 0; bottom: auto; height: 100%; object-fit: cover; object-position: left top; }
+.card-grid .pack-card .pack-image-glow { display: none; }
+.card-grid .pack-card .pack-image-banner { top: 10px; bottom: auto; left: auto; right: 10px; background: var(--color-primary); color: var(--color-on-primary); }
+.card-grid .pack-card .pack-info { position: absolute; left: 0; right: 0; bottom: 0; top: 58%; padding: 14px 18px 16px; display: flex; flex-direction: column; background: none; }
+.card-grid .pack-card .pack-info .product-actions { margin-top: auto; }
+/* In the column a squeezed item lost the bottom of its letters (the 2-line subtitle under the figures); nothing shrinks. */
+.card-grid .pack-card .pack-info > * { flex-shrink: 0; }
+.card-grid .pack-card .pack-title { color: var(--color-text); font-size: 1.15rem; }
+.card-grid .pack-card .pack-subtitle { color: var(--color-text-muted); margin-bottom: 8px; -webkit-line-clamp: 1; }   /* one line on the closed card; two pushed the button out of the square */
+.card-grid .pack-card .metrics-row { color: var(--color-gold); margin-bottom: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; }
+.card-grid .pack-card .metric-dot { background: var(--color-gold); opacity: .7; flex: 0 0 4px; }
+/* A closed card shows the first two figures; the room shows them all. */
+.card-grid .pack-card .metrics-row > :nth-child(n+4) { display: none; }
+.card-grid .pack-card .pack-meta-row, .card-grid .pack-card .pack-guide-link, .card-grid .pack-card .pack-size-muted { color: var(--color-text-muted); }
+.card-grid .pack-card .audio-overlay { bottom: 44%; }
+/* Owner 22 Oct: the text half-covered the card. A closed card shows the name, one line and the button; the figures
+   and the guide line are on the tool's own page. */
+.card-grid .pack-card .metrics-row, .card-grid .pack-card .pack-meta-row { display: none; }
+
+/* Panel tour (MIHENK): one cropped panel section per step. Colours from the brand kit / theme tokens only. */
+.panel-tour { background: var(--tour-bg); color: var(--color-text); padding: 72px 0 80px; }
+.panel-tour-inner { max-width: var(--page-max); }
+.panel-tour h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin: 0 0 10px; color: var(--color-text); }
+.panel-tour-lead { max-width: 640px; color: var(--color-text-muted); font-size: 1.08rem; line-height: 1.6; margin: 0 0 48px; }
+.panel-tour-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 56px; }
+.panel-tour-step { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 36px; align-items: center; }
+.panel-tour-step.is-flipped .panel-tour-figure { order: 2; }
+.panel-tour-step.is-wide { grid-template-columns: 1fr; gap: 18px; }
+.panel-tour-step.is-wide .panel-tour-text { max-width: 720px; }
+/* The figure's dark ground is the panel's own colour behind a cropped screenshot, so it stays dark in both themes. */
+.panel-tour-figure { margin: 0; border-radius: 10px; overflow: hidden; background: #032825; box-shadow: var(--shadow-card-hover); }
+.panel-tour-figure img { display: block; width: 100%; height: auto; }
+.panel-tour-step:not(.is-wide) .panel-tour-figure { max-width: 560px; justify-self: center; width: 100%; }
+.panel-tour-num { font: 700 .8rem/1 'JetBrains Mono', ui-monospace, Menlo, monospace; color: var(--color-gold); letter-spacing: .12em; }
+.panel-tour-text h3 { margin: 8px 0 10px; font-size: 1.35rem; color: var(--color-text); }
+.panel-tour-text p { margin: 0; color: var(--color-text-muted); line-height: 1.65; }
+.panel-tour-practical { margin-top: 64px; padding: 28px 30px; border-radius: 12px; background: var(--color-bg); box-shadow: var(--shadow-card); }
+.panel-tour-practical h3 { margin: 0 0 12px; color: var(--color-gold); font-size: 1.1rem; letter-spacing: .04em; text-transform: uppercase; }
+.panel-tour-practical ul { margin: 0; padding-left: 20px; color: var(--color-text); line-height: 1.7; }
+@media (max-width: 760px) {
+  .panel-tour { padding: 48px 0 56px; }
+  .panel-tour-step, .panel-tour-step.is-flipped { grid-template-columns: 1fr; gap: 16px; }
+  .panel-tour-step.is-flipped .panel-tour-figure { order: 0; }
+  .panel-tour-steps { gap: 40px; }
+  .panel-tour-practical { padding: 22px 20px; }
+}
+
+/* ── Homepage news feed (NewsFeed.jsx, owner 2026-10-26): the homepage is our news, read by scrolling down. Each frame holds
+   a real panel in a window; the window slides in from its side the first time it is seen. ── */
+.news-feed { max-width: var(--page-max); margin: 0 auto; padding: 8px 16px 24px; }
+
+.news-feed-head {
+  margin: 20px 0 4px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.news-frame {
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 40px; align-items: center;
+  padding: 56px 0; min-height: min(78vh, 640px); box-sizing: border-box;
+}
+.news-frame.is-flipped { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); }
+.news-frame.is-flipped .news-copy { order: 2; }
+.news-kicker {
+  margin: 0 0 10px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--color-accent);
+}
+.news-date {
+  margin: 0 0 8px; font-family: var(--font-display); font-weight: 700; line-height: 0.88; letter-spacing: -1px;
+  font-size: clamp(3.4rem, 6.8vw, 6.6rem); color: var(--color-text); text-transform: uppercase;   /* "NOVEMBER" fits its column */
+}
+.news-title { margin: 0 0 12px; font-size: clamp(1.4rem, 2.8vw, 2.2rem); font-weight: 900; line-height: 1.15; text-wrap: balance; }
+.news-line { margin: 0 0 24px; color: var(--color-text-muted); line-height: 1.65; max-width: 52ch; font-size: 1.02rem; }
+.news-cta { display: inline-block; text-decoration: none; }
+/* No entrance motion on the news frames (owner 30 Oct: "haberlerden frame motion'u kaldıralım"): they are simply there. */
+.news-window {
+  border-radius: 12px; overflow: hidden; background: var(--color-surface-2); border: 0; box-shadow: var(--shadow-card-hover);
+  box-shadow: 0 22px 48px rgba(3, 55, 51, 0.2);
+}
+.news-window img { display: block; width: 100%; height: auto; }
+/* A picture that is its own object (a product box on a clear ground): no window round it, a soft shadow under the object itself. */
+.news-window.is-bare { background: none; box-shadow: none; border-radius: 0; overflow: visible; }
+.news-window.is-bare img { filter: drop-shadow(0 22px 34px rgba(3, 55, 51, 0.22)); }
+.news-window.is-flat img { filter: none; }
+@media (max-width: 760px) {
+  .news-frame, .news-frame.is-flipped { grid-template-columns: 1fr; gap: 20px; padding: 32px 0; min-height: 0; }
+  .news-frame.is-flipped .news-copy { order: 0; }
+  .news-window { order: -1; }
+}
+
+/* Account: owned plugins as /plugins cards (owner 28 Oct), downloads and notes under each card. */
+.acct-room-grid { margin-top: 8px; }
+.acct-room-item { scroll-margin-top: 90px; }
+.acct-room-body { display: flex; flex-direction: column; gap: 2px; padding: 0 2px; }
+.acct-room-body .acct-downloads { margin: 2px 0 6px; }
+.acct-room-body .acct-manuals { margin: 0 0 4px; }
+
+/* Account welcome (owner 28 Oct): a dark brand panel at the top of /account, the same ink and gold as the plugin cards. */
+.acct-welcome {
+  position: relative; overflow: hidden; margin: 32px 0 36px; padding: 28px 28px 22px; border-radius: 18px;
+  background: radial-gradient(120% 140% at 100% 0%, rgba(197, 160, 89, .16) 0%, rgba(197, 160, 89, 0) 55%), var(--pl-panel);
+  color: var(--pl-cream); box-shadow: var(--shadow-card);
+}
+.acct-welcome-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.acct-welcome-id { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.acct-welcome-avatar {
+  flex: none; width: 64px; height: 64px; border-radius: 50%; object-fit: cover; display: flex; align-items: center; justify-content: center;
+  background: var(--pl-btn); color: var(--pl-btn-ink); font-size: 1.6rem; font-weight: 800; border: 0; box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+.acct-welcome-kicker { margin: 0 0 4px; font-size: .74rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--pl-gold); }
+.acct-welcome-title { margin: 0; font-family: 'Oswald', var(--font-heading, sans-serif); font-size: clamp(1.6rem, 3.4vw, 2.3rem); font-weight: 700; letter-spacing: .02em; line-height: 1.1; color: var(--pl-cream); }
+.acct-welcome-line { margin: 6px 0 0; font-size: .98rem; color: var(--pl-muted); }
+
+.acct-welcome-tiles { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 0; }
+.acct-welcome-tile {
+  display: flex; flex-direction: column; gap: 2px; min-width: 120px; padding: 12px 16px; border-radius: 12px; text-decoration: none;
+  background: var(--pl-tint); border: 1px solid transparent; color: var(--pl-cream); transition: background .15s, box-shadow .15s;
+}
+.acct-welcome-tile:hover { background: var(--pl-tint); border-color: transparent; box-shadow: 0 8px 20px rgba(0, 0, 0, .3); }
+.acct-welcome-tile b { font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.6rem; font-weight: 700; line-height: 1; color: var(--pl-gold); }
+.acct-welcome-tile span { font-size: .8rem; color: var(--pl-muted); }
+.acct-welcome-meta { margin: 18px 0 0; font-size: .8rem; color: var(--pl-muted); overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .acct-welcome { padding: 22px 18px 18px; margin-top: 20px; }
+  .acct-welcome-avatar { width: 52px; height: 52px; font-size: 1.3rem; }
+  .acct-welcome-tile { flex: 1 1 calc(50% - 6px); min-width: 0; }
+}
+
+.acct-help-dates { margin: 6px 0 0; padding: 0; list-style: none; font-size: .86rem; color: var(--color-text); }
+.acct-help-dates li { padding: 3px 0; border-top: 1px solid var(--color-border); }
+.acct-help-dates li:first-child { border-top: 0; }
+
+/* Account lower half (owner 28 Oct): one frame, one row type, every row closed until opened. */
+.acct-folds { border: 1px solid var(--color-border); border-radius: 16px; background: var(--color-surface); overflow: hidden; }
+.acct-fold { border-top: 1px solid var(--color-border); }
+.acct-fold:first-child { border-top: 0; }
+.acct-fold > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 20px; min-height: 56px;
+  font-weight: 800; font-size: 1rem; color: var(--color-text);
+}
+.acct-fold > summary::-webkit-details-marker { display: none; }
+.acct-fold > summary:hover { background: var(--color-surface-2); }
+.acct-fold > summary:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.acct-fold-title { flex: 1; min-width: 0; }
+.acct-fold-meta { font-size: .82rem; font-weight: 600; color: var(--color-text-muted); white-space: nowrap; }
+
+.acct-fold-body { padding: 0 20px 20px; font-size: .92rem; line-height: 1.6; color: var(--color-text-muted); }
+.acct-fold-body > p { margin: 0 0 10px; }
+.acct-fold-body .acct-credits, .acct-fold-body .acct-inbox { background: none; border: 0; padding: 0; box-shadow: none; }
+.acct-fold-sub { margin: 14px 0 6px; font-size: .9rem; font-weight: 800; color: var(--color-text); }
+.acct-fold-danger > summary { color: var(--color-danger, #b3261e); }
+.acct-fold-body .acct-key-list { margin-top: 6px; }
+.acct-help-dates li { display: flex; justify-content: space-between; gap: 12px; }
+.acct-fold-body .acct-claim { margin-top: 10px; }
+.acct-claim > summary.acct-claim-btn { list-style: none; display: inline-flex; }
+.acct-claim > summary.acct-claim-btn::-webkit-details-marker { display: none; }
+.acct-claim[open] > summary.acct-claim-btn { margin-bottom: 12px; }
+
+/* Site dividers (owner 28 Oct: "ayırıcı çizgiyi biraz dekoratif yapalım ... tüm websitedeki ayraçlara koyalım"): a rule that
+   fades at both ends with a small gold waveform in the middle. .svl-divider is a block (hr or div); .svl-divider-top /
+   .svl-divider-bottom draw it on the edge of a section. */
+:root { --svl-divider-orn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='18' viewBox='0 0 96 18'%3E%3Cg fill='%23C5A059'%3E%3Crect x='14' y='7' width='3' height='4' rx='1.5'/%3E%3Crect x='22' y='5' width='3' height='8' rx='1.5'/%3E%3Crect x='30' y='3' width='3' height='12' rx='1.5'/%3E%3Crect x='38' y='6' width='3' height='6' rx='1.5'/%3E%3Crect x='46.5' y='1' width='3' height='16' rx='1.5'/%3E%3Crect x='55' y='6' width='3' height='6' rx='1.5'/%3E%3Crect x='63' y='3' width='3' height='12' rx='1.5'/%3E%3Crect x='71' y='5' width='3' height='8' rx='1.5'/%3E%3Crect x='79' y='7' width='3' height='4' rx='1.5'/%3E%3C/g%3E%3Ccircle cx='4' cy='9' r='1.6' fill='%23C5A059' opacity='.7'/%3E%3Ccircle cx='92' cy='9' r='1.6' fill='%23C5A059' opacity='.7'/%3E%3C/svg%3E"); }
+.svl-divider, .svl-divider-top::before, .svl-divider-bottom::after {
+  background:
+    var(--svl-divider-orn) center / 96px 18px no-repeat,
+    linear-gradient(90deg, transparent 0, var(--color-border) 12%, var(--color-border) calc(50% - 62px), transparent calc(50% - 62px),
+      transparent calc(50% + 62px), var(--color-border) calc(50% + 62px), var(--color-border) 88%, transparent 100%) center / 100% 1px no-repeat;
+}
+hr.svl-divider, div.svl-divider { display: block; border: 0; height: 18px; margin: 36px 0; }
+.svl-divider-top, .svl-divider-bottom { position: relative; }
+.svl-divider-top::before, .svl-divider-bottom::after { content: ''; position: absolute; left: 0; right: 0; height: 18px; pointer-events: none; }
+.svl-divider-top::before { top: -9px; }
+.svl-divider-bottom::after { bottom: -9px; }
+.news-frame:last-child::after { display: none; }
+
+/* Every fold on the site opens with a plus (owner 28 Oct: "tamamını artı işareti ile açalım"); it turns into a cross when open. */
+details > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary:not(.acct-claim-btn)::after {
+  content: '+'; margin-left: auto; flex: none; color: var(--color-gold-bright, #C5A059); font-weight: 900; font-size: 1.25em; line-height: 1;
+  transition: transform .18s ease;
+}
+details[open] > summary:not(.acct-claim-btn)::after { content: '+'; transform: rotate(45deg); }
+
+/* Homepage packs in the gaps between news frames (PackShelf.jsx, owner 28 Oct). */
+.news-feed { position: relative; }
+.news-feed .news-frame { padding-bottom: 96px; }
+.news-feed .news-frame + .news-frame { padding-top: 96px; }
+.pack-gaps { position: absolute; top: 0; bottom: 0; pointer-events: none; overflow: hidden; z-index: 6;
+  /* full window width, not the news column: the cards slide in from the screen's own edges (owner 28 Oct) */
+  left: calc(50% - 50vw + var(--sbw, 0px) / 2); right: calc(50% - 50vw + var(--sbw, 0px) / 2); }
+.pack-gap { position: absolute; left: 0; right: 0; height: 0; }
+.pack-gap-card {
+  /* Owner 30 Oct: only the cover, the name and the play button; the card is as wide as those, no empty half. */
+  position: absolute; top: -44px; height: 88px; width: max-content; max-width: 260px; display: flex; align-items: center; gap: 12px; padding: 8px 16px 8px 8px;
+  box-sizing: border-box; border-radius: 14px; text-decoration: none; color: var(--color-text);
+  background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: 0 14px 32px var(--shadow-color); will-change: transform, opacity;
+}
+.pack-gap-card.is-left { left: 0; border-radius: 0 14px 14px 0; }
+.pack-gap-card.is-right { right: 0; border-radius: 14px 0 0 14px; }
+.pack-gap-card:hover { box-shadow: 0 18px 40px var(--shadow-color), 0 0 0 1px var(--color-gold-bright, #C5A059); }
+.pack-gap-card img { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex: none; }
+.pack-gap-text { display: flex; flex-direction: column; min-width: 0; }
+.pack-gap-name { font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: .03em; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pack-gap-cover { position: relative; flex: none; width: 72px; height: 72px; }
+.pack-gap-play {
+  position: absolute; right: 4px; bottom: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 10px; line-height: 1; padding: 0 0 0 1px;
+  background: #C5A059; color: #032825; box-shadow: 0 2px 8px rgba(0,0,0,.35); transition: transform .15s;
+}
+.pack-gap-play:hover { transform: scale(1.12); }
+.pack-gap-play.is-on { padding: 0; font-size: 9px; letter-spacing: -1px; }
+/* The covers face each other across the divider (owner 28 Oct: "kapaklar içeri doğru baksın, birbirine doğru"): on the left card
+   the cover is on its inner (right) side, on the right card on its inner (left) side; the text sits on the outer side. */
+.pack-gap-card.is-left { flex-direction: row-reverse; padding: 8px 8px 8px 16px; }
+.pack-gap-card.is-left .pack-gap-text { align-items: flex-end; text-align: right; }
+
+/* MuseHub's "Download with MuseHub" badge beside the checkout (MuseHubButton.jsx); the art is MuseHub's, drawn as delivered. */
+.musehub-btn { display: inline-flex; align-items: center; align-self: center; line-height: 0; border-radius: 9px; transition: transform .15s ease, opacity .15s ease; }
+.musehub-btn img { height: 47px; width: auto; }
+.musehub-btn .musehub-on-light { display: var(--musehub-light); }
+.musehub-btn .musehub-on-dark { display: var(--musehub-dark); }
+.musehub-btn { box-shadow: var(--shadow-card); }
+.musehub-btn:hover { transform: translateY(-1px); opacity: .92; }
+.musehub-btn:focus-visible { outline: 2px solid var(--gold, currentColor); outline-offset: 3px; }
+
+/* Boxes: a shadow, not a line (owner 28 Oct: "her şeyin etrafında kalın sarı çizgi var; bunun yerine gölge, her iki modda").
+   The border stays in the box model (transparent) so nothing moves; dividers inside boxes keep --color-border. */
+.glass-panel, .pack-card, .modal-content, .stat-card, .forum-topic, .forum-card, .forum-post,
+.plugin-control, .launch-steps li, .acct-plugin, .acct-key-list, .manual-toc,
+.manual-recipe, .inbox-panel, .acct-folds, .pack-gap-card, .room-card, .tp-card, .forum-error, .forum-notice {
+  border-color: transparent; box-shadow: var(--shadow-card);
+}
+ .pack-card:hover, .room-card:hover, .forum-topic:hover, .forum-card:hover {
+  border-color: transparent; box-shadow: var(--shadow-card-hover);
 }

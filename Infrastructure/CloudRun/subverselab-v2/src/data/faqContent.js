@@ -1,6 +1,12 @@
 // Plain data, no JSX — imported by both the React Help page (src/) and the
 // build-time prerender script (scripts/, plain Node, no bundler) so the two
 // never drift out of sync with each other.
+// Product names and prices come from src/data (owner 17 Oct: lists from the data, no counts).
+import { FREE_PLUGINS, FAMILY_PLUGINS, SOLO_PLUGINS } from './plugins.js';
+import { PRESET_PACK_LIST } from './presetPacks.js';
+
+const nameList = (list) => list.map((p) => p.displayName || p.name).join(', ');
+const PAID_PRESET_PACKS = PRESET_PACK_LIST.filter((p) => !p.free);
 
 export const GENERAL_FAQ = [
   {
@@ -9,11 +15,15 @@ export const GENERAL_FAQ = [
   },
   {
     q: 'How much does everything cost?',
-    a: 'The online tools and the guides are free, and a free account (Google or e-mail, no card) opens the member tools with their daily free use. TABAN and ALEV are free plugins. The other plugins are paid: each on its own or together as the plugin family, sold through Lemon Squeezy, with the price on every plugin page. A plugin purchase also adds credits for extra tool uses.',
+    a: `Some things are free and some are paid, and every page states its price. Free: the plugins ${nameList(FREE_PLUGINS)} (a $0 checkout that asks only for an e-mail address, no card), the Ableton rack packs on the preset packs page for signed-in members, Loom, the guides, and the browser tools within their daily free use. Paid, through Lemon Squeezy: ${nameList(FAMILY_PLUGINS)}, ${nameList(SOLO_PLUGINS)}, the sample packs${PAID_PRESET_PACKS.length ? ` and ${nameList(PAID_PRESET_PACKS)}` : ''}. Past a tool's daily free use, further uses cost credits; the tool's guide states the cost, and every dollar you pay for any purchase (before tax) adds 100 credits to your account.`,
+  },
+  {
+    q: 'Can I get a refund?',
+    a: 'Ask within 18 days of the purchase: write to info@subverselab.com with your order number and the e-mail address you paid with. Lemon Squeezy, the merchant of record, issues refunds and decides each one case by case. A refund ends the licence, closes the downloads and takes back the credits that order added. If a product does not install or run on a system its page lists, write first: most problems are an install step or a setting. Full policy: subverselab.com/refunds.',
   },
   {
     q: 'Why do some tools only let me generate or analyze a limited number of times per day?',
-    a: 'Where a tool applies a daily limit, the exact rule is documented on that tool’s guide. Subverse Mix Check allows members one completed analysis per IP address per UTC day; verified admins have no product quota. The website passes membership into the tool, so the tool does not show a second sign-in screen.',
+    a: 'Where a tool applies a daily limit, the exact rule is documented on that tool’s guide. Mix Check allows members one completed analysis per IP address per UTC day; verified admins have no product quota. The website passes membership into the tool, so the tool does not show a second sign-in screen.',
   },
   {
     q: 'I signed in on SubverseLab — why did a tool ask me to sign in again?',
@@ -22,6 +32,10 @@ export const GENERAL_FAQ = [
   {
     q: 'Why do some downloads require an account but browsing doesn’t?',
     a: 'Free access and free downloads are two different gates. A product can be fully public to look at and even use, while its actual download is reserved for signed-in members — this is stated on the product card itself, next to the download button.',
+  },
+  {
+    q: 'I bought or got something, but it is not on my Account page. What do I do?',
+    a: 'Purchases appear on the account that was signed in when you opened the checkout, usually within a minute. If you checked out before you had an account, or with a different e-mail address, open your Account page and claim the order with the order number from the Lemon Squeezy receipt; the download then appears there. If it still does not, use the report form on the Account page or email info@subverselab.com.',
   },
   {
     q: 'I found a broken link or something that doesn’t work — how do I report it?',
@@ -43,15 +57,15 @@ export const TOOL_FAQ = [
     a: 'Full Pattern gives you one .mid containing every channel. Every Channel gives you a .zip with one .mid per channel. A single channel on its own is the Channel MIDI button on that channel’s mixer strip. Exports follow what you are actually hearing, including your density settings; mute and solo affect playback only and never remove notes from the file.',
   },
   {
-    q: 'Does Subverse Mix Check upload my track anywhere permanently?',
+    q: 'Does Mix Check upload my track anywhere permanently?',
     a: 'No. Your WAV or MP3 is analyzed from temporary storage and deleted after processing; only the measurement result is returned. The tool reports direct loudness, level, spectrum, and supported mono fold-down evidence. It does not invent a quality score, a key, a BPM or advice.',
   },
   {
-    q: 'How does the Subverse Mix Check daily limit work?',
+    q: 'How does the Mix Check daily limit work?',
     a: 'Members get one completed analysis per IP address per UTC calendar day. Failed or undecodable files release the reservation. Verified SubverseLab admins are exempt from the product quota. Membership is handed over from the website; Mix Check has no separate login.',
   },
   {
-    q: 'Where does Subverse Splitter process my audio?',
+    q: 'Where does Splitter process my audio?',
     a: 'On SubverseLab’s own server. The Splitter became a web tool in August 2026, replacing the desktop app that ran separation on your machine — so the honest answer changed with it: your file is uploaded, separated in a dedicated Cloud Run service, and held in that instance’s temporary workspace only until you have collected the stems. Completed jobs and their audio are discarded within about thirty minutes, and nothing is written to the product database. Key and BPM analysis is unlimited; separations are one per member and per network address each day.',
   },
   {

@@ -1,0 +1,50 @@
+[
+ {
+  "t": 0,
+  "label": "Amber Loop: 124 BPM, G minor"
+ },
+ {
+  "t": 3.87,
+  "label": "Copper Lantern: 124 BPM, B minor"
+ },
+ {
+  "t": 7.74,
+  "label": "Dust Choir: 123 BPM, E minor"
+ },
+ {
+  "t": 11.64,
+  "label": "Glass Stairs: 124 BPM, G minor"
+ },
+ {
+  "t": 15.52,
+  "label": "Low Orbit: 122 BPM, A minor"
+ },
+ {
+  "t": 19.45,
+  "label": "Moth Signal: 122 BPM, D minor"
+ },
+ {
+  "t": 23.38,
+  "label": "Night Market: 123 BPM, E minor"
+ },
+ {
+  "t": 27.29,
+  "label": "Palm Ledger: 123 BPM, B minor"
+ },
+ {
+  "t": 31.19,
+  "label": "Riverglass: 122 BPM, A minor"
+ },
+ {
+  "t": 35.12,
+  "label": "Saffron Road: 122 BPM, A minor"
+ },
+ {
+  "t": 39.06,
+  "label": "Sunvault: 122 BPM, A minor"
+ },
+ {
+  "t": 42.99,
+  "label": "Tidewalk: 122 BPM, D minor"
+ }
+]

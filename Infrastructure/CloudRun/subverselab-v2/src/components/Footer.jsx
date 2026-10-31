@@ -1,11 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { openConsentSettings } from '../consent';
+import FooterStrips from './FooterStrips';
+import { media } from '../utils/endpoints';
+
+const SOCIAL = [
+  { name: 'YouTube', href: 'https://www.youtube.com/@SubverseLab', icon: media('/social/youtube.svg') },
+  { name: 'Instagram', href: 'https://www.instagram.com/subverse_lab/', icon: media('/social/instagram.svg') },
+];
+
+// The footer's links in three columns (owner 31 Oct). Store first, then what a signed-in person needs, then the studio.
+const FOOTER_COLUMNS = [
+  { title: 'Store', links: [
+    { label: 'Plugins', to: '/plugins' }, { label: 'Sample packs', to: '/sample-packs' }, { label: 'Preset packs', to: '/preset-packs' }, { label: 'Browser tools', to: '/tools' },
+  ] },
+  { title: 'Account', links: [
+    { label: 'Download Room', to: '/launch2' }, { label: 'Your account', to: '/account' }, { label: 'Testers', to: '/testers' }, { label: 'Forum', to: '/forum' },
+  ] },
+  { title: 'SubverseLab', links: [
+    { label: 'Loom', to: '/loom' }, { label: 'Help', to: '/help' }, { label: 'Privacy', to: '/privacy' }, { label: 'Terms', to: '/terms' }, { label: 'Refunds', to: '/refunds' },
+    { label: 'Cookie settings', onClick: openConsentSettings },
+  ] },
+];
 
 export default function Footer() {
   return (
-    <footer style={{
-      borderTop: '1px solid var(--color-border)',
+    <footer className="svl-divider-top" style={{
       backgroundColor: 'var(--color-surface)',
       padding: '60px 0 40px',
       marginTop: '60px',
@@ -37,103 +57,40 @@ export default function Footer() {
             SubverseLab
           </div>
           <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)', maxWidth: '360px', lineHeight: '1.6', margin: '0 0 24px' }}>
-            Plugins for macOS and Windows, and browser tools for music producers — arranging, measuring, mixing and stem separation.
+            Plugins for macOS and Windows, sample packs, Ableton Live racks and browser tools, made by SubverseLab for producers who want to finish the track.
           </p>
-          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', opacity: 0.7 }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             © {new Date().getFullYear()} SubverseLab. All rights reserved.
+          </div>
+          {/* The social accounts as icons, apart from the page links and on the opposite side of the footer from them (owner
+              30 Oct). Marks from simple-icons (CC0), painted in the footer's ink through a CSS mask like the emblem; the name is
+              the link's accessible label. */}
+          <div className="footer-social">
+            {SOCIAL.map((x) => (
+              <a key={x.name} href={x.href} target="_blank" rel="noopener noreferrer" className="footer-social-link" aria-label={x.name} title={x.name}>
+                <span className="footer-social-mark" style={{ WebkitMaskImage: `url(${x.icon})`, maskImage: `url(${x.icon})` }} />
+              </a>
+            ))}
           </div>
         </div>
 
-        {/* Right Column (Socials & Credits) */}
-        <div style={{ textAlign: 'right', minWidth: 0 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', justifyContent: 'flex-end', marginBottom: '24px' }}>
-            <a 
-              href="https://www.youtube.com/@SubverseLab" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              YouTube
-            </a>
-            <a 
-              href="https://www.instagram.com/subverse_lab/" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Instagram
-            </a>
-            <Link
-              to="/plugins"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Plugins
-            </Link>
-            <Link
-              to="/sample-packs"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Sample packs
-            </Link>
-            <Link
-              to="/launch2"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Plugin family
-            </Link>
-            <Link
-              to="/loom"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Loom
-            </Link>
-            <Link
-              to="/help"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Help
-            </Link>
-            <Link
-              to="/privacy"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Privacy
-            </Link>
-            <Link
-              to="/terms"
-              style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Terms
-            </Link>
-            <button
-              type="button"
-              onClick={openConsentSettings}
-              style={{ background: 'none', border: 0, padding: 0, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--color-text-muted)', fontSize: '0.9rem', fontWeight: '600', transition: 'color 0.2s' }}
-              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
-              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--color-text-muted)'}
-            >
-              Cookie settings
-            </button>
-          </div>
-        </div>
+        {/* Right side (owner 31 Oct, "derin boşluk"): the links as three short columns, Store / Account / SubverseLab, so the
+            right half stands as tall as the brand column instead of one line with a hole under it. */}
+        <nav className="footer-cols" aria-label="Site">
+          {FOOTER_COLUMNS.map((col) => (
+            <div key={col.title} className="footer-col">
+              <div className="footer-col-title">{col.title}</div>
+              {col.links.map((l) => (l.onClick
+                ? <button key={l.label} type="button" className="footer-link footer-link-button" onClick={l.onClick}>{l.label}</button>
+                : <Link key={l.label} to={l.to} className="footer-link">{l.label}</Link>))}
+            </div>
+          ))}
+        </nav>
+      </div>
+      {/* Owner 31 Oct: the strips squeezed between the two columns left a wide hole under the links on big screens. They now run
+          the full width under both columns, where every logo has room and the two rows read as one band. */}
+      <div className="container footer-strips-row">
+        <FooterStrips />
       </div>
     </footer>
   );

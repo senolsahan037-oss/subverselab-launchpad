@@ -66,14 +66,14 @@ export default function LoomPage() {
     operatingSystem: 'macOS',
     url: 'https://subverselab.com/loom',
     codeRepository: 'https://github.com/senolsahan037-oss/loom',
-    author: { '@type': 'Person', name: 'Şenol Şahan' },
+    author: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
     publisher: { '@type': 'Organization', name: 'SubverseLab', url: 'https://subverselab.com' },
     description:
       'A measurement-based production system for Ableton Live: a local MCP server that reads your own projects and library, answers with counts instead of guesses, and writes into a running Live session.',
   };
 
   return (
-    <div className="container" style={{ maxWidth: '820px', padding: '56px 20px 96px' }}>
+    <div className="container" style={{ maxWidth: 'var(--read-max)', padding: '56px 20px 96px' }}>
       <PageMeta
         title="Loom — measurement-based production for Ableton Live | SubverseLab"
         description="A local MCP server that reads your own Ableton projects and library, answers with counts instead of guesses, and writes MIDI, device chains, automation and markers into a running Live session — verifying every write by reading it back."
@@ -106,7 +106,7 @@ export default function LoomPage() {
           polished, and someone deciding whether to install it should know that
           before they read what it can do. */}
       <div style={{
-        border: '1px solid var(--color-primary)',
+        boxShadow: 'var(--shadow-card)',
         borderRadius: '10px',
         padding: '14px 18px',
         margin: '24px 0 0',

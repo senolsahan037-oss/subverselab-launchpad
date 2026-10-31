@@ -91,14 +91,17 @@ function fakeStorage() {
     ['plugins/taban/1.0.0/Taban-1.0.0-macOS.pkg', { name: 'Taban-1.0.0-macOS.pkg', body: 'TABAN-MAC' }],
     ['plugins/taban/1.0.0/Taban-1.0.0-Windows-VST3.zip', { name: 'Taban-1.0.0-Windows-VST3.zip', body: 'TABAN-WIN' }],
     ['plugins/alev/1.0.0/Alev-1.0.0-macOS.pkg', { name: 'Alev-1.0.0-macOS.pkg', body: 'ALEV-MAC' }],
+    ['plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg', { name: 'Kiyma-1.0.0-macOS.pkg', body: 'KIYMA-MAC' }],
+    ['plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip', { name: 'Kiyma-1.0.0-Windows-VST3.zip', body: 'KIYMA-WIN' }],
     ['plugins/elek/1.0.0/Elek-1.0.0-macOS.zip', { name: 'Elek-1.0.0-macOS.zip', body: 'ELEK-MAC' }],
+    ['plugins/elek/1.0.0/Elek-1.0.0-big.pkg', { name: 'plugins/elek/1.0.0/Elek-1.0.0-macOS.pkg', body: 'ELEK-BIG', size: 680334241 }],
   ]);
   return {
     bucket: () => ({ file: (object) => ({
       getMetadata: async () => {
         const file = files.get(object);
         if (!file) throw new Error('not found');
-        return [{ name: file.name, size: file.body.length }];
+        return [{ name: file.name, size: file.size ?? file.body.length }];
       },
       createReadStream: () => Readable.from([files.get(object)?.body || '']),
       download: async () => [Buffer.from(JSON.stringify({
@@ -123,7 +126,22 @@ function fakeStorage() {
         alev: { version: '1.0.0', files: {
           mac: { name: 'Alev-1.0.0-macOS.pkg', size: 8, object: 'plugins/alev/1.0.0/Alev-1.0.0-macOS.pkg' },
         } },
+        // KIYMA: the third free plugin (15 Oct 2026), both platforms.
+        kiyma: { version: '1.0.0', files: {
+          mac: { name: 'Kiyma-1.0.0-macOS.pkg', size: 9, object: 'plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg' },
+          win: { name: 'Kiyma-1.0.0-Windows-VST3.zip', size: 9, object: 'plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip' },
+        } },
         elek: { version: '1.0.0', files: { mac: { name: 'Elek-1.0.0-macOS.zip', size: 8, object: 'plugins/elek/1.0.0/Elek-1.0.0-macOS.zip' } } },
+        // RU-8 (16 Oct): macOS and Windows at launch. Packs: one zip each (platform 'zip').
+        ru8: { version: '1.0.0', files: {
+          mac: { name: 'RU-8-1.0.0-macOS.pkg', size: 7, object: 'plugins/ru8/1.0.0/RU-8-1.0.0-macOS.pkg' },
+          win: { name: 'RU-8-1.0.0-Windows.zip', size: 7, object: 'plugins/ru8/1.0.0/RU-8-1.0.0-Windows.zip' },
+        } },
+        brickyard: { version: '1.0.0', files: { zip: { name: 'SVL_Brickyard.zip', size: 5, object: 'plugins/brickyard/1.0.0/SVL_Brickyard.zip' } } },
+        kerbstone: { version: '1.0.0', files: { zip: { name: 'SVL_Kerbstone.zip', size: 5, object: 'plugins/kerbstone/1.0.0/SVL_Kerbstone.zip' } } },
+        squall: { version: '1.0.0', files: { zip: { name: 'SVL_Squall.zip', size: 5, object: 'plugins/squall/1.0.0/SVL_Squall.zip' } } },
+        'ru8-drum-pack': { version: '1.0.0', files: { zip: { name: 'RU-8_Drum_Pack.zip', size: 5, object: 'plugins/ru8-drum-pack/1.0.0/RU-8_Drum_Pack.zip' } } },
+        'racks-drums': { version: '1.0.0', files: { zip: { name: 'SubverseLab_Drum_Racks.zip', size: 5, object: 'plugins/racks-drums/1.0.0/SubverseLab_Drum_Racks.zip' } } },
         ...(state.omitTutkal ? {} : { tutkal: { version: '1.0.0', files: { mac: { name: 'Tutkal-mac.zip', size: 10, object: 'plugins/tutkal/1.0.0/Tutkal-mac.zip' } } } }),
       }))],
     }) }),
@@ -131,8 +149,12 @@ function fakeStorage() {
 }
 
 const state = { db: fakeFirestore(), storage: fakeStorage() };
+// tokenAs: tests that need a token unlike the uid-derived default (an e-mail other than <uid>@example.com, or the same
+// password account before and after it confirmed its e-mail) put the decoded token here, keyed by the uid.
+state.tokenAs = new Map();
 state.auth = { verifyIdToken: async (token) => {
   if (!token.startsWith('valid-')) throw new Error('invalid token');
+  if (state.tokenAs.has(token.slice(6))) return clone(state.tokenAs.get(token.slice(6)));
   const uid = token.slice(6);
   return { uid, email: uid.includes('admin') ? 'senolsahan037@gmail.com' : uid.includes('nomx') ? `${uid}@nomx.invalid` : uid.includes('flaky') ? `${uid}@flaky.example` : `${uid}@example.com`, email_verified: !uid.startsWith('unv-'), firebase: { sign_in_provider: uid.startsWith('google-') ? 'google.com' : 'password' } };
 } };
@@ -147,20 +169,23 @@ globalThis.__downloadTestAdminFirestore = { getFirestore: () => state.db, FieldV
 globalThis.__downloadTestAdminAuth = { getAuth: () => state.auth };
 globalThis.__downloadTestStorage = { Storage: class { constructor() { return state.storage; } } };
 
-const serverSource = await readFile(resolve(root, 'server.js'), 'utf8');
-const launchUrl = pathToFileURL(resolve(root, 'launchLicence.js')).href;
-const entitlementsUrl = pathToFileURL(resolve(root, 'entitlements.js')).href;
-const accountUrl = pathToFileURL(resolve(root, 'accountDeletion.js')).href;
+const serverSource = await readFile(resolve(root, 'api/server.js'), 'utf8');
+const launchUrl = pathToFileURL(resolve(root, 'api/launchLicence.js')).href;
+const entitlementsUrl = pathToFileURL(resolve(root, 'api/entitlements.js')).href;
+const accountUrl = pathToFileURL(resolve(root, 'api/accountDeletion.js')).href;
 const transformed = serverSource
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
-  .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(root)};`)
+  .replace("const __dirname = dirname(fileURLToPath(import.meta.url));", `const __dirname = ${JSON.stringify(resolve(root, 'api'))};`)
   .replace("import { createLaunchService, tokenBucket } from './launchLicence.js';", `import { createLaunchService, tokenBucket } from '${launchUrl}';`)
   .replace("from './entitlements.js';", `from '${entitlementsUrl}';`)
   .replace("import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';", `import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from '${accountUrl}';`)
-  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
-  .replace("from './inbox.js';", `from '${pathToFileURL(resolve(root, 'inbox.js')).href}';`)
-  .replace("from './stats.js';", `from '${pathToFileURL(resolve(root, 'stats.js')).href}';`)
+  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'api/credits.js')).href}';`)
+  .replace("from './inbox.js';", `from '${pathToFileURL(resolve(root, 'api/inbox.js')).href}';`)
+  .replace("from './stats.js';", `from '${pathToFileURL(resolve(root, 'api/stats.js')).href}';`)
+  .replace("from './catalog.js';", `from '${pathToFileURL(resolve(root, 'api/catalog.js')).href}';`)
+  .replace("from './catalogSchema.js';", `from '${pathToFileURL(resolve(root, 'api/catalogSchema.js')).href}';`)
+  .replace("from './agents.js';", `from '${pathToFileURL(resolve(root, 'api/agents.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__downloadTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__downloadTestAdminFirestore)')
@@ -274,6 +299,19 @@ await test('a Kubbe ticket cannot fetch Kaset or another platform', async () => 
   assert.equal(result.body, 'KUBBE-MAC');
   assert.notEqual(result.body, 'KASET-MAC');
   assert.notEqual(result.body, 'KUBBE-WIN');
+});
+
+await test('a file over 30 MiB streams without Content-Length (Cloud Run 32 MiB limit); a small one keeps it', async () => {
+  resetDb();
+  const exp = Math.floor(Date.now() / 1000) + 300;
+  const big = await call(`/api/download/file?t=${encodeURIComponent(signedTicket({ uid: 'alice', slug: 'elek', platform: 'mac', object: 'plugins/elek/1.0.0/Elek-1.0.0-big.pkg', exp }))}`);
+  assert.equal(big.response.status, 200);
+  assert.equal(big.body, 'ELEK-BIG');
+  assert.equal(big.response.headers['content-length'], undefined);
+  assert.match(big.response.headers['content-disposition'], /Elek-1\.0\.0-macOS\.pkg/);
+  assert.equal(big.response.headers['content-disposition'], 'attachment; filename="Elek-1.0.0-macOS.pkg"');
+  const small = await call(`/api/download/file?t=${encodeURIComponent(signedTicket({ uid: 'alice', slug: 'kubbe', platform: 'mac', object: 'plugins/kubbe/1.2.3/Kubbe-mac.zip', exp }))}`);
+  assert.equal(String(small.response.headers['content-length']), String('KUBBE-MAC'.length));
 });
 
 await test('first download counts exactly once across repeat/plugin/platform', async () => {
@@ -614,10 +652,10 @@ await test('after the free 1,000 a launch claim (one of the first 1,000) keeps K
   assert.equal((await shop('late', 'kubbe', '10.0.6.155')).response.status, 402);
   assert.equal(state.db.docs.get('launch/counter').claimed, 1000);
   const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.6.156'), authorization: 'Bearer valid-early' } });
-  assert.deepEqual(st.body, { full: true, owned: ['kubbe', 'kaset'], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false });
+  assert.deepEqual(st.body, { full: true, owned: ['kubbe', 'kaset'], packs: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false, emailOrdersWaiting: false });
   const unv = await call('/api/purchases/status', { headers: { ...headersFor('10.0.6.157'), authorization: 'Bearer valid-unv-early' } });
   assert.equal(unv.response.status, 200);
-  assert.deepEqual(unv.body, { full: true, owned: ['kubbe', 'kaset'], standing: 'none', purchased: {}, updatesUntil: {}, unverified: true });
+  assert.deepEqual(unv.body, { full: true, owned: ['kubbe', 'kaset'], packs: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: true, emailOrdersWaiting: false });
 });
 await test('first-1,000 rule (9 Oct): unverified uid claimant gets KUBBE/KASET only; e-mail-only claim, bounced and no-MX stay at 403', async () => {
   resetDb({ claimed: 1000 });
@@ -679,9 +717,9 @@ await test('purchases status: full flag and owned slugs follow the paid orders',
   state.db.docs.set('plugin_licenses/buyer-k@example.com', order('kaset', { created: '2026-10-05T10:00:00Z' }));
   const s = await call('/api/purchases/status', { headers: { ...headersFor('10.0.6.130'), authorization: 'Bearer valid-buyer-k' } });
   assert.equal(s.response.status, 200);
-  assert.deepEqual(s.body, { full: true, owned: ['kaset'], standing: 'none', purchased: { kaset: '2026-10-05' }, updatesUntil: { kaset: '2028-10-05' }, unverified: false });
+  assert.deepEqual(s.body, { full: true, owned: ['kaset'], packs: [], standing: 'none', purchased: { kaset: '2026-10-05' }, updatesUntil: { kaset: '2028-10-05' }, unverified: false, emailOrdersWaiting: false });
   const none = await call('/api/purchases/status', { headers: { ...headersFor('10.0.6.131'), authorization: 'Bearer valid-stranger' } });
-  assert.deepEqual(none.body, { full: true, owned: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false });
+  assert.deepEqual(none.body, { full: true, owned: [], packs: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false, emailOrdersWaiting: false });
   const unauth = await call('/api/purchases/status', { headers: headersFor('10.0.6.132') });
   assert.equal(unauth.response.status, 401);
 });
@@ -710,7 +748,7 @@ await test('purchases licenses: caller gets only their own keys; 401 without a t
 await test('purchases status: full flips with the counter (999 open, 1000 full)', async () => {
   const ask = (ip) => call('/api/purchases/status', { headers: { ...headersFor(ip), authorization: 'Bearer valid-flip' } });
   resetDb({ claimed: 999 });
-  const none = { owned: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false };
+  const none = { owned: [], packs: [], standing: 'none', purchased: {}, updatesUntil: {}, unverified: false, emailOrdersWaiting: false };
   assert.deepEqual((await ask('10.0.7.10')).body, { full: false, ...none });
   state.db.docs.set('launch/counter', { claimed: 1000, downloads: 0 });
   assert.deepEqual((await ask('10.0.7.11')).body, { full: true, ...none });
@@ -732,12 +770,12 @@ await test('TUTKAL (seventh family product): family order opens it; no order 402
   // A refund closes it.
   await hook(orderPayload('tk-fam@example.com', { event: 'order_refunded', id: 'TK1', status: 'refunded' }));
   assert.equal((await ticketReq('tk-fam', '10.0.9.4', 'tutkal', 'launch2')).response.status, 402);
-  // A hand-picked tester opens the five tester products, TUTKAL included (owner decision 2026-10-05), but not Kubbe.
+  // A hand-picked tester opens TUTKAL too (owner decision 2026-10-05); since 2026-10-14 every released product (agreement 4.2).
   state.db.docs.set('launch2_testers/tk-test@example.com', { at: '2026-10-05T10:00:00Z' });
   assert.equal((await ticketReq('tk-test', '10.0.9.5', 'koro', 'launch2')).response.status, 200);
   assert.equal((await ticketReq('tk-test', '10.0.9.6', 'tutkal', 'launch2')).response.status, 200);
   const ts = await call('/api/purchases/status', { headers: { ...headersFor('10.0.9.8'), authorization: 'Bearer valid-tk-test' } });
-  assert.deepEqual(ts.body.owned, ['koro', 'yanki', 'hava', 'mihenk', 'tutkal']);
+  assert.deepEqual(ts.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
   assert.equal(ts.body.standing, 'tester');
   assert.deepEqual(ts.body.updatesUntil, {});
   // TUTKAL does not exist on launch 1.
@@ -769,7 +807,8 @@ await test('TUTKAL not published for a platform or not in the manifest yet: hone
 
 
 // ---- Singles: every plugin can be bought on its own (owner decision 2026-10-05) ---------------------------------
-const SLUG_IDS = { kubbe: 6001, kaset: 6002, koro: 6003, yanki: 6004, hava: 6005, mihenk: 6006, tutkal: 6007, bundle: 6008, family: 5550, taban: 6009, alev: 6010, elek: 6011 };
+const SLUG_IDS = { kubbe: 6001, kaset: 6002, koro: 6003, yanki: 6004, hava: 6005, mihenk: 6006, tutkal: 6007, bundle: 6008, family: 5550, taban: 6009, alev: 6010, elek: 6011, kiyma: 6012, ru8: 6013,
+  brickyard: 6020, kerbstone: 6021, squall: 6025, sweep: 6030, 'ru8-drum-pack': 6040, 'preset-sweep': 6041 };
 process.env.LS_PRODUCT_SLUGS = Object.entries(SLUG_IDS).map(([slug, id]) => `${id}:${slug}`).join(',');
 const SINGLE_SLUGS = ['koro', 'yanki', 'hava', 'mihenk', 'tutkal'];
 const named = (email, { id, product, name, status = 'paid', event = 'order_created', uid, created = '2026-10-05T10:00:00Z' }) => JSON.stringify({
@@ -856,12 +895,197 @@ await test('ELEK: a family buyer without an ELEK order is refused elek; an ELEK 
   assert.equal((await ticketReq('ekfam', '10.0.18.21', 'elek', 'solo')).response.status, 402, 'but not ELEK');
   const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.18.22'), authorization: 'Bearer valid-ekfam' } });
   assert.equal(st.body.owned.includes('elek'), false); assert.equal(st.body.owned.length, 7);
-  // A tester seat does not open it either.
+  // An ELEK-only order is not a family seat.
   await hook(orderPayload('ekonly@example.com', { id: 'EK3', product: SLUG_IDS.elek }));
   const claimedBefore = state.db.docs.get('launch2/counter').claimed;
   assert.equal((await ticketReq('ekonly', '10.0.18.23', 'koro', 'launch2')).response.status, 402, 'an ELEK buyer is not a family buyer');
   assert.equal(state.db.docs.get('launch2/counter').claimed, claimedBefore);
 });
+// ---- Testers (agreement v1.1): every released product, by the tester record's status ------------------------------
+
+// ---- RU-8 (SOLO_SLUGS, 16 Oct): cases copied from ELEK's; macOS AND Windows at launch -------------------------------------
+await test('RU-8: a paid RU-8 order opens exactly ru8 via solo on mac and win; refund closes it; family, admin preview and launch2 do not open it', async () => {
+  resetDb({ claimed: 1000 });
+  const before = state.db.docs.get('launch2/counter').claimed;
+  assert.equal((await ticketReq('ru1', '10.0.19.1', 'ru8', 'solo')).response.status, 402, 'no order, no ticket');
+  const w = await hook(named('ru1@example.com', { id: 'RU1', product: SLUG_IDS.ru8, name: 'RU-8 Rhythm Unit', uid: 'ru1' }));
+  assert.equal(w.response.status, 200);
+  assert.equal(state.db.docs.get('plugin_licenses/ru1@example.com').orders.RU1.product, 'ru8');
+  const mac = await ticketReq('ru1', '10.0.19.2', 'ru8', 'solo');
+  assert.equal(mac.response.status, 200); assert.equal(decodeTicket(mac.body.url).slug, 'ru8'); assert.equal(mac.body.name, 'RU-8-1.0.0-macOS.pkg');
+  const win = await ticketReq('ru1', '10.0.19.3', 'ru8', 'solo', 'win');
+  assert.equal(win.response.status, 200); assert.equal(win.body.name, 'RU-8-1.0.0-Windows.zip');
+  assert.equal((await ticketReq('ru1', '10.0.19.4', 'elek', 'solo')).response.status, 402, 'an RU-8 order is not an ELEK order');
+  assert.equal((await ticketReq('ru1', '10.0.19.5', 'ru8', 'launch2')).response.status, 400);
+  assert.equal((await ticketReq('ru1', '10.0.19.6', 'ru8-drum-pack', 'pack', 'zip')).response.status, 402, 'RU-8 does not include the Drum Pack (paid separately)');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.19.7'), authorization: 'Bearer valid-ru1' } });
+  assert.deepEqual(st.body.owned, ['ru8']); assert.deepEqual(st.body.packs, []); assert.equal(st.body.updatesUntil.ru8, '2028-10-05');
+  assert.equal(state.db.docs.get('launch2/counter').claimed, before, 'an RU-8 order is not a family seat');
+  const m = await call('/api/download/manifest', { headers: headersFor('10.0.19.8') });
+  assert.deepEqual(Object.keys(m.body.ru8.files).sort(), ['mac', 'win']);
+  await hook(named('ru1@example.com', { id: 'RU1', product: SLUG_IDS.ru8, name: 'RU-8 Rhythm Unit', status: 'refunded', event: 'order_refunded' }));
+  assert.equal((await ticketReq('ru1', '10.0.19.9', 'ru8', 'solo')).response.status, 402);
+  // family buyer and admin preview: not RU-8
+  await hook(orderPayload('rufam@example.com', { id: 'RUF', uid: 'rufam' }));
+  assert.equal((await ticketReq('rufam', '10.0.19.10', 'ru8', 'solo')).response.status, 402);
+  assert.equal((await ticketReq('admin-ru', '10.0.19.11', 'ru8', 'solo')).response.status, 402, 'the admin preview does not open RU-8');
+});
+await test('RU-8: product name fallback "RU-8 ..." maps to ru8; "RU-8 Drum Pack" maps to the pack, never to the instrument', async () => {
+  resetDb({ claimed: 1000 });
+  await hook(named('ru2@example.com', { id: 'RU2', product: 99901, name: 'RU-8 Rhythm Unit' }));
+  assert.equal(state.db.docs.get('plugin_licenses/ru2@example.com').orders.RU2.product, 'ru8');
+  await hook(named('ru2@example.com', { id: 'RU3', product: 99902, name: 'RU-8 Drum Pack' }));
+  assert.equal(state.db.docs.get('plugin_licenses/ru2@example.com').orders.RU3.product, 'ru8-drum-pack');
+  await hook(named('ru2@example.com', { id: 'RU4', product: 99903, name: 'Sweep the store bundle' }));
+  assert.equal(state.db.docs.get('plugin_licenses/ru2@example.com').orders.RU4.product, 'sweep', 'never the old KUBBE + KASET bundle');
+  await hook(named('ru2@example.com', { id: 'RU5', product: 99904, name: 'SVL Kerbstone' }));
+  assert.equal(state.db.docs.get('plugin_licenses/ru2@example.com').orders.RU5.product, 'kerbstone');
+});
+
+// ---- Packs (PACK_SLUGS, 16 Oct): paid only; per-pack orders, the sample-pack sweep, the preset-pack sweep -----------------
+const paidOrder = (email, { id, product, name = null, cents = 500, status = 'paid', event = 'order_created', uid, created = '2026-10-17T02:00:00Z' }) => JSON.stringify({
+  meta: { event_name: event, ...(uid ? { custom_data: { uid } } : {}) },
+  data: { id: String(id), attributes: { user_email: email, status, refunded: status === 'refunded', created_at: created, total: cents, total_usd: cents, currency: 'USD', first_order_item: { product_id: product, product_name: name, variant_id: 1 } } },
+});
+await test('packs: a paid pack order opens exactly that pack (launchId pack, platform zip); refund closes it; nothing else opens', async () => {
+  resetDb({ claimed: 1000 });
+  assert.equal((await ticketReq('pk1', '10.0.40.1', 'brickyard', 'pack', 'zip')).response.status, 402, 'no order, no ticket');
+  await hook(paidOrder('pk1@example.com', { id: 'PK1', product: SLUG_IDS.brickyard, uid: 'pk1' }));
+  const ok = await ticketReq('pk1', '10.0.40.2', 'brickyard', 'pack', 'zip');
+  assert.equal(ok.response.status, 200); assert.equal(ok.body.name, 'SVL_Brickyard.zip'); assert.equal(decodeTicket(ok.body.url).slug, 'brickyard');
+  assert.equal((await ticketReq('pk1', '10.0.40.3', 'kerbstone', 'pack', 'zip')).response.status, 402, 'another pack stays closed');
+  assert.equal((await ticketReq('pk1', '10.0.40.4', 'brickyard', 'pack', 'mac')).response.status, 400, 'packs have only the zip platform');
+  assert.equal((await ticketReq('pk1', '10.0.40.5', 'brickyard', 'solo', 'zip')).response.status, 400, 'packs only through launchId pack');
+  assert.equal((await ticketReq('pk1', '10.0.40.6', 'koro', 'pack', 'zip')).response.status, 400, 'pack does not know plugins');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.40.7'), authorization: 'Bearer valid-pk1' } });
+  assert.deepEqual(st.body.packs, ['brickyard']); assert.deepEqual(st.body.owned, [], 'a pack is not a plugin'); assert.equal(st.body.updatesUntil.brickyard, undefined, 'no updates term on packs');
+  const m = await call('/api/download/manifest', { headers: headersFor('10.0.40.8') });
+  assert.deepEqual(Object.keys(m.body.brickyard.files), ['zip']);
+  await hook(paidOrder('pk1@example.com', { id: 'PK1', product: SLUG_IDS.brickyard, status: 'refunded', event: 'order_refunded' }));
+  assert.equal((await ticketReq('pk1', '10.0.40.9', 'brickyard', 'pack', 'zip')).response.status, 402);
+});
+await test('packs: no free path — a $0 pack order, a family order, a free plugin, an active tester and the admin preview open no pack', async () => {
+  resetDb({ claimed: 1000 });
+  await hook(paidOrder('pk0@example.com', { id: 'PK0', product: SLUG_IDS.kerbstone, cents: 0, uid: 'pk0' }));
+  assert.equal((await ticketReq('pk0', '10.0.41.1', 'kerbstone', 'pack', 'zip')).response.status, 402, 'a $0 order opens nothing');
+  await hook(paidOrder('pk0@example.com', { id: 'PK0S', product: SLUG_IDS.sweep, cents: 0, uid: 'pk0' }));
+  assert.equal((await ticketReq('pk0', '10.0.41.2', 'kerbstone', 'pack', 'zip')).response.status, 402, 'a $0 sweep opens nothing');
+  await hook(orderPayload('pkfam@example.com', { id: 'PKF', uid: 'pkfam' }));
+  assert.equal((await ticketReq('pkfam', '10.0.41.3', 'brickyard', 'pack', 'zip')).response.status, 402, 'family');
+  await hook(named('pkfree@example.com', { id: 'PKT', product: SLUG_IDS.taban, name: 'TABAN', uid: 'pkfree' }));
+  assert.equal((await ticketReq('pkfree', '10.0.41.4', 'brickyard', 'pack', 'zip')).response.status, 402, 'free plugin');
+  state.db.docs.set('launch2_testers/pktest@example.com', { email: 'pktest@example.com', status: 'active', agreementVersion: '1.1', agreementAcceptedAt: '2026-10-14T08:30:00.000Z', agreementVia: 'email' });
+  assert.equal((await ticketReq('pktest', '10.0.41.5', 'brickyard', 'pack', 'zip')).response.status, 402, 'tester');
+  assert.equal((await ticketReq('admin-pk', '10.0.41.6', 'brickyard', 'pack', 'zip')).response.status, 402, 'admin preview');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.41.7'), authorization: 'Bearer valid-pktest' } });
+  assert.deepEqual(st.body.packs, []);
+});
+await test('sweep: one paid sweep opens every sample pack listed when it was bought (SWEEPS.sweep), not the preset pack, not a pack listed later', async () => {
+  resetDb({ claimed: 1000 });
+  const { SAMPLE_PACK_LISTED, SAMPLE_PACK_SLUGS } = await import(entitlementsUrl);
+  await hook(paidOrder('sw1@example.com', { id: 'SW1', product: SLUG_IDS.sweep, cents: 2500, uid: 'sw1' }));
+  for (const [i, slug] of ['brickyard', 'kerbstone', 'squall'].entries()) {
+    const r = await ticketReq('sw1', `10.0.42.${i + 1}`, slug, 'pack', 'zip');
+    assert.equal(r.response.status, 200, slug);
+  }
+  assert.equal((await ticketReq('sw1', '10.0.42.9', 'ru8-drum-pack', 'pack', 'zip')).response.status, 402, 'the sample-pack sweep does not include preset packs');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.42.10'), authorization: 'Bearer valid-sw1' } });
+  assert.deepEqual(st.body.packs, SAMPLE_PACK_SLUGS, 'every listed sample pack'); assert.deepEqual(st.body.owned, []);
+  // A pack listed after the order is not part of it; a sweep bought after the listing is.
+  SAMPLE_PACK_LISTED.laterpack = '2026-12-01T00:00:00Z';
+  try {
+    const { sweepSlugs } = await import(entitlementsUrl);
+    assert.equal(sweepSlugs('sweep', '2026-10-17T02:00:00Z').includes('laterpack'), false);
+    assert.equal(sweepSlugs('sweep', '2026-12-02T00:00:00Z').includes('laterpack'), true);
+    assert.equal(sweepSlugs('sweep', null).includes('laterpack'), false, 'no date: only the first listing');
+  } finally { delete SAMPLE_PACK_LISTED.laterpack; }
+  await hook(paidOrder('sw1@example.com', { id: 'SW1', product: SLUG_IDS.sweep, cents: 2500, status: 'refunded', event: 'order_refunded' }));
+  assert.equal((await ticketReq('sw1', '10.0.42.11', 'brickyard', 'pack', 'zip')).response.status, 402, 'refund closes every pack');
+});
+await test('preset packs: a Drum Pack order opens only the Drum Pack; the optional preset-sweep opens preset packs only', async () => {
+  resetDb({ claimed: 1000 });
+  await hook(paidOrder('pp1@example.com', { id: 'PP1', product: SLUG_IDS['ru8-drum-pack'], cents: 900, uid: 'pp1' }));
+  const ok = await ticketReq('pp1', '10.0.43.1', 'ru8-drum-pack', 'pack', 'zip');
+  assert.equal(ok.response.status, 200); assert.equal(ok.body.name, 'RU-8_Drum_Pack.zip');
+  assert.equal((await ticketReq('pp1', '10.0.43.2', 'ru8', 'solo')).response.status, 402, 'the Drum Pack is not RU-8');
+  await hook(paidOrder('pp2@example.com', { id: 'PP2', product: SLUG_IDS['preset-sweep'], cents: 900, uid: 'pp2' }));
+  assert.equal((await ticketReq('pp2', '10.0.43.3', 'ru8-drum-pack', 'pack', 'zip')).response.status, 200);
+  assert.equal((await ticketReq('pp2', '10.0.43.4', 'brickyard', 'pack', 'zip')).response.status, 402, 'the preset sweep is not the sample-pack sweep');
+});
+await test('free rack packs (owner 17 Oct, launchId member): any signed-in deliverable account downloads, no order; nothing else opens', async () => {
+  resetDb({ claimed: 1000 });
+  const ok = await ticketReq('mem1', '10.0.44.1', 'racks-drums', 'member', 'zip');
+  assert.equal(ok.response.status, 200); assert.equal(ok.body.name, 'SubverseLab_Drum_Racks.zip');
+  assert.equal((await ticketReq('mem1', '10.0.44.2', 'racks-bass', 'member', 'zip')).response.status, 404, 'not published yet: honest 404');
+  assert.equal((await ticketReq('mem1', '10.0.44.3', 'racks-drums', 'pack', 'zip')).response.status, 400, 'not a paid pack');
+  assert.equal((await ticketReq('mem1', '10.0.44.4', 'ru8-drum-pack', 'member', 'zip')).response.status, 400, 'member opens no paid pack');
+  assert.equal((await ticketReq('mem1', '10.0.44.5', 'koro', 'member', 'mac')).response.status, 400, 'member opens no plugin');
+  const anon = await call('/api/download/ticket', { method: 'POST', headers: headersFor('10.0.44.6'), body: JSON.stringify({ slug: 'racks-drums', platform: 'zip', launchId: 'member' }) });
+  assert.equal(anon.response.status, 401, 'sign in first');
+  state.db.docs.set('bounced_emails/mem2@example.com', { at: '2026-10-05T00:00:00Z' });
+  assert.equal((await ticketReq('mem2', '10.0.44.7', 'racks-drums', 'member', 'zip')).response.status, 403, 'an address that cannot receive mail gets nothing');
+  assert.ok(!entitlements.PACK_SLUGS.includes('racks-drums'), 'free packs are not sold packs');
+});
+await test('inbox: pack, sweep and RU-8 order messages point to Account -> Packs / RU-8, with no licence-key or plug-in install line for packs', async () => {
+  const { orderMessage } = await import(pathToFileURL(resolve(root, 'api/inbox.js')).href);
+  const pack = orderMessage('kerbstone', { orderNumber: 7 });
+  assert.match(pack.title, /Kerbstone sample pack/); assert.equal(pack.link, '/account#packs'); assert.doesNotMatch(pack.body, /licence key|VST3/);
+  assert.match(orderMessage('sweep').title, /Sweep the store/);
+  assert.equal(orderMessage('ru8').title, 'Your RU-8 is ready');
+});
+
+await test('testers: active opens the family, free and ELEK tickets without a seat or order; ended keeps only owned; revoked keeps nothing', async () => {
+  resetDb({ claimed: 1000 });
+  const claimedBefore = state.db.docs.get('launch2/counter').claimed;
+  state.db.docs.set('launch2_testers/tt1@example.com', { email: 'tt1@example.com', status: 'active', agreementVersion: '1.1', agreementAcceptedAt: '2026-10-14T08:30:00.000Z', agreementVia: 'email' });
+  assert.equal((await ticketReq('tt1', '10.0.30.1', 'koro', 'launch2')).response.status, 200);
+  const elek = await ticketReq('tt1', '10.0.30.2', 'elek', 'solo');
+  assert.equal(elek.response.status, 200); assert.equal(decodeTicket(elek.body.url).slug, 'elek');
+  assert.equal((await ticketReq('tt1', '10.0.30.3', 'taban', 'free')).response.status, 200);
+  assert.equal((await ticketReq('tt1', '10.0.30.4', 'kubbe')).response.status, 200, 'launch 1 products too, without taking a free seat');
+  assert.equal(state.db.docs.get('launch2/counter').claimed, claimedBefore, 'no paid seat');
+  assert.equal(state.db.docs.get('launch/counter').claimed, 1000, 'no launch-1 seat either');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.30.5'), authorization: 'Bearer valid-tt1' } });
+  assert.deepEqual(st.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
+  assert.equal(st.body.standing, 'tester');
+  // Ended: only what the owned map lists.
+  state.db.docs.set('launch2_testers/tt1@example.com', { ...state.db.docs.get('launch2_testers/tt1@example.com'), status: 'ended', owned: { elek: '2026-10-14' } });
+  assert.equal((await ticketReq('tt1', '10.0.30.6', 'elek', 'solo')).response.status, 200, 'owned');
+  assert.equal((await ticketReq('tt1', '10.0.30.7', 'koro', 'launch2')).response.status, 402);
+  assert.equal((await ticketReq('tt1', '10.0.30.8', 'taban', 'free')).response.status, 402);
+  const ended = await call('/api/purchases/status', { headers: { ...headersFor('10.0.30.9'), authorization: 'Bearer valid-tt1' } });
+  assert.deepEqual(ended.body.owned, ['elek']); assert.equal(ended.body.standing, 'none');
+  // Revoked: owned is ignored.
+  state.db.docs.set('launch2_testers/tt1@example.com', { ...state.db.docs.get('launch2_testers/tt1@example.com'), status: 'revoked' });
+  assert.equal((await ticketReq('tt1', '10.0.30.10', 'elek', 'solo')).response.status, 402);
+  assert.equal((await ticketReq('tt1', '10.0.30.11', 'koro', 'launch2')).response.status, 402);
+  assert.deepEqual((await call('/api/purchases/status', { headers: { ...headersFor('10.0.30.12'), authorization: 'Bearer valid-tt1' } })).body.owned, []);
+  // A paid order still works for a revoked tester: the tester record never takes away what was bought.
+  await hook(named('tt1@example.com', { id: 'TT1', product: SLUG_IDS.elek, name: 'ELEK', uid: 'tt1' }));
+  assert.equal((await ticketReq('tt1', '10.0.30.13', 'elek', 'solo')).response.status, 200);
+});
+await test('testers: a test-build ticket is closed to buyers, applicants and unassigned testers; only an active assigned tester gets it', async () => {
+  resetDb({ claimed: 1000 });
+  state.db.docs.set('launch2_testers/tb1@example.com', { email: 'tb1@example.com', status: 'active' });
+  state.db.docs.set('tester_builds/b1', { slug: 'koro', name: 'Koro test', version: '0.9.1', platform: 'mac', objectPath: 'plugins/koro/1.0.0/Koro-mac.zip', notes: '', assignedTo: ['tb1@example.com'], createdAt: '2026-10-14T00:00:00Z', releasedAt: null });
+  const req = (uid, ip, body) => call('/api/download/ticket', { method: 'POST', headers: { ...headersFor(ip), ...(uid ? { authorization: `Bearer valid-${uid}` } : {}) }, body: JSON.stringify(body) });
+  const ok = await req('tb1', '10.0.31.1', { kind: 'test-build', buildId: 'b1' });
+  assert.equal(ok.response.status, 200);
+  const data = decodeTicket(ok.body.url);
+  assert.equal(data.object, 'plugins/koro/1.0.0/Koro-mac.zip'); assert.equal(data.slug, 'koro'); assert.equal(data.platform, 'mac');
+  assert.equal(state.db.docs.get('downloads/tb1'), undefined, 'a test build is not counted as a product download');
+  // A family buyer is not a tester.
+  await hook(orderPayload('tb2@example.com', { id: 'TB2' }));
+  assert.equal((await req('tb2', '10.0.31.2', { kind: 'test-build', buildId: 'b1' })).response.status, 403);
+  assert.equal((await req('tb1', '10.0.31.3', { kind: 'test-build', buildId: 'nosuch' })).response.status, 403);
+  assert.equal((await req(undefined, '10.0.31.4', { kind: 'test-build', buildId: 'b1' })).response.status, 401);
+  // The product ticket route never reads a build id as a product: a plain koro ticket for the same tester is the product gate.
+  state.db.docs.set('launch2_testers/tb1@example.com', { email: 'tb1@example.com', status: 'ended' });
+  assert.equal((await req('tb1', '10.0.31.5', { kind: 'test-build', buildId: 'b1' })).response.status, 403, 'ended');
+  state.db.docs.set('launch2_testers/tb1@example.com', { email: 'tb1@example.com', status: 'revoked' });
+  assert.equal((await req('tb1', '10.0.31.6', { kind: 'test-build', buildId: 'b1' })).response.status, 403, 'revoked');
+});
+
 // ---- Free plugins (FREE_SLUGS): a $0 Lemon Squeezy order is the entitlement ------------------------------------
 const freeOrder = (email, { id, uid, status = 'paid', event = 'order_created' }) => JSON.stringify({
   meta: { event_name: event, ...(uid ? { custom_data: { uid } } : {}) },
@@ -909,10 +1133,50 @@ await test('free ALEV: its own $0 order opens ALEV and not TABAN; a TABAN order 
   await hook(freeOrder('tb1@example.com', { id: 'A2', uid: 'tb1' }));
   assert.equal((await ticketReq('tb1', '10.0.17.5', 'alev', 'free')).response.status, 402, 'TABAN order does not open ALEV');
 });
-await test('free TABAN: an unverified password account gets 403 even with the order', async () => {
+await test('free by e-mail (owner 24 Oct): an unproven password account opens the free plugin its e-mail took signed out; a paid e-mail-only order still needs the claim', async () => {
+  resetDb({ claimed: 1000 });
+  // $0 TABAN placed signed out (no uid) with the address the password account later signs up with.
+  await hook(freeOrder('unv-fe@example.com', { id: 'FE1' }));
+  const t = await ticketReq('unv-fe', '10.0.19.1', 'taban', 'free');
+  assert.equal(t.response.status, 200); assert.equal(decodeTicket(t.body.url).slug, 'taban');
+  const st = await authReq('/api/purchases/status', 'unv-fe', '10.0.19.2');
+  assert.deepEqual(st.body.owned, ['taban']); assert.equal(st.body.unverified, true); assert.equal(st.body.updatesUntil.taban, undefined);
+  // Only the plugin its own e-mail took: ALEV stays closed, and nobody else's $0 order counts.
+  assert.equal((await ticketReq('unv-fe', '10.0.19.3', 'alev', 'free')).response.status, 402);
+  await hook(freeOrder('other@example.com', { id: 'FE2' }));
+  assert.equal((await ticketReq('unv-fe2', '10.0.19.4', 'taban', 'free')).response.status, 402);
+  // A paid order matched only by the e-mail keeps the proven rule: 403 asks for the order-number claim, not listed.
+  await hook(named('unv-fe@example.com', { id: 'FE3', product: SLUG_IDS.koro, name: 'KORO' }));
+  assert.equal((await ticketReq('unv-fe', '10.0.19.5', 'koro', 'launch2')).response.status, 403);
+  assert.deepEqual((await authReq('/api/purchases/status', 'unv-fe', '10.0.19.6')).body.owned, ['taban']);
+  // A refunded $0 order opens nothing.
+  await hook(freeOrder('unv-fr@example.com', { id: 'FE4', status: 'refunded', event: 'order_refunded' }));
+  assert.equal((await ticketReq('unv-fr', '10.0.19.7', 'taban', 'free')).response.status, 402);
+});
+await test('free KIYMA: its own $0 order opens KIYMA on both platforms and nothing else; ALEV and TABAN orders do not open it', async () => {
+  resetDb({ claimed: 1000 });
+  const kiymaOrder = (email, id, uid) => JSON.stringify({
+    meta: { event_name: 'order_created', custom_data: { uid } },
+    data: { id: String(id), attributes: { user_email: email, status: 'paid', refunded: false, created_at: '2026-10-15T10:00:00Z', currency: 'USD', total: 0, total_usd: 0, tax_usd: 0, first_order_item: { product_id: SLUG_IDS.kiyma, product_name: 'KIYMA', variant_id: 1 } } },
+  });
+  assert.equal((await ticketReq('ky1', '10.0.18.1', 'kiyma', 'free')).response.status, 402, 'no order, no ticket');
+  const w = await hook(kiymaOrder('ky1@example.com', 'K1', 'ky1'));
+  assert.equal(w.response.status, 200); assert.equal(w.body.credits, 'free-order');
+  const mac = await ticketReq('ky1', '10.0.18.2', 'kiyma', 'free');
+  assert.equal(mac.response.status, 200); assert.equal(decodeTicket(mac.body.url).slug, 'kiyma'); assert.equal(mac.body.name, 'Kiyma-1.0.0-macOS.pkg');
+  const win = await ticketReq('ky1', '10.0.18.3', 'kiyma', 'free', 'win');
+  assert.equal(win.response.status, 200); assert.equal(win.body.name, 'Kiyma-1.0.0-Windows-VST3.zip');
+  assert.equal((await ticketReq('ky1', '10.0.18.4', 'alev', 'free')).response.status, 402, 'KIYMA order does not open ALEV');
+  assert.equal((await ticketReq('ky1', '10.0.18.5', 'taban', 'free')).response.status, 402, 'KIYMA order does not open TABAN');
+  const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.18.6'), authorization: 'Bearer valid-ky1' } });
+  assert.deepEqual(st.body.owned, ['kiyma']);
+  await hook(freeOrder('tb2@example.com', { id: 'K2', uid: 'tb2' }));
+  assert.equal((await ticketReq('tb2', '10.0.18.7', 'kiyma', 'free')).response.status, 402, 'TABAN order does not open KIYMA');
+});
+await test('free TABAN: an unverified password account opens it with its e-mail\'s $0 order (owner 24 Oct; was 403)', async () => {
   resetDb({ claimed: 1000 });
   await hook(freeOrder('unv-free@example.com', { id: 'F3' }));
-  assert.equal((await ticketReq('unv-free', '10.0.16.1', 'taban', 'free')).response.status, 403);
+  assert.equal((await ticketReq('unv-free', '10.0.16.1', 'taban', 'free')).response.status, 200);
 });
 await test('product name fallback (no LS_PRODUCT_SLUGS entry): plugin name maps to its slug, the family name never to the bundle', async () => {
   resetDb({ claimed: 1000 });
@@ -1149,7 +1413,7 @@ await test('inbox: a paid order writes one message; a twice-delivered webhook st
 await test('inbox: family order title, $0 free order, refunds and unpaid orders', async () => {
   resetDb({ claimed: 1000 });
   await hook(orderPayload('fam1@example.com', { id: 'I2', product: 5550, uid: 'fam1' }));
-  assert.equal(state.db.docs.get('inbox/fam1/messages/order-I2').title, 'Your SubverseLab plugin family is ready (7 plugins)');
+  assert.equal(state.db.docs.get('inbox/fam1/messages/order-I2').title, 'Your SubverseLab plugin family is ready');
   assert.equal(state.db.docs.get('inbox/fam1/messages/order-I2').link, '/account');
   // A $0 free plugin order (TABAN), uid from custom data.
   const saved = process.env.LS_PRODUCT_SLUGS; process.env.LS_PRODUCT_SLUGS = '1422884:taban';
@@ -1292,19 +1556,20 @@ await test('uid-bound KUBBE single opens KUBBE through the launch room when the 
   assert.equal((await shop('unv-ub3b', 'kubbe', '10.0.42.4')).response.status, 200);
   assert.equal(state.db.docs.get('launch/counter').claimed, 10, 'an unverified buyer does not take a free seat');
 });
-await test('an order found only by e-mail needs a proven e-mail: a non-proven account gets 403 (free, single, kubbe), an empty status and no keys', async () => {
+await test('a paid order found only by e-mail needs a proven e-mail: a non-proven account gets 403 (single, kubbe) and no keys; the $0 one opens (owner 24 Oct)', async () => {
   resetDb({ claimed: 1000 });
   await hook(freeOrder('unv-eo@example.com', { id: 'EO1' }));
   await hook(named('unv-eo@example.com', { id: 'EO2', product: SLUG_IDS.koro }));
   await hook(named('unv-eo@example.com', { id: 'EO3', product: SLUG_IDS.kubbe }));
   state.db.docs.set('plugin_licenses/unv-eo@example.com', { ...state.db.docs.get('plugin_licenses/unv-eo@example.com'), licenses: { L1: { license_id: 'L1', key: 'KEY-EO-1', order_id: 'EO2', product: 'koro', status: 'active' } } });
   assert.equal(state.db.docs.has('orders_by_uid/unv-eo'), false, 'no uid, no index');
-  for (const [slug, launchId, ip] of [['taban', 'free', '10.0.43.1'], ['koro', 'launch2', '10.0.43.2'], ['kubbe', 'launch', '10.0.43.3']]) {
+  assert.equal((await ticketReq('unv-eo', '10.0.43.1', 'taban', 'free')).response.status, 200, 'free plugin opens by e-mail');
+  for (const [slug, launchId, ip] of [['koro', 'launch2', '10.0.43.2'], ['kubbe', 'launch', '10.0.43.3']]) {
     const r = await ticketReq('unv-eo', ip, slug, launchId);
     assert.equal(r.response.status, 403, slug); assert.match(r.body.error, /Claim it with the order number/); assert.equal(r.body.url, undefined);
   }
   const st = await unvStatus('unv-eo', '10.0.43.4');
-  assert.equal(st.response.status, 200); assert.deepEqual(st.body.owned, []); assert.equal(st.body.unverified, true);
+  assert.equal(st.response.status, 200); assert.deepEqual(st.body.owned, ['taban']); assert.equal(st.body.unverified, true);
   const lic = await authReq('/api/purchases/licenses', 'unv-eo', '10.0.43.5');
   assert.equal(lic.response.status, 200); assert.deepEqual(lic.body.licenses, []); assert.equal(JSON.stringify(lic.body).includes('KEY-EO-1'), false);
   // The same orders under a proven e-mail (email_verified true, or Google) open without a claim.
@@ -1447,7 +1712,7 @@ await test('claim: the family order writes launch2_uids like the webhook and ope
   assert.deepEqual(r.body.slugs, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal']);
   assert.deepEqual(state.db.docs.get('launch2_uids/unv-cl3'), { email: 'fam@other.test', orderId: 'C3', at: '2026-10-05T10:00:00Z' });
   assert.equal(state.db.docs.get('launch2_purchases/fam@other.test').uid, 'unv-cl3');
-  assert.equal(state.db.docs.get('inbox/unv-cl3/messages/order-C3').title, 'Your SubverseLab plugin family is ready (7 plugins)');
+  assert.equal(state.db.docs.get('inbox/unv-cl3/messages/order-C3').title, 'Your SubverseLab plugin family is ready');
   assert.match(state.db.docs.get('inbox/unv-cl3/messages/order-C3').body, /Account \u2192 each plugin \u2192 Download/);
   assert.equal((await ticketReq('unv-cl3', '10.0.62.3', 'koro', 'launch2')).response.status, 200);
   assert.equal((await authReq('/api/purchases/status', 'unv-cl3', '10.0.62.4')).body.standing, 'paid', 'status shows the family');
@@ -1494,14 +1759,14 @@ await test('claim: 5 tries per hour per account, then 429; another account is no
   assert.equal((await claimReq('cl-rate2', { orderNumber: '777', email: 'none@other.test' }, '10.0.64.10')).response.status, 404);
 });
 await test('inbox copy: welcome is three lines; order message lines for a plugin, the family and the bundle', async () => {
-  const inbox = await import(pathToFileURL(resolve(root, 'inbox.js')).href);
+  const inbox = await import(pathToFileURL(resolve(root, 'api/inbox.js')).href);
   assert.deepEqual(inbox.welcomeMessage.body.split('\n'), [
     'Your downloads, licence keys and tool credits live on the Account page.',
     'Free plugins: get them on their page, they appear here right after.',
     'Messages about your orders arrive in this inbox.',
   ]);
   const fam = inbox.orderMessage('family', { orderNumber: 12, created: '2026-10-09T08:00:00Z' });
-  assert.equal(fam.title, 'Your SubverseLab plugin family is ready (7 plugins)');
+  assert.equal(fam.title, 'Your SubverseLab plugin family is ready');
   assert.equal(fam.link, '/account');
   assert.equal(fam.body.split('\n')[0], 'Order #12, 2026-10-09.');
   assert.equal(fam.body.split('\n')[1], 'Download: Account \u2192 each plugin \u2192 Download.');
@@ -1575,14 +1840,101 @@ await test('GET /api/email/check: syntax, bounced, no MX, a fine address; a DNS 
   assert.ok(limited > 0);
 });
 
+// ---- Confirm the e-mail to open signed-out orders (owner bug 25 Oct 2026) ------------------------------------------
+// A paid order placed signed out (no uid) + a password account with the same e-mail: before, the account saw nothing until
+// the order number was typed. Now /api/purchases/status says emailOrdersWaiting, the account page sends Firebase's
+// confirmation link, and once email_verified is true the same account opens the order by e-mail. A second account made
+// with the same address (it never gets the link) still opens nothing.
+const pwToken = (uid, email, verified = false) => state.tokenAs.set(uid, { uid, email, email_verified: verified, firebase: { sign_in_provider: 'password' } });
+await test('confirm e-mail (owner 25 Oct): a signed-out RU-8 order waits for an unconfirmed password account, opens once it confirms, never for a squatter', async () => {
+  resetDb({ claimed: 1000 });
+  state.tokenAs.clear();
+  // RU-8 order without a uid (paid signed out), checkout e-mail buyer25@example.com.
+  assert.equal((await hook(named('Buyer25@Example.com', { id: 'CE1', product: SLUG_IDS.ru8, name: 'RU-8' }))).response.status, 200);
+  pwToken('pw-ce1', 'buyer25@example.com');
+  const before = await authReq('/api/purchases/status', 'pw-ce1', '10.0.80.1');
+  assert.equal(before.response.status, 200);
+  assert.deepEqual(before.body.owned, [], 'unconfirmed: the paid order is not opened by the e-mail');
+  assert.equal(before.body.unverified, true);
+  assert.equal(before.body.emailOrdersWaiting, true, 'the page is told to offer the confirmation link');
+  assert.equal(JSON.stringify(before.body).includes('ru8'), false, 'what was bought is not revealed before the e-mail is proven');
+  const t1 = await ticketReq('pw-ce1', '10.0.80.2', 'ru8', 'solo');
+  assert.equal(t1.response.status, 403);
+  assert.match(t1.body.error, /confirm your e-mail on your Account page/);
+  assert.equal((await authReq('/api/ru8/ios/entitlement', 'pw-ce1', '10.0.80.3')).body.owned, false);
+  // The link was opened: the same uid, email_verified true (fresh token). No order number, no write needed.
+  pwToken('pw-ce1', 'buyer25@example.com', true);
+  const after = await authReq('/api/purchases/status', 'pw-ce1', '10.0.80.4');
+  assert.deepEqual(after.body.owned, ['ru8']);
+  assert.equal(after.body.unverified, false);
+  assert.equal(after.body.emailOrdersWaiting, false);
+  const t2 = await ticketReq('pw-ce1', '10.0.80.5', 'ru8', 'solo');
+  assert.equal(t2.response.status, 200); assert.equal(decodeTicket(t2.body.url).slug, 'ru8');
+  assert.deepEqual((await authReq('/api/ru8/ios/entitlement', 'pw-ce1', '10.0.80.6')).body, { owned: true, via: 'lemonsqueezy' });
+  // A second password account with the same address that never confirmed it: told the order waits, opens nothing.
+  pwToken('pw-ce1-squat', 'buyer25@example.com');
+  const squat = await authReq('/api/purchases/status', 'pw-ce1-squat', '10.0.80.7');
+  assert.deepEqual(squat.body.owned, []); assert.equal(squat.body.emailOrdersWaiting, true);
+  assert.equal((await ticketReq('pw-ce1-squat', '10.0.80.8', 'ru8', 'solo')).response.status, 403);
+  assert.deepEqual((await authReq('/api/purchases/licenses', 'pw-ce1-squat', '10.0.80.9')).body.licenses, []);
+});
+await test('confirm e-mail: emailOrdersWaiting is false when nothing paid waits (no order, a free order, an order bound to the uid, Google), true for a family or pack bought by e-mail', async () => {
+  resetDb({ claimed: 1000 });
+  state.tokenAs.clear();
+  pwToken('pw-ce2', 'none25@example.com');
+  assert.equal((await authReq('/api/purchases/status', 'pw-ce2', '10.0.81.1')).body.emailOrdersWaiting, false, 'no order');
+  // A $0 free plugin opens by e-mail already (freeByEmail): nothing to confirm for it.
+  await hook(freeOrder('free25@example.com', { id: 'CE2' }));
+  pwToken('pw-ce3', 'free25@example.com');
+  const free = await authReq('/api/purchases/status', 'pw-ce3', '10.0.81.2');
+  assert.deepEqual(free.body.owned, ['taban']); assert.equal(free.body.emailOrdersWaiting, false);
+  // A paid order that carries this account's uid is already on the account.
+  await hook(named('bound25@example.com', { id: 'CE3', product: SLUG_IDS.koro, name: 'KORO', uid: 'pw-ce4' }));
+  pwToken('pw-ce4', 'bound25@example.com');
+  const bound = await authReq('/api/purchases/status', 'pw-ce4', '10.0.81.3');
+  assert.deepEqual(bound.body.owned, ['koro']); assert.equal(bound.body.emailOrdersWaiting, false);
+  // ...but a second, signed-out order under the same e-mail waits.
+  await hook(named('bound25@example.com', { id: 'CE4', product: SLUG_IDS.hava, name: 'HAVA' }));
+  const more = await authReq('/api/purchases/status', 'pw-ce4', '10.0.81.4');
+  assert.deepEqual(more.body.owned, ['koro']); assert.equal(more.body.emailOrdersWaiting, true);
+  // The family paid signed out.
+  assert.equal((await hook(claimHook('fam25@example.com', { id: 'CE5', number: 4025, product: 5550, total: 1999 }))).response.status, 200);
+  pwToken('pw-ce5', 'fam25@example.com');
+  const fam = await authReq('/api/purchases/status', 'pw-ce5', '10.0.81.5');
+  assert.equal(fam.body.standing, 'none'); assert.equal(fam.body.emailOrdersWaiting, true);
+  pwToken('pw-ce5', 'fam25@example.com', true);
+  const famAfter = await authReq('/api/purchases/status', 'pw-ce5', '10.0.81.6');
+  assert.equal(famAfter.body.standing, 'paid'); assert.equal(famAfter.body.emailOrdersWaiting, false);
+  // A paid sample pack bought signed out.
+  await hook(paidOrder('pack25@example.com', { id: 'CE6', product: SLUG_IDS.brickyard, name: 'Brickyard' }));
+  pwToken('pw-ce6', 'pack25@example.com');
+  const pack = await authReq('/api/purchases/status', 'pw-ce6', '10.0.81.7');
+  assert.deepEqual(pack.body.packs, []); assert.equal(pack.body.emailOrdersWaiting, true);
+  // A Google account reads its e-mail's orders directly: nothing waits.
+  await hook(named('google-ce7@example.com', { id: 'CE7', product: SLUG_IDS.koro, name: 'KORO' }));
+  const g = await authReq('/api/purchases/status', 'google-ce7', '10.0.81.8');
+  assert.deepEqual(g.body.owned, ['koro']); assert.equal(g.body.emailOrdersWaiting, false);
+  state.tokenAs.clear();
+});
+await test('confirm e-mail: the account page sends Firebase\'s own link to the account\'s address only when the server says an order waits', async () => {
+  const page = await readFile(resolve(root, 'src/components/AccountPage.jsx'), 'utf8');
+  const hook = await readFile(resolve(root, 'src/components/LaunchPage.jsx'), 'utf8');
+  assert.match(hook, /emailOrdersWaiting: body\.emailOrdersWaiting === true/);
+  assert.match(page, /\{emailOrdersWaiting && <ConfirmEmail user=\{user\}/);
+  assert.match(page, /sendEmailVerification\(user, \{ url: `\$\{window\.location\.origin\}\/account` \}\)/, 'the link goes to the signed-in user\'s own address, back to /account');
+  assert.match(page, /await user\.reload\(\);\s*if \(user\.emailVerified\) \{ await user\.getIdToken\(true\);/, 'a fresh token carries email_verified to the server');
+  const block = page.slice(page.indexOf('function ConfirmEmail'), page.indexOf('// Sample packs and preset packs'));
+  for (const banned of [/\bAI\b/, /beta/i, /coming soon/i, /machine learning/i]) assert.doesNotMatch(block, banned);
+});
+
 await test('firestore.rules: orders_by_uid is closed to every client; Dockerfile copies every server file server.js imports', async () => {
   const rules = await readFile(resolve(root, 'firestore.rules'), 'utf8');
   assert.match(rules, /match \/orders_by_uid\/\{document=\*\*\} \{\s*allow read, write: if false;/);
-  const docker = await readFile(resolve(root, 'Dockerfile'), 'utf8');
+  const docker = await readFile(resolve(root, 'api/Dockerfile'), 'utf8');
   const copied = new Set(docker.match(/COPY server\.js ([^.\n]*\.js[^\n]*) \.\//)?.[0].split(/\s+/).filter((x) => x.endsWith('.js')));
-  const src = await readFile(resolve(root, 'server.js'), 'utf8');
+  const src = await readFile(resolve(root, 'api/server.js'), 'utf8');
   for (const m of src.matchAll(/from '\.\/([A-Za-z0-9_-]+\.js)'/g)) assert.ok(copied.has(m[1]), `${m[1]} missing from the Dockerfile COPY line`);
-  for (const f of copied) for (const m of (await readFile(resolve(root, f), 'utf8')).matchAll(/from '\.\/([A-Za-z0-9_-]+\.js)'/g)) assert.ok(copied.has(m[1]), `${m[1]} (imported by ${f}) missing from the Dockerfile COPY line`);
+  for (const f of copied) for (const m of (await readFile(resolve(root, 'api', f), 'utf8')).matchAll(/from '\.\/([A-Za-z0-9_-]+\.js)'/g)) assert.ok(copied.has(m[1]), `${m[1]} (imported by ${f}) missing from the Dockerfile COPY line`);
 });
 
 const failed = results.filter((result) => !result.ok);

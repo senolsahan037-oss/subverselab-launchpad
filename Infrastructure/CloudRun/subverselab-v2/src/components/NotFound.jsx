@@ -1,13 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
-import { FAMILY_PLUGINS } from '../data/plugins';
+import { FAMILY_PLUGINS, SOLO_PLUGINS, LINE2_PLUGINS, FREE_PLUGINS, CHECKOUT } from '../data/plugins';
+import { byLatestRelease } from '../data/productDates';
+
+// Every plugin on sale or free, newest first like the store (the family is retired; its products are sold on their own).
+const JACKS = byLatestRelease([...FAMILY_PLUGINS, ...SOLO_PLUGINS, ...LINE2_PLUGINS.filter((p) => p && CHECKOUT[p.slug]), ...FREE_PLUGINS].filter(Boolean), (p) => p.slug);
 
 // The site's own 404. The server already answers unknown URLs with a real 404
 // status (see server.js); this is what a visitor who lands on one sees: a
 // piece of SubverseLab hardware with no signal on its input. Tape counter
 // stopped at 404, VU needle resting on the left stop, a flat trace with one
-// dropout, and a patch bay with the seven plugins to plug back into.
+// dropout, and a patch bay with the plugins to plug back into.
 
 const PLATE = '#0A3A35';
 const CREAM = '#F2EFE7';
@@ -53,8 +57,9 @@ const css = `
 .nf-key:active { transform: translateY(3px); box-shadow: 0 0 0 #9d9686, 0 2px 4px rgba(0,0,0,.25); }
 .nf-key.gold { background: linear-gradient(180deg,#e2c27e,${GOLD}); box-shadow: 0 3px 0 #8C6F35, 0 6px 12px rgba(0,0,0,.25); }
 .nf-bay { margin-top: 24px; border-top: 1px solid rgba(242,239,231,.14); padding-top: 14px; }
-.nf-jacks { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 10px; }
-@media (max-width: 620px) { .nf-jacks { grid-template-columns: repeat(4, 1fr); } }
+.nf-jacks { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 8px; margin-top: 10px; }
+.nf-jacks .nf-jack { flex: 0 0 calc((100% - 56px) / 8); }
+@media (max-width: 620px) { .nf-jacks .nf-jack { flex-basis: calc((100% - 24px) / 4); } }
 .nf-jack { text-align: center; text-decoration: none; color: ${CREAM}; font-size: .62rem; letter-spacing: 1.5px; font-weight: 700; }
 .nf-jack b { display: block; width: 26px; height: 26px; margin: 0 auto 6px; border-radius: 50%;
   background: radial-gradient(circle, #050c0b 0 34%, #b9b3a3 36% 52%, #6f6a5e 54% 100%); box-shadow: 0 2px 4px rgba(0,0,0,.4); transition: box-shadow .15s; }
@@ -78,7 +83,7 @@ export default function NotFound() {
         <Screw style={{ left: 10, bottom: 10 }} /><Screw style={{ right: 10, bottom: 10 }} />
 
         <div className="nf-top">
-          <span className="nf-brand">SUBVERSE-LAB</span>
+          <span className="nf-brand">SUBVERSELAB</span>
           <span className="nf-model">ERROR UNIT · MODEL NF-404</span>
         </div>
 
@@ -125,7 +130,7 @@ export default function NotFound() {
         <nav className="nf-bay" aria-label="Plugins">
           <div className="nf-label" style={{ color: DIM }}>Patch bay</div>
           <div className="nf-jacks">
-            {FAMILY_PLUGINS.filter(Boolean).map((p) => (
+            {JACKS.map((p) => (
               <Link key={p.slug} to={p.path} className="nf-jack"><b />{p.name}</Link>
             ))}
           </div>

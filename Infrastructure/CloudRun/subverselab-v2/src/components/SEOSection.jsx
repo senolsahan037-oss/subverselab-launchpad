@@ -175,7 +175,7 @@ export default function SEOSection() {
   if (loading || (faqs.length === 0 && blogs.length === 0)) return null;
 
   return (
-    <section style={{ borderTop: '1px solid var(--color-border)', marginTop: '40px' }}>
+    <section className="svl-divider-top" style={{ marginTop: '40px' }}>
       <div className="container" style={{ padding: '80px 40px' }}>
 
         {/* FAQ Section */}

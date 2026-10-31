@@ -1,0 +1,82 @@
+[
+ {
+  "t": 0,
+  "label": "Android Tears: 112 BPM, B minor"
+ },
+ {
+  "t": 4.29,
+  "label": "Blade Horizon: 96 BPM, D minor"
+ },
+ {
+  "t": 9.29,
+  "label": "Chrome Cathedral: 140 BPM, C minor"
+ },
+ {
+  "t": 12.71,
+  "label": "Coastal Drive: 116 BPM, E minor"
+ },
+ {
+  "t": 16.85,
+  "label": "Cyber Chrome: 118 BPM, A minor"
+ },
+ {
+  "t": 20.92,
+  "label": "Grid Runner: 128 BPM, A minor"
+ },
+ {
+  "t": 24.67,
+  "label": "Hyperdrive Exit: 132 BPM, A minor"
+ },
+ {
+  "t": 28.31,
+  "label": "Laser Grid: 134 BPM, D minor"
+ },
+ {
+  "t": 31.89,
+  "label": "Last Arcade: 144 BPM, D minor"
+ },
+ {
+  "t": 35.22,
+  "label": "Mainframe Sunset: 110 BPM, A minor"
+ },
+ {
+  "t": 39.59,
+  "label": "Midnight Turbo: 124 BPM, C minor"
+ },
+ {
+  "t": 43.46,
+  "label": "Neon Conduit: 136 BPM, G minor"
+ },
+ {
+  "t": 46.99,
+  "label": "Night Courier: 130 BPM, G minor"
+ },
+ {
+  "t": 50.68,
+  "label": "Outrun Vector: 126 BPM, E minor"
+ },
+ {
+  "t": 54.49,
+  "label": "Phosphor Wake: 100 BPM, G minor"
+ },
+ {
+  "t": 59.29,
+  "label": "Polygon Heart: 120 BPM, E minor"
+ },
+ {
+  "t": 63.29,
+  "label": "Static Bloom: 102 BPM, B minor"
+ },
+ {
+  "t": 67.99,
+  "label": "Subspace Pulse: 122 BPM, E minor"
+ },
+ {
+  "t": 71.93,
+  "label": "Titanium Rain: 104 BPM, A minor"
+ },
+ {
+  "t": 76.54,
+  "label": "VHS Mirage: 108 BPM, B minor"
+ }
+]

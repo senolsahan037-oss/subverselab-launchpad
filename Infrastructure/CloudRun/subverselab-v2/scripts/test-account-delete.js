@@ -81,16 +81,19 @@ globalThis.__acctTestAuth = { getAuth: () => state.auth };
 globalThis.__acctTestStorage = { Storage: class { constructor() { return {}; } } };
 
 const url = (f) => pathToFileURL(resolve(root, f)).href;
-const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
+const transformed = (await readFile(resolve(root, 'api/server.js'), 'utf8'))
   .replace("import express from 'express';", `import express from '${pathToFileURL(require.resolve('express')).href}';`)
   .replace("import compression from 'compression';", `import compression from '${pathToFileURL(require.resolve('compression')).href}';`)
-  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(root)};`)
-  .replace("from './launchLicence.js';", `from '${url('launchLicence.js')}';`)
-  .replace("from './entitlements.js';", `from '${url('entitlements.js')}';`)
-  .replace("from './accountDeletion.js';", `from '${url('accountDeletion.js')}';`)
-  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'credits.js')).href}';`)
-  .replace("from './inbox.js';", `from '${url('inbox.js')}';`)
-  .replace("from './stats.js';", `from '${url('stats.js')}';`)
+  .replace('const __dirname = dirname(fileURLToPath(import.meta.url));', `const __dirname = ${JSON.stringify(resolve(root, 'api'))};`)
+  .replace("from './launchLicence.js';", `from '${url('api/launchLicence.js')}';`)
+  .replace("from './entitlements.js';", `from '${url('api/entitlements.js')}';`)
+  .replace("from './accountDeletion.js';", `from '${url('api/accountDeletion.js')}';`)
+  .replace("from './credits.js';", `from '${pathToFileURL(resolve(root, 'api/credits.js')).href}';`)
+  .replace("from './catalog.js';", `from '${pathToFileURL(resolve(root, 'api/catalog.js')).href}';`)
+  .replace("from './catalogSchema.js';", `from '${pathToFileURL(resolve(root, 'api/catalogSchema.js')).href}';`)
+  .replace("from './agents.js';", `from '${pathToFileURL(resolve(root, 'api/agents.js')).href}';`)
+  .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
+  .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__acctTestApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__acctTestFirestore)')
@@ -99,7 +102,7 @@ const transformed = (await readFile(resolve(root, 'server.js'), 'utf8'))
   .replace(/const PORT = process\.env\.PORT \|\| 8080;[\s\S]*?\n\);\s*$/, '');
 const server = await import(`data:text/javascript;base64,${Buffer.from(transformed).toString('base64')}`);
 process.env.DOWNLOAD_TICKET_SECRET = 'acct-test-secret';
-const { emailMarker } = await import(url('accountDeletion.js'));
+const { emailMarker } = await import(url('api/accountDeletion.js'));
 
 const routeHandlers = new Map(server.app.router.stack.filter((l) => l.route).map((l) => [l.route.path, l.route.stack.at(-1).handle]));
 class FakeResponse extends PassThrough {
@@ -174,7 +177,19 @@ function seed() {
   D.set('forum_topics/t2', { authorId: 'bob', title: 'Bob topic' });
   D.set('forum_topics/t2/replies/y1', { authorId: 'alice', body: 'Alice reply' });
   D.set('forum_topics/t2/replies/y2', { authorId: 'bob', body: 'Bob reply' });
-  D.set('credits/alice', { balance: 900, granted: 1000, spent: 100, updatedAt: '2026-10-05' });
+  D.set('credits/alice', { balance: 900, granted: 1000, spent: 100, updatedAt: '2026-10-05', tester: { month: '2026-10', remaining: 400 } });
+  D.set('credit_ledger/tester_2026-10_alice', { uid: 'alice', delta: 2000, reason: 'tester-grant', month: '2026-10', at: '2026-10-05' });
+  D.set('launch_keys/SVL-TEST-SEDA-0001-0002', { email: 'alice@example.com', uid: null, product: 'seda', product_id: 9021, status: 'active', activation_limit: 2, instances: { i1: { name: 'Mac', created: 'x' } }, created: '2026-10-12', source: 'tester' });
+  D.set('tester_keys/seda:alice@example.com', { key: 'SVL-TEST-SEDA-0001-0002', email: 'alice@example.com', product: 'seda', created: '2026-10-12' });
+  D.set('tester_agent_tokens/hash1', { email: 'alice@example.com', createdAt: '2026-10-12', lastUsedAt: null });
+  D.set('tester_agent_tokens/hash2', { email: 'bob@example.com', createdAt: '2026-10-12', lastUsedAt: null });
+  D.set('tester_messages/m1', { email: 'alice@example.com', from: 'tester', kind: 'message', body: 'Hello from Alice', at: '2026-10-12T00:00:00Z', read: true });
+  D.set('tester_messages/m2', { email: 'alice@example.com', from: 'staff', kind: 'message', body: 'Reply to Alice', at: '2026-10-12T01:00:00Z', read: false });
+  D.set('tester_messages/m3', { email: 'bob@example.com', from: 'tester', kind: 'message', body: 'Bob keeps this', at: '2026-10-12T02:00:00Z', read: false });
+  D.set('tester_build_results/b1_alice@example.com', { buildId: 'b1', email: 'alice@example.com', tasks: {}, summary: 'Alice results', updatedAt: '2026-10-12T00:00:00Z' });
+  D.set('tester_build_results/b1_bob@example.com', { buildId: 'b1', email: 'bob@example.com', tasks: {}, summary: 'Bob results', updatedAt: '2026-10-12T00:00:00Z' });
+  D.set('tester_builds/b1', { slug: 'koro', name: 'Koro test', version: '0.9.1', platform: 'mac', objectPath: 'testbuilds/koro/0.9.1/Koro.pkg', notes: '', assignedTo: ['alice@example.com', 'bob@example.com'], createdAt: '2026-10-10T00:00:00Z', releasedAt: null });
+  D.set('tester_builds/b2', { slug: 'koro', name: 'Koro test 2', version: '0.9.2', platform: 'win', objectPath: 'testbuilds/koro/0.9.2/Koro.exe', notes: '', assignedTo: ['alice@example.com'], createdAt: '2026-10-11T00:00:00Z', releasedAt: null });
   D.set('credit_ledger/purchase_2002', { uid: 'alice', delta: 1000, reason: 'purchase', orderId: '2002', at: '2026-10-05' });
   D.set('credit_ledger/spend_splitter_j1', { uid: 'alice', delta: -50, reason: 'spend', tool: 'splitter', jobId: 'j1', at: '2026-10-05' });
   D.set('pending_credits/alice@example.com', { email: 'alice@example.com', orders: { 3003: { credits: 500, at: '2026-10-05' } } });
@@ -253,6 +268,17 @@ await test('deletion removes every personal document, keeps only hashed markers,
   for (const secret of ['LS-KEY-77', 'LS-KEY-KORO-78', 'LS-KEY-FAM-79', 'receipt']) assert.ok(!dump().includes(secret), `${secret} must not survive`);
   assert.equal(kept.purchase.orderId, '2002');
   assert.equal(kept.seat.orderId, '2002');
+  // Tester data: the record, reports and monthly tester credits go; builds stay for the others, only this address leaves the lists.
+  assert.ok(!D.has('credit_ledger/tester_2026-10_alice'));
+  assert.ok(!D.has('tester_agent_tokens/hash1') && D.has('tester_agent_tokens/hash2'), "the agent key goes with the account, another tester's stays");
+  // A tester key is switched off and stripped of the address, not deleted (a plugin still holding it hears "disabled"); its index goes.
+  assert.deepEqual([D.get('launch_keys/SVL-TEST-SEDA-0001-0002').status, D.get('launch_keys/SVL-TEST-SEDA-0001-0002').email, D.get('launch_keys/SVL-TEST-SEDA-0001-0002').uid], ['disabled', null, null]);
+  assert.ok(!D.has('tester_keys/seda:alice@example.com'));
+  for (const gone of ['tester_messages/m1', 'tester_messages/m2', 'tester_build_results/b1_alice@example.com']) assert.ok(!D.has(gone), `${gone} should be gone`);
+  assert.ok(D.has('tester_messages/m3') && D.has('tester_build_results/b1_bob@example.com'), "another tester's thread and results stay");
+  assert.deepEqual(D.get('tester_builds/b1').assignedTo, ['bob@example.com']);
+  assert.deepEqual(D.get('tester_builds/b2').assignedTo, []);
+  assert.equal(D.get('tester_builds/b1').objectPath, 'testbuilds/koro/0.9.1/Koro.pkg');
   assert.ok(!dump().toLowerCase().includes('alice'), 'no trace of the name or address is left anywhere');
   assert.ok(state.deletedUsers.has('alice'));
   assert.ok(D.has('inbox/bob/messages/welcome'), "another account's inbox stays");
@@ -374,6 +400,21 @@ await test('report purge: resolved for over 12 months go, newer stay, unstamped 
   assert.ok(!D.has('reports_archive/aold') && !D.has('reports_archive/aold2') && D.has('reports_archive/anew'));
   assert.ok(!D.has('reports/old')); assert.ok(D.has('reports/new')); assert.ok(D.has('reports/open'));
   assert.ok(D.get('reports/legacy').resolvedAt);
+});
+
+await test('emailMarker (audit F6): on Cloud Run a missing ACCOUNT_HASH_SECRET throws instead of using the public label; tests and local runs keep the label', async () => {
+  const keep = { s: process.env.ACCOUNT_HASH_SECRET, k: process.env.K_SERVICE };
+  try {
+    delete process.env.ACCOUNT_HASH_SECRET; delete process.env.K_SERVICE;
+    assert.equal(emailMarker('a@example.com').length, 64);
+    process.env.K_SERVICE = 'subverselab-api';
+    assert.throws(() => emailMarker('a@example.com'), /ACCOUNT_HASH_SECRET/);
+    process.env.ACCOUNT_HASH_SECRET = 'x'.repeat(32);
+    assert.equal(emailMarker('a@example.com').length, 64);
+  } finally {
+    if (keep.s === undefined) delete process.env.ACCOUNT_HASH_SECRET; else process.env.ACCOUNT_HASH_SECRET = keep.s;
+    if (keep.k === undefined) delete process.env.K_SERVICE; else process.env.K_SERVICE = keep.k;
+  }
 });
 
 const failed = results.filter((r) => !r).length;

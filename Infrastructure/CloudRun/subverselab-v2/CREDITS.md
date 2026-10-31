@@ -107,9 +107,30 @@ No secrets. The tool services need no extra role to fetch an identity token for 
 
 ## Data (Firestore, Admin SDK only; `firestore.rules`)
 
-- `credits/{uid}` `{balance, granted, spent, updatedAt}`; a signed-in user may read only their own document.
-- `credit_ledger/{id}` `{uid, delta, reason: purchase|refund|spend|release|admin, orderId?, tool?, jobId?, shortfall?, at}`; ids are deterministic
-  (`purchase_{orderId}`, `refund_{orderId}_{n}`, `spend_{tool}_{jobId}`, `release_{tool}_{jobId}`) so a repeat can never write twice. Needs the composite index (uid ASC, at DESC) in `firestore.indexes.json` (without it the balance route falls back to an unindexed read).
-- `pending_credits/{email}`: paid orders that carried no account id; claimed by a verified (or Google) account with that e-mail on `/api/credits/balance` or `/api/purchases/status`.
+- `credits/{uid}` `{balance, granted, spent, updatedAt, tester?: {month, remaining}}`; a signed-in user may read only their own document.
+- `credit_ledger/{id}` `{uid, delta, reason: purchase|refund|spend|release|admin|tester-grant|tester-expire, orderId?, tool?, jobId?, shortfall?, at}`; ids are deterministic
+  (`purchase_{orderId}`, `refund_{orderId}_{n}`, `spend_{tool}_{jobId}`, `release_{tool}_{jobId}`, `tester_{YYYY-MM}_{uid}`, `tester_expire_{YYYY-MM}_{uid}`) so a repeat can never write twice. Needs the composite index (uid ASC, at DESC) in `firestore.indexes.json` (without it the balance route falls back to an unindexed read).
+- `pending_credits/{email}`: paid orders that carried no account id; claimed by the account whose sign-in e-mail is that e-mail (proven or not, owner 2026-10-18) on `/api/credits/balance` or `/api/purchases/status`, and by the account that claims the order with its order number (`/api/orders/claim`, that order's credits only).
 - Order amounts: `plugin_licenses/{email}.orders[orderId]` gets `amount_usd_cents` (= `total_usd - tax_usd`, or `total - tax` when the currency is USD), `currency`, `total`; family orders also `launch2_purchases/{email}.amountUsdCents/currency/total`.
 - Refund (`order_refunded`): the order's credits are removed (balance never below 0; the part that was already spent is recorded as `shortfall`, the refund is never blocked). A partial refund removes the same share.
+
+## Tester credits (Tester Agreement v1.1, section 4.5)
+
+An active tester (`launch2_testers/{e-mail}.status` is `active`, or missing on an old record) gets **2,000 credits per calendar month (UTC)**.
+Unused tester credits do not carry over. The tool services change nothing: they still call `spend` / `release` and see one `balance`.
+
+Design (credits.js): one pool, one tracked slice. `credits/{uid}.tester = {month, remaining}` says how much of `balance` is this month's tester grant;
+the rest of `balance` is purchased (or admin) credits, which tester handling never touches. Nothing runs on a timer: the first `spend` or balance read of a
+uid in a new month does the work, in the same Firestore transaction as the spend.
+
+1. Expiry: the previous month's `remaining` (or all of it when the tester is ended / revoked, or the e-mail is not proven) is removed with ledger line
+   `tester_expire_{YYYY-MM}_{uid}` (delta = -remaining). `balance` and `granted` both drop, so `balance = granted - spent` still holds.
+2. Grant: an active tester gets ledger line `tester_{YYYY-MM}_{uid}` (delta +2000, `granted` +2000). The id is deterministic, so a month can never be granted twice,
+   even if the slice marker were lost; re-activating a tester in the same month does not grant again.
+3. Spend takes tester credits first (`fromTester` and `testerMonth` are stored on the `spend_*` line), then purchased ones. A `402` still persists the expiry / grant.
+4. Refund of an order removes purchased credits only (`balance - tester.remaining` at most). Release returns the tester part only while that month's slice is
+   still the one on the account; after a rollover those credits have expired like the rest (`granted` drops by the expired part).
+
+The uid's e-mail must be proven (Google sign-in or verified), the same rule as every e-mail-matched entitlement: `server.js` passes `testerEmail` to
+`spend` / `readBalance` only then. `GET /api/credits/balance` returns `tester: {month, monthly, left}` (or `null`). Tests: `scripts/test-credits.js`
+("tester credits ..." cases).

@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../data/faqContent';
+import { HELP } from '../data/siteMeta';
+import { BuyingFlow, infoFiguresCss } from './InfoFigures';
 
 // Plain <details>/<summary> rather than a JS-driven accordion — every
 // answer stays in the DOM (just visually collapsed), so a crawler that
@@ -39,24 +41,31 @@ export default function HelpPage() {
   };
 
   return (
-    <div className="container" style={{ paddingTop: '80px', paddingBottom: '100px', maxWidth: '760px' }}>
+    <div className="container" style={{ paddingTop: '80px', paddingBottom: '100px', maxWidth: 'var(--read-max)' }}>
       <Helmet>
         <title>Help &amp; FAQ | SubverseLab</title>
-        <meta name="description" content="Answers to common questions about SubverseLab accounts, sign-in, downloads, and how each free tool works." />
+        <meta name="description" content={HELP.description} />
         <link rel="canonical" href="https://subverselab.com/help" />
         <meta property="og:title" content="Help &amp; FAQ | SubverseLab" />
-        <meta property="og:description" content="Answers to common questions about SubverseLab accounts, sign-in, downloads, and how each free tool works." />
+        <meta property="og:description" content={HELP.description} />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://subverselab.com/help" />
         <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
       </Helmet>
 
-      <Link to="/" className="btn btn-outline" style={{ marginBottom: '24px', display: 'inline-block' }}>← Back to Tools</Link>
+      <Link to="/tools" className="btn btn-outline" style={{ marginBottom: '24px', display: 'inline-block' }}>← Back to Tools</Link>
 
       <h1 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '8px' }}>Help &amp; FAQ</h1>
       <p style={{ color: 'var(--color-text-muted)', marginBottom: '36px' }}>
-        Common questions about accounts, downloads, and how each tool works. For anything tool-specific and detailed, check that tool's own <Link to="/learn" style={{ color: 'var(--color-primary)' }}>guide</Link>.
+        Questions before you buy, or stuck after? Here is how accounts, buying, downloads and credits work, and how each tool works. For the finer details of one tool, read its own <Link to="/learn" style={{ color: 'var(--color-primary)' }}>guide</Link>.
       </p>
+
+      <style>{infoFiguresCss}</style>
+      <section style={{ marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: '800', marginBottom: '16px' }}>How buying works</h2>
+        <BuyingFlow />
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Refunds and what they change: <Link to="/refunds" style={{ color: 'var(--color-primary)' }}>Purchases and Refunds</Link>.</p>
+      </section>
 
       <FaqSection title="General" items={GENERAL_FAQ} />
       <FaqSection title="Tools" items={TOOL_FAQ} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
+import { apiUrl } from '../utils/endpoints';
 
 // What the signed-in account owns, shared by every Buy / Get-free button on the page: ONE request to
 // GET /api/purchases/status for all of them (not one per button), repeated when the account changes.
@@ -40,7 +41,7 @@ export function expectingOrder(slug, now = Date.now()) {
   return !started || started === slug || (started === 'family' && slug !== 'family');
 }
 
-const EMPTY = { loaded: false, owned: [], standing: null, unverified: false };
+const EMPTY = { loaded: false, owned: [], packs: [], standing: null, unverified: false };
 let user = null;
 let state = { ...EMPTY };
 let fetchedAt = 0;
@@ -58,11 +59,11 @@ async function refresh(force = false) {
   inflight = (async () => {
     try {
       const token = await forUser.getIdToken();
-      const r = await fetch('/api/purchases/status', { headers: { Authorization: `Bearer ${token}` } });
+      const r = await fetch(apiUrl('/api/purchases/status'), { headers: { Authorization: `Bearer ${token}` } });
       const body = await r.json().catch(() => ({}));
       if (user !== forUser) return;
       fetchedAt = Date.now();
-      if (r.ok && Array.isArray(body.owned)) state = { loaded: true, owned: body.owned, standing: body.standing || null, unverified: body.unverified === true };
+      if (r.ok && Array.isArray(body.owned)) state = { loaded: true, owned: body.owned, packs: Array.isArray(body.packs) ? body.packs : [], standing: body.standing || null, unverified: body.unverified === true };
       else state = { ...EMPTY, loaded: true };
     } catch { /* keep what we had; the buttons stay as they are */ } finally { inflight = null; }
     emit();
@@ -103,7 +104,7 @@ function watchAuth() {
   });
 }
 
-// {signedIn, loaded, owned: [slugs], standing, unverified, expecting(slug)}
+// {signedIn, loaded, owned: [slugs], packs: [pack slugs], standing, unverified, expecting(slug)}
 export default function usePurchaseStatus() {
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function usePurchaseStatus() {
   return {
     signedIn: Boolean(user),
     ...state,
-    owns: (slug) => (slug === 'family' ? state.standing === 'paid' : state.owned.includes(slug)),
+    owns: (slug) => (slug === 'family' ? state.standing === 'paid' : state.owned.includes(slug) || state.packs.includes(slug)),
     expecting: (slug) => Boolean(user) && expectingOrder(slug),
   };
 }

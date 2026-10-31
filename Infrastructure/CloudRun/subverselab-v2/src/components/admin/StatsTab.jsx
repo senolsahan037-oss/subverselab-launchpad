@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../../utils/endpoints';
 
 // The Stats tab: orders, accounts, downloads and page views from our own data (GET /api/admin/stats), so it does not depend
 // on Google Analytics, which only runs for visitors who accepted the cookie banner. Page views are counted by our own
@@ -93,7 +94,7 @@ export default function StatsTab({ user }) {
     let cancelled = false;
     setLoading(true);
     user.getIdToken()
-      .then((token) => fetch(`/api/admin/stats?days=${days}`, { headers: { Authorization: `Bearer ${token}` } }))
+      .then((token) => fetch(apiUrl(`/api/admin/stats?days=${days}`), { headers: { Authorization: `Bearer ${token}` } }))
       .then(async (r) => { const body = await r.json().catch(() => ({})); if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`); return body; })
       .then((body) => { if (!cancelled) { setData(body); setError(null); } })
       .catch((err) => { if (!cancelled) setError('Stats are unavailable right now: ' + err.message); })
@@ -102,14 +103,16 @@ export default function StatsTab({ user }) {
   }, [user, days]);
 
   const w = data?.orders.window;
-  const family = data?.orders.products.find((p) => p.slug === 'family')?.window;
   const buyers = data?.orders.buyers;
+  const sold = (data?.orders.products || [])
+    .filter((p) => p.all.paid || p.all.free || p.all.refunded)
+    .sort((a, b) => b.window.revenue_cents - a.window.revenue_cents || b.all.revenue_cents - a.all.revenue_cents);
 
   return (
     <>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '20px' }}>
         {DAY_CHOICES.map((d) => (
-          <button key={d} onClick={() => setDays(d)} className={`btn ${days === d ? 'btn-primary' : 'btn-outline'}`} style={{ fontSize: '0.85rem' }}>{d} days</button>
+          <button key={d} onClick={() => setDays(d)} className={`btn ${days === d ? 'btn-primary' : 'btn-outline'}`} style={{ fontSize: '0.85rem' }}>Last {d} days</button>
         ))}
         <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
           {loading ? 'Loading...' : data ? `${data.from} to ${data.to} (UTC)` : ''}
@@ -121,17 +124,20 @@ export default function StatsTab({ user }) {
       {data && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '16px', marginBottom: '24px' }}>
-            <Kpi label="Paid orders" value={num(w.paid)} sub={`${money(w.revenue_cents)} before tax`} />
-            <Kpi label="Family orders" value={num(family?.paid)} sub="paid, in this window" color="var(--color-accent)" />
-            <Kpi label="Free orders" value={num(w.free)} sub={`${num(w.refunded)} refunded`} color="#ffb347" />
-            <Kpi label="New accounts" value={num(data.accounts.new_in_window)} sub={`${num(data.accounts.total)} in total`} color="var(--color-accent)" />
-            <Kpi label="Page views" value={num(data.traffic.views)} sub={`${num(data.traffic.visits)} visits`} />
+            <Kpi label="Money in" value={money(w.revenue_cents)} sub={`${num(w.paid)} paid order${w.paid === 1 ? '' : 's'}, net of tax`} />
+            <Kpi label="Free downloads ordered" value={num(w.free)} sub={w.refunded ? `${num(w.refunded)} refunded` : 'no refunds'} color="var(--color-gold)" />
+            <Kpi label="Visits" value={num(data.traffic.visits)} sub={`${num(data.traffic.buy_clicks)} Buy clicks`} color="var(--color-accent)" />
+            <Kpi label="New accounts" value={num(data.accounts.new_in_window)} sub={`${num(data.accounts.active.d7)} seen in 7 days`} color="var(--color-accent)" />
           </div>
 
-          <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-            <strong style={{ color: 'var(--color-text)' }}>{num(buyers.free_and_family)}</strong> e-mail{buyers.free_and_family === 1 ? '' : 's'} took a free plugin (ALEV or TABAN) and bought the family; <strong style={{ color: 'var(--color-text)' }}>{num(buyers.free_first_then_family)}</strong> of them took the free plugin first.
-            {' '}{num(buyers.paid_emails)} distinct e-mails paid, {num(buyers.free_emails)} took a free plugin. Orders ever: {num(data.orders.all_time.paid)} paid, {num(data.orders.all_time.free)} free, {num(data.orders.all_time.refunded)} refunded, {money(data.orders.all_time.revenue_cents)}.
-            {' '}Page views are counted by our own cookieless counter{data.traffic.tracking_since ? `, counting since ${data.traffic.tracking_since}` : ', which has not counted anything in this window yet'}; earlier days have no view numbers.
+          <div style={{ marginBottom: '24px' }}>
+            <Table
+              title="What sold"
+              note="This window first, all time after the slash. Money is what the buyer paid in USD without tax."
+              head={['Product', 'Paid', 'Free', 'Money']}
+              rows={sold.map((p) => ({ key: p.slug, cells: [p.slug.toUpperCase(), `${num(p.window.paid)} / ${num(p.all.paid)}`, `${num(p.window.free)} / ${num(p.all.free)}`, `${money(p.window.revenue_cents)} / ${money(p.all.revenue_cents)}`] }))}
+              empty="No orders yet."
+            />
           </div>
 
           <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
@@ -139,44 +145,43 @@ export default function StatsTab({ user }) {
             <VisitBars series={data.series} />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <Table
-              title="Per day"
-              note="Revenue is what the buyer paid in USD without tax. Visits are the first page of a tab; views are all pages."
-              head={['Date', 'Visits', 'Views', 'Sign-ups', 'Paid', 'Free', 'Revenue']}
-              minWidth={560}
-              rows={data.series.map((d) => ({ key: d.date, cells: [d.date, num(d.visits), num(d.views), num(d.signups), num(d.paid), num(d.free), money(d.revenue_cents)] }))}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(420px, 100%), 1fr))', gap: '20px', marginBottom: '24px' }}>
-            <Table
-              title="Per product"
-              note="Window / all time."
-              head={['Product', 'Paid', 'Free', 'Refunded', 'Revenue']}
-              rows={data.orders.products
-                .filter((p) => p.all.paid || p.all.free || p.all.refunded)
-                .map((p) => ({ key: p.slug, cells: [p.slug, `${num(p.window.paid)} / ${num(p.all.paid)}`, `${num(p.window.free)} / ${num(p.all.free)}`, `${num(p.window.refunded)} / ${num(p.all.refunded)}`, `${money(p.window.revenue_cents)} / ${money(p.all.revenue_cents)}`] }))}
-            />
-            <Table
-              title="Downloads"
-              note={`All time, by account. ${num(data.downloads.accounts_any)} accounts downloaded something; ${num(data.downloads.first_per_day.reduce((n, d) => n + d.count, 0))} first-time downloads in this window.`}
-              head={['Plugin', 'Mac', 'Windows', 'Accounts']}
-              rows={data.downloads.by_product.map((p) => ({ key: p.slug, cells: [p.slug, `${num(p.mac.count)} (${num(p.mac.accounts)})`, `${num(p.win.count)} (${num(p.win.accounts)})`, num(p.accounts)] }))}
-            />
-          </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: '20px', marginBottom: '24px' }}>
             <BarList title="Top pages" items={data.traffic.paths} nameKey="path" />
-            <BarList title="Top referrers" items={data.traffic.refs} nameKey="host" />
-            <div className="glass-panel" style={{ padding: '20px', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: '1.8' }}>
-              <h3 style={{ fontSize: '1.05rem', marginBottom: '12px', color: 'var(--color-text)' }}>Accounts</h3>
-              Signed in within 1 day: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.active.d1)}</strong><br />
-              Within 7 days: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.active.d7)}</strong><br />
-              Within 30 days: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.active.d30)}</strong><br />
-              Google: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.providers.google)}</strong> · E-mail and password: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.providers.password)}</strong> · Other: <strong style={{ color: 'var(--color-text)' }}>{num(data.accounts.providers.other)}</strong>
-            </div>
+            <BarList title="Where visitors came from" items={data.traffic.refs} nameKey="host" />
           </div>
+
+          <details className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600 }}>More detail: per day, downloads, Buy clicks, buyers</summary>
+            <div style={{ marginTop: '16px', display: 'grid', gap: '20px' }}>
+              <Table
+                title="Per day"
+                note="Visits are the first page of a tab; views are all pages."
+                head={['Date', 'Visits', 'Views', 'Buy clicks', 'Sign-ups', 'Paid', 'Free', 'Money']}
+                minWidth={620}
+                rows={data.series.map((d) => ({ key: d.date, cells: [d.date, num(d.visits), num(d.views), num(d.buy_clicks), num(d.signups), num(d.paid), num(d.free), money(d.revenue_cents)] }))}
+              />
+              <Table
+                title="Downloads"
+                note={`All time; the number in brackets is accounts. ${num(data.downloads.accounts_any)} accounts downloaded something.`}
+                head={['Plugin', 'Mac', 'Windows', 'Accounts']}
+                rows={data.downloads.by_product.map((p) => ({ key: p.slug, cells: [p.slug.toUpperCase(), `${num(p.mac.count)} (${num(p.mac.accounts)})`, `${num(p.win.count)} (${num(p.win.accounts)})`, num(p.accounts)] }))}
+              />
+              <Table
+                title="Buy clicks"
+                note={'A click opens the checkout; the order may or may not follow. "Opening seen" = the homepage opening was shown in that tab.'}
+                head={['Product', 'Page', 'Place', 'Opening seen', 'Clicks']}
+                minWidth={520}
+                empty="No Buy clicks counted yet."
+                rows={(data.traffic.buys || []).map((b) => ({ key: `${b.slug}|${b.path}|${b.place}|${b.intro}`, cells: [b.slug.toUpperCase(), b.path, b.place, b.intro ? 'yes' : 'no', num(b.clicks)] }))}
+              />
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', lineHeight: '1.7', margin: 0 }}>
+                {num(buyers.paid_emails)} e-mails have paid, {num(buyers.free_emails)} took a free plugin; {num(buyers.free_and_family)} took a free plugin and bought the 7-plugin bundle ({num(buyers.free_first_then_family)} free first).
+                {' '}All time: {num(data.orders.all_time.paid)} paid, {num(data.orders.all_time.free)} free, {num(data.orders.all_time.refunded)} refunded, {money(data.orders.all_time.revenue_cents)}.
+                {' '}Accounts seen within 1 / 7 / 30 days: {num(data.accounts.active.d1)} / {num(data.accounts.active.d7)} / {num(data.accounts.active.d30)}. Google {num(data.accounts.providers.google)}, e-mail {num(data.accounts.providers.password)}, other {num(data.accounts.providers.other)}.
+                {' '}Page views come from our own cookieless counter{data.traffic.tracking_since ? `, counting since ${data.traffic.tracking_since}` : ''}.
+              </p>
+            </div>
+          </details>
         </>
       )}
     </>

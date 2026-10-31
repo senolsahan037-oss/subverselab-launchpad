@@ -237,7 +237,7 @@ export default function SEOAdminTab({ packs = [] }) {
                   href={`/learn/${article.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', textDecoration: 'none', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textDecoration: 'none', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                   title={`/learn/${article.slug}`}
                 >
                   /learn/{article.slug}
@@ -251,7 +251,7 @@ export default function SEOAdminTab({ packs = [] }) {
                     : <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.78rem' }} disabled={!!busy} onClick={() => handleUnpublish(article.id)}>{busy === 'unpublishing' ? '...' : 'Unpublish'}</button>
                   }
                   <button
-                    style={{ padding: '6px 10px', background: 'rgba(192,57,43,0.12)', border: '1px solid rgba(192,57,43,0.3)', color: '#e74c3c', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '600' }}
+                    style={{ padding: '6px 10px', background: 'transparent', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: '600' }}
                     disabled={!!busy}
                     onClick={() => handleDelete(article.id)}
                   >

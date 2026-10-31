@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiUrl } from '../utils/endpoints';
 
 // The one reader of GET /api/launch/codes?launch=<id> → {total, claimed}.
 // Returns the counter, or null while loading and whenever it cannot be read
@@ -9,7 +10,7 @@ export function useLaunchCounter(launchId = 'launch') {
   useEffect(() => {
     let alive = true;
     if (!launchId) return undefined;   // a caller that must not read any counter (/launch2) passes null
-    fetch(`/api/launch/codes?launch=${launchId}`)
+    fetch(apiUrl(`/api/launch/codes?launch=${launchId}`))
       .then((r) => (r.ok ? r.json() : { available: false }))
       .then((body) => { if (alive) setCodes(body); })
       .catch(() => { if (alive) setCodes({ available: false }); });

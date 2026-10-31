@@ -24,7 +24,7 @@ export const FORUM_SEED_TOPICS = [
   },
   {
     category: 'Product support',
-    title: 'How does the daily limit on Subverse Splitter work?',
+    title: 'How does the daily limit on Splitter work?',
     body: "Key & BPM analysis is always free. Vocal removal and stem separation share one free run per day, and after that a run costs 50 credits (credits come with any plugin purchase: every dollar is 100 credits), counted per account and per network address. The run is reserved when the job starts and only marked used when it finishes, so a failed separation gives it back rather than charging you for audio you never received. People behind one office or campus address share that address's run between them — worth knowing before you plan around it.",
     replies: [],
   },

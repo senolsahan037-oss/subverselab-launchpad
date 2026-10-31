@@ -1,5 +1,5 @@
-# SubverseLab — free tools for music producers
-# Full guide text for every tool is available at https://subverselab.com/llms-full.txt
+# SubverseLab — plug-ins, sample packs and tools for music producers
+# Full text of every product page and tool guide is available at https://subverselab.com/llms-full.txt
 #
 # Every group repeats the Disallow lines on purpose. robots.txt groups do not
 # inherit from one another — a crawler obeys only its own most specific group.
