@@ -1,0 +1,183 @@
+{
+  "checkout": "https://subverselab.lemonsqueezy.com/checkout/buy/78f96fae-6dfb-4060-8f5f-2204379d3c0a",
+  "cover": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2F8bitorchestral%2Fmw29wio1-8bitorchestral_1200.jpg?alt=media&token=4b898863-633b-4621-95e9-351539ead9b4",
+  "createdAt": "2026-11-04T15:32:48.018Z",
+  "folders": [
+    [
+      "Construction Kits/Ascend_144_Fm",
+      "19 files: Full, Arp, Bass, Cymbals, Hats, Kick, Lead, Perc, Runs, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Cinder_105_Dm",
+      "15 files: Full, 808, Arp, Harp, Hats, Kick, Snare, Woodwind + MIDI"
+    ],
+    [
+      "Construction Kits/Citadel_120_Am",
+      "17 files: Full, Arp, Bass, Cymbals, Hats, Kick, Lead, Runs, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Crusade_135_Bm",
+      "17 files: Full, Arp, Bass, Cymbals, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Eclipse_112_Am",
+      "17 files: Full, Arp, Bass, Hats, Kick, Runs, Snare, Timpani, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Ember_98_Csm",
+      "15 files: Full, Arp, Bass, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Herald_126_Dm",
+      "15 files: Full, Arp, Bass, Cymbals, Hats, Kick, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Ironclad_126_Fm",
+      "15 files: Full, Arp, Bass, Brass, Hats, Kick, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Lament_96_Em",
+      "15 files: Full, Arp, Bass, Hats, Kick, Pizz, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Masque_125_Am",
+      "17 files: Full, Arp, Bass, Harp, Hats, Kick, Snare, Violin, Woodwind + MIDI"
+    ],
+    [
+      "Construction Kits/Mirebridge_125_Gsm",
+      "17 files: Full, Arp, Bass, Hats, Kick, Perc, Runs, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Nocturne_100_Bm",
+      "15 files: Full, 808, Arp, Hats, Kick, Perc, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Overture_120_Dm",
+      "15 files: Full, Arp, Bass, Hats, Kick, Perc, Snare, Violin + MIDI"
+    ],
+    [
+      "Construction Kits/Phantom_108_Fm",
+      "15 files: Full, Arp, Bass, Hats, Kick, Lead, Snare, Timpani + MIDI"
+    ],
+    [
+      "Construction Kits/Rampart_144_Csm",
+      "17 files: Full, Arp, Bass, Brass, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Requiem_90_Gm",
+      "15 files: Full, Arp, Bass, Harp, Hats, Kick, Snare, Woodwind + MIDI"
+    ],
+    [
+      "Construction Kits/Siege_135_Cm",
+      "17 files: Full, Arp, Bass, Cymbals, Hats, Kick, Runs, Snare, Woodwind + MIDI"
+    ],
+    [
+      "Construction Kits/Tempest_120_Cm",
+      "17 files: Full, Arp, Bass, Cymbals, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Throne_140_Gm",
+      "17 files: Full, Arp, Bass, Brass, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Valor_126_Em",
+      "17 files: Full, Arp, Bass, Brass, Hats, Kick, Lead, Perc, Snare + MIDI"
+    ],
+    [
+      "Construction Kits/Vigil_120_Gm",
+      "17 files: Full, Arp, Bass, Hats, Kick, Pizz, Snare, Violin, Woodwind + MIDI"
+    ],
+    [
+      "Construction Kits/Wraith_140_Bbm",
+      "17 files: Full, Arp, Bass, Hats, Kick, Pizz, Snare, Violin, Woodwind + MIDI"
+    ],
+    [
+      "One Shots",
+      "113 files: Arp 9, Bass 8, Brass 9, Choir 3, Claps 3, Cymbals 4, Guitar 13, Harp 6, Hats 5, Kicks 7, Orchestral Hits 6, Percussion 6, Pizz 4, Snares 5, Strings 11, Timpani 7, Violin 3, Woodwind 4"
+    ],
+    [
+      "Documents",
+      "README.txt, LICENCE.txt, measurements.csv, measurements.html, SHA256SUMS.txt"
+    ]
+  ],
+  "fullName": "SVL 8-Bit Orchestral",
+  "id": "8bitorchestral",
+  "inside": [
+    "22 construction kits, 8 bars, 90 to 144 BPM, each a full mix with its stems and MIDI",
+    "22 full mixes, 168 stems and 168 MIDI files",
+    "113 one-shots: arpeggios, basses, kicks, snares, claps, hats, cymbals, percussion, timpani, orchestral hits, strings, brass, woodwind, violin, harp, pizzicato, choir, guitar",
+    "24-bit / 44.1 kHz WAV, minor keys from A to G#",
+    "365 MB zip"
+  ],
+  "kindLine": "Chip house, electro and hip hop kits",
+  "licence": "standard",
+  "listedAt": "2026-11-04T15:30:00.000Z",
+  "lsProductId": "1501277",
+  "madeLine": "Construction kits in chip house, electro and hip hop, every sound played on models of two 1980s home-computer sound chips, register by register, and written the way the old chip tunes were written: one hook, fast arpeggios, jumping bass. Each kit is a full mix with separate stems and MIDI, plus one-shots to play the chips yourself.",
+  "name": "8-Bit Orchestral",
+  "peaks": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2F8bitorchestral%2Fmw29y0pn-peaks.json?alt=media&token=9821a368-d328-4f96-b8b5-4757ef3cbb08",
+  "price": 0,
+  "published": true,
+  "publisher": "",
+  "released": "2026-11-04",
+  "scenes": [
+    "0 Tempest kit",
+    "12 One shots: arpeggios",
+    "13.92 Mirebridge kit",
+    "29.28 One shots: drums",
+    "31.18 Valor kit",
+    "46.42 One shots: basses",
+    "48.42 Overture kit",
+    "64.42 One shots: stabs, plucks, runs",
+    "66.2 Crusade kit",
+    "73.31 Throne kit",
+    "87.03 Ascend kit",
+    "100.36 One shots: sustained arpeggios",
+    "103.03 Requiem kit",
+    "113.69 Eclipse kit",
+    "130.84 End hit"
+  ],
+  "snippet": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2F8bitorchestral%2Fmw29xzj3-SVL_8BitOrchestral_snippet.mp3?alt=media&token=8f944626-40e7-471e-88f1-675ad1690cfb",
+  "soundcloud": "https://soundcloud.com/subverselab/svl-8-bit-orchestral-demo",
+  "summary": "The sound of an 80s home computer turned into a producer's toolkit: square-wave hooks, arpeggios at up to 50 notes a second, buzzy and walking basses and chip drums, with strings, brass, choir, harp and guitar voices built from the same chips. Every kit comes as the full mix and as separate stems with MIDI, so you can keep the hook and write your own track around it. Nothing is smoothed over: no limiter, the chips keep their peaks.",
+  "technical": [
+    [
+      "Files in the zip",
+      "476 (Construction Kits 358 · One Shots 113 · documents 5)"
+    ],
+    [
+      "Audio format",
+      "24-bit / 44.1 kHz WAV, stereo — all 303 WAV files"
+    ],
+    [
+      "Sample peak",
+      "−24.51 to −1.16 dBFS"
+    ],
+    [
+      "True peak",
+      "−24.5 to −1.1 dBTP"
+    ],
+    [
+      "Loudness, full kits",
+      "−18.4 to −14.1 LUFS integrated (22 full mixes, no limiter: the chips keep their peaks)"
+    ],
+    [
+      "Tempos",
+      "90, 96, 98, 100, 105, 108, 112, 120, 125, 126, 135, 140, 144 BPM"
+    ],
+    [
+      "Kit keys",
+      "A minor, B minor, Bb minor, C minor, C# minor, D minor, E minor, F minor, G minor, G# minor"
+    ],
+    [
+      "MIDI",
+      "168 Standard MIDI files (.mid)"
+    ],
+    [
+      "Download",
+      "364.9 MB zip, 836.5 MB unzipped, SHA-256 checksums inside"
+    ]
+  ],
+  "updated": "2026-11-04",
+  "updatedAt": "2026-11-06T11:31:15.110Z"
+}

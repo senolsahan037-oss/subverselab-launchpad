@@ -1,0 +1,637 @@
+{
+  "8bitorchestral": {
+    "files": {
+      "zip": {
+        "name": "SVL_8BitOrchestral.zip",
+        "object": "plugins/8bitorchestral/1.0.0/SVL_8BitOrchestral.zip",
+        "size": 364925350,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/8bitorchestral/1.0.0/SVL_8BitOrchestral.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "adalet": {
+    "files": {
+      "mac": {
+        "name": "Adalet-1.0.0-macOS.pkg",
+        "object": "plugins/adalet/1.0.0/Adalet-1.0.0-macOS.pkg",
+        "size": 10119317,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/adalet/1.0.0/Adalet-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "ADALET-1.0.0-windows.zip",
+        "object": "plugins/adalet/1.0.0/ADALET-1.0.0-windows.zip",
+        "size": 7132681,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/adalet/1.0.0/ADALET-1.0.0-windows.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "ahenk": {
+    "files": {
+      "mac": {
+        "name": "AHENK-1.0.0-macOS.pkg",
+        "object": "plugins/ahenk/1.0.0/AHENK-1.0.0-macOS.pkg",
+        "size": 2470267840,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ahenk/1.0.0/AHENK-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "AHENK-1.0.0-Windows-Setup.exe",
+        "object": "plugins/ahenk/1.0.0/AHENK-1.0.0-Windows-Setup.exe",
+        "size": 2453854507,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ahenk/1.0.0/AHENK-1.0.0-Windows-Setup.exe",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "alev": {
+    "files": {
+      "mac": {
+        "name": "Alev-1.0.1-macOS.pkg",
+        "object": "plugins/alev/1.0.1/Alev-1.0.1-macOS.pkg",
+        "size": 9176504,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/alev/1.0.1/Alev-1.0.1-macOS.pkg",
+        "version": "1.0.1"
+      },
+      "win": {
+        "name": "Alev-1.0.1-Windows-VST3.zip",
+        "object": "plugins/alev/1.0.1/Alev-1.0.1-Windows-VST3.zip",
+        "size": 3115407,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/alev/1.0.1/Alev-1.0.1-Windows-VST3.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "brickyard": {
+    "files": {
+      "zip": {
+        "name": "SVL_Brickyard.zip",
+        "object": "plugins/brickyard/1.0.1/SVL_Brickyard.zip",
+        "size": 135939335,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/brickyard/1.0.1/SVL_Brickyard.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "elek": {
+    "files": {
+      "mac": {
+        "name": "Elek-1.0.3-macOS.pkg",
+        "object": "plugins/elek/1.0.3/Elek-1.0.3-macOS.pkg",
+        "size": 716399804,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/elek/1.0.3/Elek-1.0.3-macOS.pkg",
+        "version": "1.0.3"
+      },
+      "win": {
+        "name": "Elek-1.0.1-Windows.zip",
+        "object": "plugins/elek/1.0.1/Elek-1.0.1-Windows.zip",
+        "size": 442781019,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/elek/1.0.1/Elek-1.0.1-Windows.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.3"
+  },
+  "grindstone": {
+    "files": {
+      "zip": {
+        "name": "SVL_Grindstone.zip",
+        "object": "plugins/grindstone/1.0.0/SVL_Grindstone.zip",
+        "size": 626807232,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/grindstone/1.0.0/SVL_Grindstone.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "hava": {
+    "files": {
+      "mac": {
+        "name": "Hava-1.0.1-macOS.pkg",
+        "object": "plugins/hava/1.0.1/Hava-1.0.1-macOS.pkg",
+        "size": 15076826,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/hava/1.0.1/Hava-1.0.1-macOS.pkg",
+        "version": "1.0.1"
+      },
+      "win": {
+        "name": "Hava-1.0.1-Windows-VST3.zip",
+        "object": "plugins/hava/1.0.1/Hava-1.0.1-Windows-VST3.zip",
+        "size": 3207548,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/hava/1.0.1/Hava-1.0.1-Windows-VST3.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "ironmere": {
+    "files": {
+      "zip": {
+        "name": "SVL_Ironmere.zip",
+        "object": "plugins/ironmere/1.0.1/SVL_Ironmere.zip",
+        "size": 358657679,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ironmere/1.0.1/SVL_Ironmere.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "jingfang": {
+    "files": {
+      "mac": {
+        "name": "JingFang-1.4.0-macOS.pkg",
+        "object": "plugins/jingfang/1.4.0/JingFang-1.4.0-macOS.pkg",
+        "size": 126718722,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/jingfang/1.4.0/JingFang-1.4.0-macOS.pkg",
+        "version": "1.4.0"
+      },
+      "win": {
+        "name": "JING-FANG-windows.zip",
+        "object": "plugins/jingfang/1.4.0/JING-FANG-windows.zip",
+        "size": 41786114,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/jingfang/1.4.0/JING-FANG-windows.zip",
+        "version": "1.4.0"
+      }
+    },
+    "version": "1.4.0"
+  },
+  "kaset": {
+    "files": {
+      "mac": {
+        "name": "Kaset-1.1.0-macOS.pkg",
+        "object": "plugins/kaset/1.1.0/Kaset-1.1.0-macOS.pkg",
+        "size": 9609835,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kaset/1.1.0/Kaset-1.1.0-macOS.pkg",
+        "version": "1.1.0"
+      },
+      "win": {
+        "name": "Kaset-1.1.0-Windows-VST3.zip",
+        "object": "plugins/kaset/1.1.0/Kaset-1.1.0-Windows-VST3.zip",
+        "size": 3187204,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kaset/1.1.0/Kaset-1.1.0-Windows-VST3.zip",
+        "version": "1.1.0"
+      }
+    },
+    "version": "1.1.0"
+  },
+  "kerbstone": {
+    "files": {
+      "zip": {
+        "name": "SVL_Kerbstone.zip",
+        "object": "plugins/kerbstone/1.0.1/SVL_Kerbstone.zip",
+        "size": 114131663,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kerbstone/1.0.1/SVL_Kerbstone.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "kiyma": {
+    "files": {
+      "mac": {
+        "name": "Kiyma-1.0.0-macOS.pkg",
+        "object": "plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg",
+        "size": 42029770,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "Kiyma-1.0.0-Windows-VST3.zip",
+        "object": "plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip",
+        "size": 7680758,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "koro": {
+    "files": {
+      "mac": {
+        "name": "Koro-1.0.1-macOS.pkg",
+        "object": "plugins/koro/1.0.1/Koro-1.0.1-macOS.pkg",
+        "size": 17154918,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/koro/1.0.1/Koro-1.0.1-macOS.pkg",
+        "version": "1.0.1"
+      },
+      "win": {
+        "name": "Koro-1.0.1-Windows-VST3.zip",
+        "object": "plugins/koro/1.0.1/Koro-1.0.1-Windows-VST3.zip",
+        "size": 3239591,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/koro/1.0.1/Koro-1.0.1-Windows-VST3.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "kotoflux": {
+    "files": {
+      "zip": {
+        "name": "SVL_Kotoflux.zip",
+        "object": "plugins/kotoflux/1.0.0/SVL_Kotoflux.zip",
+        "size": 594026860,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kotoflux/1.0.0/SVL_Kotoflux.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "kubbe": {
+    "files": {
+      "mac": {
+        "name": "Kubbe-1.1.0-macOS.pkg",
+        "object": "plugins/kubbe/1.1.0/Kubbe-1.1.0-macOS.pkg",
+        "size": 15092420,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kubbe/1.1.0/Kubbe-1.1.0-macOS.pkg",
+        "version": "1.1.0"
+      },
+      "win": {
+        "name": "Kubbe-1.1.0-Windows-VST3.zip",
+        "object": "plugins/kubbe/1.1.0/Kubbe-1.1.0-Windows-VST3.zip",
+        "size": 3193732,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/kubbe/1.1.0/Kubbe-1.1.0-Windows-VST3.zip",
+        "version": "1.1.0"
+      }
+    },
+    "version": "1.1.0"
+  },
+  "lampglass": {
+    "files": {
+      "zip": {
+        "name": "SVL_Lampglass.zip",
+        "object": "plugins/lampglass/1.0.1/SVL_Lampglass.zip",
+        "size": 106104531,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/lampglass/1.0.1/SVL_Lampglass.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "lowlight": {
+    "files": {
+      "zip": {
+        "name": "SVL_Lowlight.zip",
+        "object": "plugins/lowlight/1.0.1/SVL_Lowlight.zip",
+        "size": 207294664,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/lowlight/1.0.1/SVL_Lowlight.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "mihenk": {
+    "files": {
+      "mac": {
+        "name": "Mihenk-1.0.2-macOS.pkg",
+        "object": "plugins/mihenk/1.0.2/Mihenk-1.0.2-macOS.pkg",
+        "size": 19691118,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/mihenk/1.0.2/Mihenk-1.0.2-macOS.pkg",
+        "version": "1.0.2"
+      },
+      "win": {
+        "name": "Mihenk-1.0.2-Windows.zip",
+        "object": "plugins/mihenk/1.0.2/Mihenk-1.0.2-Windows.zip",
+        "size": 7913083,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/mihenk/1.0.2/Mihenk-1.0.2-Windows.zip",
+        "version": "1.0.2"
+      }
+    },
+    "version": "1.0.2"
+  },
+  "mirage": {
+    "files": {
+      "zip": {
+        "name": "SVL_Mirage.zip",
+        "object": "plugins/mirage/1.0.1/SVL_Mirage.zip",
+        "size": 600201451,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/mirage/1.0.1/SVL_Mirage.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "nightgrid": {
+    "files": {
+      "zip": {
+        "name": "SVL_Nightgrid.zip",
+        "object": "plugins/nightgrid/1.0.0/SVL_Nightgrid.zip",
+        "size": 581889073,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/nightgrid/1.0.0/SVL_Nightgrid.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "palmglow": {
+    "files": {
+      "zip": {
+        "name": "SVL_Palmglow.zip",
+        "object": "plugins/palmglow/1.0.1/SVL_Palmglow.zip",
+        "size": 272765767,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/palmglow/1.0.1/SVL_Palmglow.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "racks-bass": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_Bass_Racks.zip",
+        "object": "plugins/racks-bass/1.0.0/SubverseLab_Bass_Racks.zip",
+        "size": 23456,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-bass/1.0.0/SubverseLab_Bass_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "racks-bus": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_Bus_Master_Racks.zip",
+        "object": "plugins/racks-bus/1.0.0/SubverseLab_Bus_Master_Racks.zip",
+        "size": 24989,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-bus/1.0.0/SubverseLab_Bus_Master_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "racks-drums": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_Drum_Racks.zip",
+        "object": "plugins/racks-drums/1.0.0/SubverseLab_Drum_Racks.zip",
+        "size": 25009,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-drums/1.0.0/SubverseLab_Drum_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "racks-fx": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_FX_Racks.zip",
+        "object": "plugins/racks-fx/1.0.0/SubverseLab_FX_Racks.zip",
+        "size": 25085,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-fx/1.0.0/SubverseLab_FX_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "racks-instruments": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_Instrument_Racks.zip",
+        "object": "plugins/racks-instruments/1.0.0/SubverseLab_Instrument_Racks.zip",
+        "size": 26827,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-instruments/1.0.0/SubverseLab_Instrument_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "racks-vocals": {
+    "files": {
+      "zip": {
+        "name": "SubverseLab_Vocal_Racks.zip",
+        "object": "plugins/racks-vocals/1.0.0/SubverseLab_Vocal_Racks.zip",
+        "size": 24771,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/racks-vocals/1.0.0/SubverseLab_Vocal_Racks.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "ru8": {
+    "files": {
+      "mac": {
+        "name": "RU-8-1.1.0-macOS.pkg",
+        "object": "plugins/ru8/1.1.0/RU-8-1.1.0-macOS.pkg",
+        "size": 321620550,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ru8/1.1.0/RU-8-1.1.0-macOS.pkg",
+        "version": "1.1.0"
+      },
+      "win": {
+        "name": "RU-8-windows-x64.zip",
+        "object": "plugins/ru8/1.1.0/RU-8-windows-x64.zip",
+        "size": 208673129,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ru8/1.1.0/RU-8-windows-x64.zip",
+        "version": "1.1.0"
+      }
+    },
+    "version": "1.1.0"
+  },
+  "ru8-drum-pack": {
+    "files": {
+      "zip": {
+        "name": "RU-8_Drum_Pack.zip",
+        "object": "plugins/ru8-drum-pack/1.0.0/RU-8_Drum_Pack.zip",
+        "size": 19636928,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/ru8-drum-pack/1.0.0/RU-8_Drum_Pack.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "saffron": {
+    "files": {
+      "zip": {
+        "name": "SVL_Saffron.zip",
+        "object": "plugins/saffron/1.0.0/SVL_Saffron.zip",
+        "size": 600500906,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/saffron/1.0.0/SVL_Saffron.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "seda": {
+    "files": {
+      "mac": {
+        "name": "Seda-1.0.0-macOS.pkg",
+        "object": "plugins/seda/1.0.0/Seda-1.0.0-macOS.pkg",
+        "size": 15404072,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/seda/1.0.0/Seda-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "Seda-1.0.0-Windows.zip",
+        "object": "plugins/seda/1.0.0/Seda-1.0.0-Windows.zip",
+        "size": 7015455,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/seda/1.0.0/Seda-1.0.0-Windows.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "slagworks": {
+    "files": {
+      "zip": {
+        "name": "SVL_Slagworks.zip",
+        "object": "plugins/slagworks/1.0.1/SVL_Slagworks.zip",
+        "size": 105907339,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/slagworks/1.0.1/SVL_Slagworks.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "slagworks2": {
+    "files": {
+      "zip": {
+        "name": "SVL_Slagworks2.zip",
+        "object": "plugins/slagworks2/1.0.0/SVL_Slagworks2.zip",
+        "size": 121786976,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/slagworks2/1.0.0/SVL_Slagworks2.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "solstice": {
+    "files": {
+      "zip": {
+        "name": "SVL_Solstice.zip",
+        "object": "plugins/solstice/1.0.0/SVL_Solstice.zip",
+        "size": 633510673,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/solstice/1.0.0/SVL_Solstice.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "squall": {
+    "files": {
+      "zip": {
+        "name": "SVL_Squall.zip",
+        "object": "plugins/squall/1.0.1/SVL_Squall.zip",
+        "size": 260483988,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/squall/1.0.1/SVL_Squall.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "stepwell": {
+    "files": {
+      "zip": {
+        "name": "SVL_Stepwell.zip",
+        "object": "plugins/stepwell/1.0.1/SVL_Stepwell.zip",
+        "size": 97018359,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/stepwell/1.0.1/SVL_Stepwell.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  },
+  "taban": {
+    "files": {
+      "mac": {
+        "name": "Taban-1.0.0-macOS.pkg",
+        "object": "plugins/taban/1.0.0/Taban-1.0.0-macOS.pkg",
+        "size": 9487497,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/taban/1.0.0/Taban-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "Taban-1.0.0-Windows-VST3.zip",
+        "object": "plugins/taban/1.0.0/Taban-1.0.0-Windows-VST3.zip",
+        "size": 3259029,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/taban/1.0.0/Taban-1.0.0-Windows-VST3.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "torna": {
+    "files": {
+      "mac": {
+        "name": "Torna-1.0.0-macOS.pkg",
+        "object": "plugins/torna/1.0.0/Torna-1.0.0-macOS.pkg",
+        "size": 15350860,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/torna/1.0.0/Torna-1.0.0-macOS.pkg",
+        "version": "1.0.0"
+      },
+      "win": {
+        "name": "TORNA-windows.zip",
+        "object": "plugins/torna/1.0.0/TORNA-windows.zip",
+        "size": 6999237,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/torna/1.0.0/TORNA-windows.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "tutkal": {
+    "files": {
+      "mac": {
+        "name": "Tutkal-1.0.3-macOS.pkg",
+        "object": "plugins/tutkal/1.0.3/Tutkal-1.0.3-macOS.pkg",
+        "size": 10997224,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/tutkal/1.0.3/Tutkal-1.0.3-macOS.pkg",
+        "version": "1.0.3"
+      },
+      "win": {
+        "name": "Tutkal-1.0.3-Windows-VST3.zip",
+        "object": "plugins/tutkal/1.0.3/Tutkal-1.0.3-Windows-VST3.zip",
+        "size": 3317932,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/tutkal/1.0.3/Tutkal-1.0.3-Windows-VST3.zip",
+        "version": "1.0.3"
+      }
+    },
+    "version": "1.0.3"
+  },
+  "velvetroom": {
+    "files": {
+      "zip": {
+        "name": "SVL_Velvetroom.zip",
+        "object": "plugins/velvetroom/1.0.0/SVL_Velvetroom.zip",
+        "size": 654525026,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/velvetroom/1.0.0/SVL_Velvetroom.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "woodpanel": {
+    "files": {
+      "zip": {
+        "name": "SVL_Woodpanel.zip",
+        "object": "plugins/woodpanel/1.0.0/SVL_Woodpanel.zip",
+        "size": 345836829,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/woodpanel/1.0.0/SVL_Woodpanel.zip",
+        "version": "1.0.0"
+      }
+    },
+    "version": "1.0.0"
+  },
+  "yanki": {
+    "files": {
+      "mac": {
+        "name": "Yanki-1.0.1-macOS.pkg",
+        "object": "plugins/yanki/1.0.1/Yanki-1.0.1-macOS.pkg",
+        "size": 16046545,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/yanki/1.0.1/Yanki-1.0.1-macOS.pkg",
+        "version": "1.0.1"
+      },
+      "win": {
+        "name": "Yanki-1.0.1-Windows-VST3.zip",
+        "object": "plugins/yanki/1.0.1/Yanki-1.0.1-Windows-VST3.zip",
+        "size": 3385146,
+        "url": "https://storage.googleapis.com/subverselab-downloads/plugins/yanki/1.0.1/Yanki-1.0.1-Windows-VST3.zip",
+        "version": "1.0.1"
+      }
+    },
+    "version": "1.0.1"
+  }
+}

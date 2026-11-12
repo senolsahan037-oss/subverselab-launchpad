@@ -1,0 +1,191 @@
+{
+  "checkout": "https://subverselab.lemonsqueezy.com/checkout/buy/a26a4a61-1f76-4a62-9774-f068db707924",
+  "cover": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fgrindstone%2Fmw1b4nej-cover_1200.jpg?alt=media&token=cdc07be8-fe4d-40dd-b333-07ca98ba2872",
+  "createdAt": "2026-11-03T23:18:03.379Z",
+  "folders": [
+    [
+      "Loops/Backbone",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Bootstraps",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Breakaway",
+      "13 files: Full, Hook, Chords, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Callused",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Comeback",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/FinalBell",
+      "11 files: Full, Hook, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Footwork",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Frontline",
+      "13 files: Full, Hook, Chords, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Groundwork",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/HardWon",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Headstrong",
+      "11 files: Full, Hook, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/HeavyLift",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/HoldTheLine",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/IronWill",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/LastRound",
+      "13 files: Full, Hook, Chords, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Overtime",
+      "11 files: Full, Hook, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Redline",
+      "13 files: Full, Hook, Chords, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Sparring",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Sprint",
+      "11 files: Full, Hook, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Steadfast",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Unbroken",
+      "13 files: Full, Hook, Chords, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Undefeated",
+      "13 files: Full, Hook, Chords, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Uphill",
+      "11 files: Full, Hook, Bass, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Loops/Warpaint",
+      "11 files: Full, Hook, 808, Kick, Snare, Hats + MIDI"
+    ],
+    [
+      "Documents",
+      "README.txt, LICENCE.txt, measurements.csv, measurements.html, SHA256SUMS.txt"
+    ]
+  ],
+  "fullName": "SVL Grindstone",
+  "id": "grindstone",
+  "inside": [
+    "24 loops, 8 bars each, in their own folders",
+    "24 full mixes and 132 stems (hook, chords, bass or 808, kick, snare, hats)",
+    "132 MIDI files, one for every stem",
+    "24-bit / 44.1 kHz stereo WAV",
+    "626.8 MB zip"
+  ],
+  "kindLine": "Hip hop and trap loops with drums",
+  "licence": "standard",
+  "listedAt": "2026-11-03T21:00:00.000Z",
+  "lsProductId": "1499395",
+  "madeLine": "Written and played in our studio: melodies, chords and bass on synth patches, drums from multi-sampled acoustic kits, every loop mixed and measured here.",
+  "name": "Grindstone",
+  "peaks": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fgrindstone%2Fmw1b52ty-peaks.json?alt=media&token=5ceb2982-88a9-435b-9662-c2020a22e6e0",
+  "price": 5,
+  "published": true,
+  "publisher": "",
+  "released": "2026-11-04",
+  "scenes": [
+    "0 Warpaint: 140 BPM, E minor",
+    "13.71 Ornament: Iron Will hook alone",
+    "16.57 Iron Will: 84 BPM, B minor",
+    "28 Ornament: snare roll",
+    "29.6 Frontline: 150 BPM, D minor",
+    "42.4 Ornament: Groundwork hook + chords",
+    "45.13 Groundwork: 88 BPM, C minor",
+    "56.04 Ornament: Overtime hook + 808",
+    "57.54 Overtime: 160 BPM, F# minor",
+    "69.54 Ornament: Comeback drum break",
+    "72.46 Comeback: 82 BPM, D minor",
+    "84.17 Ornament: snare roll",
+    "85.83 Headstrong: 145 BPM, B minor",
+    "99.07 Bootstraps: 80 BPM, G minor",
+    "105.07 Unbroken: 168 BPM, G minor",
+    "110.78 Ornament: Heavy Lift hook + bass",
+    "113.57 Heavy Lift: 86 BPM, C minor",
+    "119.15 Final Bell: 175 BPM, C minor",
+    "124.64 End"
+  ],
+  "snippet": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fgrindstone%2Fmw1b51be-SVL_Grindstone_snippet.mp3?alt=media&token=521db069-1e47-4d29-8b87-a8ce5b1f69cf",
+  "soundcloud": "https://soundcloud.com/subverselab/svl-grindstone-demo",
+  "summary": "24 eight-bar hip hop and trap loops, 14 slow ones around 80-98 BPM and 10 fast ones at 140-175 BPM: dark keys, guitars and string pads over heavy bass and 808s, with roomy drums. Every loop comes as the full mix, its separate stems and a MIDI file for every part.",
+  "technical": [
+    [
+      "Files in the zip",
+      "293 (Loops 288 · documents 5)"
+    ],
+    [
+      "Audio format",
+      "24-bit / 44.1 kHz, stereo — all 156 WAV files"
+    ],
+    [
+      "Sample peak",
+      "-15.94 to -1.13 dBFS"
+    ],
+    [
+      "True peak",
+      "-15.7 to -1.1 dBTP"
+    ],
+    [
+      "Loudness, full loops",
+      "-13.0 LUFS integrated on all 24 full mixes"
+    ],
+    [
+      "Tempos",
+      "80, 82, 84, 85, 86, 87, 88, 89, 90, 92, 93, 95, 96, 98, 140, 142, 145, 150, 155, 160, 162, 168, 170, 175 BPM"
+    ],
+    [
+      "Loop keys",
+      "A minor, B minor, C minor, D minor, E minor, F minor, F# minor, G minor"
+    ],
+    [
+      "MIDI",
+      "132 Standard MIDI files (.mid)"
+    ],
+    [
+      "Download",
+      "626.8 MB zip, 733.8 MB unzipped, SHA-256 checksums inside"
+    ]
+  ],
+  "updated": "2026-11-04",
+  "updatedAt": "2026-11-06T11:31:16.444Z"
+}

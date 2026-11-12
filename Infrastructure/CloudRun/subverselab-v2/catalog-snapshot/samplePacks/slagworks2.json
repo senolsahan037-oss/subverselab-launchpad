@@ -1,0 +1,131 @@
+{
+  "checkout": "https://subverselab.lemonsqueezy.com/checkout/buy/bcf028e1-8d62-4526-aa5b-ddd8bcde287f",
+  "cover": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fslagworks2%2Fmw1h0yz4-slagworks2_1200.jpg?alt=media&token=8e5530aa-2585-47a8-93b1-cfefada52e9d",
+  "createdAt": "2026-11-04T01:28:10.780Z",
+  "folders": [
+    [
+      "One Shots/Kicks",
+      "36 files: Hard, Tok, Industrial & Schranz kicks"
+    ],
+    [
+      "One Shots/Rumbles",
+      "24 files: Subterranean resonant rolling tails"
+    ],
+    [
+      "One Shots/Claps",
+      "12 files: Warehouse and industrial claps"
+    ],
+    [
+      "One Shots/Snares",
+      "14 files: Pitched and layered noise snares"
+    ],
+    [
+      "One Shots/Hats",
+      "24 files: Closed, open, and metallic hats"
+    ],
+    [
+      "One Shots/Rides",
+      "10 files: Heavy acoustic and bronze rides"
+    ],
+    [
+      "One Shots/Percussion",
+      "46 files: Tribal toms, metal clicks, and hydraulic knocks"
+    ],
+    [
+      "One Shots/FX",
+      "18 files: Lasers, screamers, drones, and risers"
+    ],
+    [
+      "One Shots/Stabs",
+      "22 files: Classic rave saws, hoovers, and acid chords"
+    ],
+    [
+      "Loops",
+      "47 files: 10 Hero Kits (Full, Kick, Bass, Perc, Acid, Top loops)"
+    ],
+    [
+      "MIDI",
+      "57 files: Exact sequence files for all tonal and acid loops"
+    ],
+    [
+      "Demo",
+      "2 files: Full 71.5s mixed and mastered demo (WAV and MP3)"
+    ],
+    [
+      "Documents",
+      "5 files: README.txt, LICENCE.txt, SHA256SUMS.txt, measurements.csv, measurements.html"
+    ]
+  ],
+  "fullName": "SVL Slagworks 2",
+  "id": "slagworks2",
+  "inside": [
+    "206 one-shot samples (Kicks, Rumbles, Claps, Snares, Hats, Rides, Percussion, FX, Stabs)",
+    "47 loops (10 full Hero Kits across 150 and 160 BPM with individual stem layers)",
+    "57 standard MIDI files matching all melodic, acid and tonal percussion phrases",
+    "Full 71.5s mixed Demo track in 24-bit WAV and MP3 format",
+    "Complete technical documentation, licence agreement and SHA256 checksums",
+    "24-bit / 44.1 kHz WAV format, 100% royalty-free in your commercial productions"
+  ],
+  "kindLine": "Hard techno drums & acid (150-160 BPM)",
+  "licence": "standard",
+  "listedAt": "2026-11-04T00:00:00.000Z",
+  "lsProductId": "1499596",
+  "madeLine": "Synthesised from scratch via SuperCollider custom analogue modelling and recorded hardware 303 diode filter chains; measured file by file.",
+  "name": "Slagworks 2",
+  "peaks": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fslagworks2%2Fmw1ftous-peaks.json?alt=media&token=61c7bdcc-360f-46ee-96aa-04f2081f43c9",
+  "price": 5,
+  "published": true,
+  "publisher": "",
+  "released": "2026-11-04",
+  "scenes": [
+    "0 Intro",
+    "12 Drop 1 (TribalFloor 160 BPM)",
+    "24 Tok & Acid (303 Diode 160 BPM)",
+    "36 Breakdown & Saws",
+    "48 Climax (Cataclysm 160 BPM)",
+    "60 Outro & Decay"
+  ],
+  "snippet": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fslagworks2%2Fmw1ftnsg-Slagworks2_snippet.mp3?alt=media&token=56e2115c-cedb-4352-ab3a-622b9d81adfe",
+  "soundcloud": "https://soundcloud.com/subverselab/svl-slagworks-2-demo",
+  "summary": "Slagworks 2 delivers high-velocity underground warehouse hard techno and blistering 303 acid lines. Built across 150 and 160 BPM, the pack features heavy Schranz and Tok kicks, continuous rolling rumbles, industrial metal percussion, and razor-sharp rave saws, engineered for maximal dancefloor impact without dynamic compromise.",
+  "technical": [
+    [
+      "Files in the zip",
+      "318 files (254 WAV, 57 MIDI, 7 documents and demo)"
+    ],
+    [
+      "Audio format",
+      "24-bit / 44.1 kHz WAV, stereo, all 254 WAV files"
+    ],
+    [
+      "Sample peak",
+      "-1.11 dBFS (safely below 0 dBFS ceiling)"
+    ],
+    [
+      "True peak",
+      "-1.10 dBTP (all files <= -1.10 dBTP inter-sample limit)"
+    ],
+    [
+      "Loudness",
+      "Loops -9.8 to -14.2 LUFS, One-shots -3.4 to -22.6 LUFS, Demo -14.1 LUFS"
+    ],
+    [
+      "Tempos",
+      "150 BPM (4 kits) and 160 BPM (6 kits)"
+    ],
+    [
+      "Loop keys",
+      "F, G, F#, A#, A, D#, G#"
+    ],
+    [
+      "MIDI",
+      "57 standard MIDI files matching all tonal and bassline loops"
+    ],
+    [
+      "Download",
+      "121.8 MB zip archive (uncompressed 143.3 MB)"
+    ]
+  ],
+  "updated": "2026-11-04",
+  "updatedAt": "2026-11-06T11:33:02.510Z"
+}

@@ -1,0 +1,42 @@
+{
+  "boxImage": "",
+  "cardImage": "",
+  "checkout": "",
+  "controls": [],
+  "controlsNote": "",
+  "createdAt": "2026-11-05T00:47:57.755Z",
+  "description": "",
+  "displayName": "",
+  "edits": true,
+  "formats": "",
+  "free": false,
+  "id": "tutkal",
+  "imageSize": null,
+  "intro": "",
+  "kind": "",
+  "launchEnds": "",
+  "launchPrice": null,
+  "lsProductId": "",
+  "manual": "",
+  "model": "",
+  "modes": [],
+  "musehub": "",
+  "noKey": true,
+  "og": "",
+  "price": null,
+  "published": true,
+  "publisher": "",
+  "released": "",
+  "sections": [],
+  "tagline": "",
+  "title": "",
+  "trust": "",
+  "updated": "",
+  "updatedAt": "2026-11-05T00:47:57.755Z",
+  "videos": [
+    [
+      "https://youtu.be/UxIeWqMjRXM",
+      "GLUE, LA and PUMP explained on SVL Woodpanel breaks, a bass line and a sidechain."
+    ]
+  ]
+}

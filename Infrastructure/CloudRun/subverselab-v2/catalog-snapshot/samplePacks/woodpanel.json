@@ -1,0 +1,148 @@
+{
+  "checkout": "https://subverselab.lemonsqueezy.com/checkout/buy/bd6af2db-94ea-4e34-a523-bb4c6e73b18d",
+  "cover": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fwoodpanel%2Fmw0r5b0k-cover.jpg?alt=media&token=2a5b4ff0-1bdf-4d74-b4dd-79fa83402b9a",
+  "createdAt": "2026-11-03T13:57:52.089Z",
+  "folders": [
+    [
+      "Breaks/Basement",
+      "18 files: Main, Fill and Ghost, each Full + Kick, Snare, Hats, Perc stems + MIDI"
+    ],
+    [
+      "Breaks/Cellar",
+      "18 files, same layout"
+    ],
+    [
+      "Breaks/Hallway",
+      "18 files, same layout"
+    ],
+    [
+      "Breaks/Parlor",
+      "18 files, same layout"
+    ],
+    [
+      "Breaks/Sweatbox",
+      "18 files, same layout"
+    ],
+    [
+      "Breaks/Uptown",
+      "18 files, same layout"
+    ],
+    [
+      "Construction Kits/Basement_90_Am",
+      "9 files: Full, Drums, Bass, Keys, Guitar + MIDI"
+    ],
+    [
+      "Construction Kits/Cellar_100_Em",
+      "10 files: Full, Drums, Bass, Keys, Guitar, FX + MIDI"
+    ],
+    [
+      "Construction Kits/Hallway_90_Am",
+      "9 files: Full, Drums, Bass, Keys, Guitar + MIDI"
+    ],
+    [
+      "Construction Kits/Parlor_96_Dm",
+      "9 files: Full, Drums, Bass, Keys, Guitar + MIDI"
+    ],
+    [
+      "Construction Kits/Sweatbox_98_Am",
+      "10 files: Full, Drums, Bass, Keys, Guitar, FX + MIDI"
+    ],
+    [
+      "Construction Kits/Uptown_96_Am",
+      "10 files: Full, Drums, Bass, Keys, Guitar, FX + MIDI"
+    ],
+    [
+      "One Shots",
+      "152 files: Kicks 18, Snares 25, Claps 10, Hats 27, Toms 4, Percussion 52, Bass 5, Chord Stabs 6, Guitar Chops 5"
+    ],
+    [
+      "Texture FX",
+      "7 files: vinyl crackle beds, pop, needle lift, tape stop, rewind"
+    ],
+    [
+      "Documents",
+      "README.txt, LICENCE_DRAFT.txt, measurements.csv, measurements.html, SHA256SUMS.txt"
+    ]
+  ],
+  "fullName": "SVL Woodpanel",
+  "id": "woodpanel",
+  "inside": [
+    "18 drum breaks from 6 kits (full, fill and ghost-note takes), each with kick, snare, hats and percussion stems and MIDI",
+    "6 construction kits, 8 bars, full mix with drums, bass, keys and guitar stems and MIDI",
+    "152 one-shots: kicks, snares, claps, hats, toms, percussion, bass, chord stabs, guitar chops",
+    "7 texture FX: vinyl crackle beds, pop, needle lift, tape stop, rewind",
+    "24-bit / 44.1 kHz WAV, 90 to 100 BPM, A minor, D minor and E minor",
+    "346 MB zip"
+  ],
+  "kindLine": "70s funk breaks and kits",
+  "licence": "standard",
+  "listedAt": "2026-11-02T21:00:00.000Z",
+  "lsProductId": "1498221",
+  "madeLine": "Six 70s funk drum kits between 90 and 100 BPM, each played as a full break, a fill and a ghost-note take with every drum as its own stem and MIDI, plus construction kits with bass, keys and guitar on top. Real acoustic drum recordings, replayed as new grooves and run through our own console, tape and sampler chain.",
+  "name": "Woodpanel",
+  "peaks": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fwoodpanel%2Fmw15j84o-peaks.json?alt=media&token=79d52afc-2f58-44af-9186-135eba6acf07",
+  "price": 0,
+  "published": true,
+  "publisher": "",
+  "released": "2026-11-03",
+  "scenes": [
+    "0 Uptown kit",
+    "20 One shots: kicks, snares, toms",
+    "22.5 Fill",
+    "25 Sweatbox kit",
+    "44.59 One shots: hats, claps, percussion",
+    "47.26 Hallway kit",
+    "57.93 Breakdown",
+    "60.59 Hallway drop",
+    "71.26 One shots: bass, guitar chops",
+    "73.93 Basement kit",
+    "84.59 Basement break",
+    "89.93 One shots: chord stabs",
+    "92.33 Cellar kit",
+    "111.53 Parlor kit",
+    "121.53 End hit"
+  ],
+  "snippet": "https://firebasestorage.googleapis.com/v0/b/project-62238635-aae4-41f4-880.firebasestorage.app/o/catalog%2FsamplePacks%2Fwoodpanel%2Fmw15j0bo-Breaks_snippet_v8.mp3?alt=media&token=de880719-32f8-4c6e-8400-0e8fa45cf0aa",
+  "soundcloud": "https://soundcloud.com/subverselab/svl-woodpanel-demo",
+  "summary": "Drum breaks with the feel of a 1970s funk and soul session: a real kit in a small wood-panelled room, on tape, with modern punch and low end. Every break comes as a full loop and as separate kick, snare, hats and percussion stems with MIDI, so you can rebuild it your way. The construction kits put bass, chords and guitar over the drums for a quick start, and the vinyl crackle comes separately, so you add it once, where you want it.",
+  "technical": [
+    [
+      "Files in the zip",
+      "329 (Breaks 108 · Construction Kits 57 · One Shots 152 · Texture FX 7 · documents 5)"
+    ],
+    [
+      "Audio format",
+      "24-bit / 44.1 kHz WAV, stereo — all 282 WAV files"
+    ],
+    [
+      "Sample peak",
+      "−15.34 to −1.21 dBFS"
+    ],
+    [
+      "True peak",
+      "−15.3 to −1.2 dBTP"
+    ],
+    [
+      "Loudness, full loops",
+      "−15.0 to −11.6 LUFS integrated (24 full mixes)"
+    ],
+    [
+      "Tempos",
+      "90, 96, 98, 100 BPM"
+    ],
+    [
+      "Loop keys",
+      "A minor, D minor, E minor"
+    ],
+    [
+      "MIDI",
+      "42 Standard MIDI files (.mid)"
+    ],
+    [
+      "Download",
+      "345.8 MB zip, 421.4 MB unzipped, SHA-256 checksums inside"
+    ]
+  ],
+  "updated": "2026-11-03",
+  "updatedAt": "2026-11-06T11:30:52.223Z"
+}
