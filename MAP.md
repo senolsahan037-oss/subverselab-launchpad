@@ -11,15 +11,29 @@ own search.
 
 | Repository | What it is |
 |---|---|
-| [subverselab-launchpad](https://github.com/senolsahan037-oss/subverselab-launchpad) | The rules every product is held to, the validation gate, the deployment registry, and this map. Not a product |
+| [subverselab-launchpad](https://github.com/senolsahan037-oss/subverselab-launchpad) | The standing rules (`CLAUDE.md`), the website and its services, the deployment registry, and this map. Not a product |
+
+---
+
+## Plug-ins — sold at [subverselab.com/plugins](https://subverselab.com/plugins)
+
+Analog-style effects and standalone apps for macOS and Windows (VST3, AU, standalone), built with JUCE. Their source is
+private; they are listed here so the map covers everything SubverseLab ships.
+
+| Group | Products |
+|---|---|
+| The plug-in family (sold singly or as one family) | KUBBE reverb · KASET tape colour · KORO vocal doubler + harmonizer · YANKI tape echo · HAVA top-end air · MIHENK mastering app · TUTKAL bus compressor |
+| Sold on their own | ELEK stem separation app |
+| Free | TABAN reverse limiter · ALEV 3-band saturator · KIYMA audio mincer |
 
 ---
 
 ## Tools that run in a browser — topic `live-tool`
 
-Free, no account needed, at [subverselab.com](https://subverselab.com). Six tools
-across seven repositories: the splitter has both a web service and a desktop
-plugin built from the same model.
+At [subverselab.com](https://subverselab.com), free to start; most ask for a free
+account, and where a tool has a daily limit, the credits that come with a plug-in
+purchase pay for more. The tools live in their own repositories: the splitter has both
+a web service and a desktop app built from the same model.
 
 | Tool | Live at | Repository | What it does |
 |---|---|---|---|
@@ -39,7 +53,7 @@ for the site to serve.
 
 | Repository | What it is |
 |---|---|
-| [loom](https://github.com/senolsahan037-oss/loom) | A local MCP server with 45 tools for Ableton Live: reads your own `.als` archive, and writes MIDI, device chains, automation and locators into a running Live session through an Ableton Extension, verifying every write by reading it back |
+| [loom](https://github.com/senolsahan037-oss/loom) | A local MCP server for Ableton Live (tool list in its README): reads your own `.als` archive, and writes MIDI, device chains, automation and locators into a running Live session through an Ableton Extension, verifying every write by reading it back |
 | [sample-reader](https://github.com/senolsahan037-oss/sample-reader) | Measures the audio itself rather than the file name — tempo, key, brightness, analogue signature — and refuses to answer when the evidence is thin |
 | [sample-chopper](https://github.com/senolsahan037-oss/sample-chopper) | Chops a recording the way it would be chopped by hand in Ableton, driven by measured numbers |
 | [subverselab-sampler](https://github.com/senolsahan037-oss/subverselab-sampler) | Sliced sample packs with a waveform UI, plus a chop bench that writes into an Ableton project |

@@ -4,7 +4,7 @@ Publishes AI-generated content to SubverseLab's YouTube and Instagram channels. 
 
 Content sits as a `draft` in Firestore until manually approved or a `scheduledFor` time is reached — Instagram's Graph API has no real draft concept (an unpublished media container just expires after 24h and is never visible in the app), so that state lives entirely in our own database.
 
-Full design: see the plan this was built from, or `Rules/06_DEPLOYMENT.md` / `Rules/08_DEPLOYMENT_REGISTRY.md` for the deployed shape.
+Full design: see the plan this was built from, or `Rules/DEPLOYMENT_REGISTRY.md` for the deployed shape.
 
 ## Local development
 
@@ -59,6 +59,6 @@ cp env.yaml.example env.yaml   # fill in real values, never commit this file
 gcloud run deploy social-publish --source . --project project-62238635-aae4-41f4-880 --region europe-west1 --env-vars-file env.yaml --allow-unauthenticated
 ```
 
-After deploying, record the assigned URL in `Rules/08_DEPLOYMENT_REGISTRY.md` and confirm `GET /health` returns 200.
+After deploying, record the assigned URL in `Rules/DEPLOYMENT_REGISTRY.md` and confirm `GET /health` returns 200.
 
-Then run `node Scripts/sync-agent-rules.js` from the repo root to generate this service's `.agents/rules/` mirror (Platform Invariant #9), and `node Scripts/verify-agent-rules-sync.js` to confirm it matches.
+(The old `.agents/rules` mirror scripts were retired 2026-10-15; nothing to sync. Deploys only on the owner's go, root CLAUDE.md.)

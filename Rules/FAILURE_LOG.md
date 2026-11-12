@@ -1,6 +1,8 @@
-# 09 — Failure Log
+# Failure log
 
 Canonical for: failures that reached production, why each one was invisible, and the check that catches it now.
+
+Carried over from `Rules/09_FAILURE_LOG.md` on 2026-10-15 (sections A–N unchanged except file references) and merged with the root `PLATFORM_INCIDENTS.md` (section O below). Both originals are in `_arsiv/rules_2026-10/`. **New incidents go into section O**; a mechanism that repeats gets its own lettered section.
 
 This file is not a diary. Every entry is here because the bug **did not look like a bug** — the service reported healthy, the page returned 200, the build passed. Listing the bugs alone would be useless; what repeats is the *mechanism*, so the entries are grouped by mechanism and each one ends with the check that would have caught it.
 
@@ -13,11 +15,11 @@ All entries below were found on 2026-08-24, in one pass over three services that
 The most expensive class. Code catches an error, returns something plausible, and the failure becomes indistinguishable from "there is nothing here."
 
 **A1 — Missing Firestore composite index emptied every guide page.**
-`ArticlePage`'s related-guides query needs a `type + createdAt` composite index. It did not exist, so the query threw; `seoService.js` caught it and returned `[]`. The section rendered nothing and the page looked finished. The real loss was every internal link between guides — for readers and for crawlers alike. Fixed by creating the index; indexes are now versioned in `firestore.indexes.json` (see `00_PLATFORM_INVARIANTS.md` §4).
+`ArticlePage`'s related-guides query needs a `type + createdAt` composite index. It did not exist, so the query threw; `seoService.js` caught it and returned `[]`. The section rendered nothing and the page looked finished. The real loss was every internal link between guides — for readers and for crawlers alike. Fixed by creating the index; indexes are now versioned in `firestore.indexes.json` (see `BROWSER_TOOLS.md` §4).
 *Check:* a `where` plus an `orderBy` on a different field needs an index — add it to `firestore.indexes.json` in the same change. Load a page that runs the query and count the elements it should produce, not just its HTTP status.
 
 **A2 — CORS rejection became a blank page via the SPA fallback.**
-`cors()` mounted on the whole app rejected the tool's *own* assets, because Vite marks its script and stylesheet tags `crossorigin` and the browser sends an `Origin` header even same-origin. The rejection produced a 500, the SPA catch-all answered with `index.html`, the stylesheet arrived as `text/html`, and the module never executed. Sensei served a completely blank page while `/health` returned `ok`. Fixed by scoping CORS to `/api` in both tools (`06_DEPLOYMENT.md`).
+`cors()` mounted on the whole app rejected the tool's *own* assets, because Vite marks its script and stylesheet tags `crossorigin` and the browser sends an `Origin` header even same-origin. The rejection produced a 500, the SPA catch-all answered with `index.html`, the stylesheet arrived as `text/html`, and the module never executed. Sensei served a completely blank page while `/health` returned `ok`. Fixed by scoping CORS to `/api` in both tools (`SITE_RUNBOOK.md`).
 *Check:* `curl -H "Origin: https://<tool-host>" .../assets/<file>.css` must return `200 text/css`. Without the header the bug is invisible.
 
 **A3 — `deriveExcerpt` stripped HTML tags from Markdown.**
@@ -31,7 +33,7 @@ Guides are Markdown; the excerpt function only removed `<tags>`. Every guide's s
 Two components agree on a handshake in comments and code review, and exactly one of them ships it.
 
 **B1 — SynthPulse waited for a message the website never sent.**
-The tool gated MIDI export behind an `AUTH_STATE_CHANGED` postMessage. That message appears nowhere in the website, including its build output. `isAuthed` could never become true, so export — the tool's only output — was unreachable for every visitor. Fixed by adopting the same session handoff Sensei uses (`03_VALIDATION.md`).
+The tool gated MIDI export behind an `AUTH_STATE_CHANGED` postMessage. That message appears nowhere in the website, including its build output. `isAuthed` could never become true, so export — the tool's only output — was unreachable for every visitor. Fixed by adopting the same session handoff Sensei uses (`BROWSER_TOOLS.md`).
 
 **B2 — The Tool Room disabled the handoff for one product by name.**
 `usesIndependentToolAuth = slug === 'sensei'` set the iframe's `onLoad` to `undefined`, a leftover from when Sensei had its own login. After Sensei's login was removed, this line guaranteed the token was never posted.
@@ -48,7 +50,7 @@ Every one of these was "verified" before shipping. The verification was the wron
 
 **C1 — `curl` cannot see a CORS bug.** It sends no `Origin`, so the rejection never triggers and every asset returns 200. See A2.
 
-**C2 — A desktop browser cannot see a responsive bug.** The site shipped with one media query. At 375 px the header ran 309 px past the viewport and everything after the first nav link was unreachable. It was never seen because whoever looked always had a wide window open. Now automated: `npm run check:responsive` (`06_DEPLOYMENT.md`), verified to fail as well as to pass.
+**C2 — A desktop browser cannot see a responsive bug.** The site shipped with one media query. At 375 px the header ran 309 px past the viewport and everything after the first nav link was unreachable. It was never seen because whoever looked always had a wide window open. Now automated: `npm run check:responsive` (`SITE_RUNBOOK.md`), verified to fail as well as to pass.
 
 **C3 — An HTTP 200 says nothing about whether the app mounted.** Sensei returned 200 with a correct `<title>` while `#root` had zero children.
 *Check:* `document.getElementById('root').children.length > 0`.
@@ -64,7 +66,7 @@ If it is not in the repository, nobody knows it is required and nothing can recr
 
 **D1 — Composite indexes** existed only as console state. Now in `firestore.indexes.json`, referenced from `firebase.json`.
 
-**D2 — Deployment targets** were partly unrecorded. Sensei and SynthPulse are hosted in `subverselab-project` while writing Firestore in `project-62238635-aae4-41f4-880`; neither was in the registry, so the obvious guess — the main project — would have created a second, competing service while the real one went stale. Both are now in `08_DEPLOYMENT_REGISTRY.md` with the split spelled out.
+**D2 — Deployment targets** were partly unrecorded. Sensei and SynthPulse are hosted in `subverselab-project` while writing Firestore in `project-62238635-aae4-41f4-880`; neither was in the registry, so the obvious guess — the main project — would have created a second, competing service while the real one went stale. Both are now in `DEPLOYMENT_REGISTRY.md` with the split spelled out.
 
 **D3 — A stale duplicate of `metadata-sync-service`** sat in the main project in `us-central1`, pointed at by nothing. Deploying to it would have failed silently in the worst way: no error, no effect. Deleted, and the registry now names the duplicate so it is not recreated.
 
@@ -85,7 +87,7 @@ If it is not in the repository, nobody knows it is required and nothing can recr
 ## F. Copy that spoke for a product it did not own
 
 **F1 — The Help page asserted a quota on behalf of a product that has none.**
-"Each AI tool enforces its own daily quota" was false for a product under the approved no-quota policy, and that product may not correct it, because the same policy forbids discussing quotas at all. Shared surfaces now say a limit applies *where* one applies. See `00_PLATFORM_INVARIANTS.md` §5.
+"Each AI tool enforces its own daily quota" was false for a product under the approved no-quota policy, and that product may not correct it, because the same policy forbids discussing quotas at all. Shared surfaces now say a limit applies *where* one applies. See `BROWSER_TOOLS.md` §5.
 
 **F2 — robots.txt granted access and removed protection in the same stroke.**
 Fifteen AI crawlers were named to welcome them. robots.txt groups do not inherit: a crawler obeys only its most specific matching group, so naming each bot also released it from the `Disallow` lines under `*`. All fifteen were being told explicitly that `/admin` and `/account` were open — the one thing the file existed to prevent. Every group now repeats the `Disallow` lines, and those two routes are additionally served `X-Robots-Tag: noindex, nofollow`, because `Disallow` stops fetching and not indexing.
@@ -164,7 +166,7 @@ fields ttls list` returned zero policies for the whole database, so nothing had
 ever acted on it and Mix Check's quota documents have been accumulating since
 the day it shipped. Writing the field is not the same as enabling the policy.
 *Check for I1–I4:* for anything that runs longer than a request, state the
-runtime flags in `08_DEPLOYMENT_REGISTRY.md` with the reason each one exists,
+runtime flags in `DEPLOYMENT_REGISTRY.md` with the reason each one exists,
 and check TTL policies with `gcloud firestore fields ttls list` rather than by
 reading the code that sets the field.
 
@@ -279,7 +281,7 @@ against a ceiling of 20. The registry already said where each tool lived; it was
 not consulted, because a working neighbour looked like an answer.
 
 *Check:* resolve the project from the table at the top of
-`08_DEPLOYMENT_REGISTRY.md` before writing a deploy command, and never from the
+`DEPLOYMENT_REGISTRY.md` before writing a deploy command, and never from the
 last tool whose command was read. A deploy that succeeds is not a deploy that
 landed in the right place.
 
@@ -294,3 +296,48 @@ An OAuth client, a billing link or an API quota leaves no resource behind to
 find.
 
 ---
+
+## O. Platform incidents as traffic grew (October 2026)
+
+Moved here from the root `PLATFORM_INCIDENTS.md` on 2026-10-15, with incident 12 added from `RELEASE_QUEUE.md`. Unlike A–N these are not grouped by mechanism: one row per incident, newest first, with the permanent fix still owed.
+
+Owner, 9 Oct 2026: "Note the places that crashed during these processes. As the platform grows, these are where it bursts; we will need permanent solutions."
+One row per incident. Status: OPEN (permanent fix still needed) / PATCHED (worked around) / FIXED (permanent fix live). Newest first.
+
+| # | Date | What broke | Effect (measured) | Root cause | Patch so far | Permanent fix needed | Status |
+|---|---|---|---|---|---|---|---|
+| 12 | 14 Oct | **ELEK downloads failed** (live outage) | 11 × HTTP 500 since 12 Oct, all ELEK, all from one buyer ("the download will not work. The other downloads work fine.") | `/api/download/file` sent `Content-Length`; Cloud Run refuses an HTTP/1 response over 32 MiB that declares its length. ELEK is 680 MB (mac) / 443 MB (win), every other installer < 20 MB. The 12 Oct ELEK end-to-end test never clicked the download | Revision 00213: `Content-Length` only up to 30 MiB, larger files chunked; service timeout 300 s → 3600 s; test-download.js case for a 680 MB file. Verified: mac 680,334,241 B in 63 s on the tag URL, win 442,781,099 B in 39 s on subverselab.com | A download check in every release test that pulls the largest installer, not a small one | FIXED |
+| 1 | 9 Oct | **Site mail goes out through the owner's personal Gmail** (Firebase Auth CUSTOM_SMTP smtp.gmail.com) | Gmail daily limit hit: ~200+ verification mails in 2 days + Resend loops. Owner's own Gmail could not send (bulk "download ready" mail bounced "You have reached a limit for sending mail"); verification mail dead; bounces flood the owner's inbox | No transactional mail provider; site uses a personal mailbox | Verification mail removed (00206); Gmail filter "Site bounce"; user mails sent from labsubverse@gmail.com in batches of 12–13 | Transactional provider on our own domain (Resend free 3,000/mo, noreply@subverselab.com, SPF/DKIM/DMARC), bounce webhook → `bounced_emails`; personal Gmail never used by the site | PATCHED |
+| 2 | 8–9 Oct | **Buyers could not reach what they bought** | 34 of 107 order e-mails (32 %) blocked: 21 ordered without a site account / with another e-mail, 13 unverified; 51 free-plugin buyers never downloaded | Ownership matched only by e-mail; download required a verified e-mail; verification mail unreliable (see #1); no redirect from checkout to /account | 00205: orders bound by uid (`orders_by_uid`, 54 backfilled), "Bought without signing in?" claim by order number, owned-aware buttons, inbox order messages; 00206: no verification needed for bound orders; mails to the 51. 9 Oct afternoon: LS receipt text still said "wait for the verification e-mail" (13 orders between 00206 and the fix could not see their plugin); receipt fixed on all 10 products, the 11 buyers mailed from labsubverse 16:47 | Checkout only from a signed-in session (or account created at checkout); LS confirmation/receipt button → /account (owner sets in LS, 10 products); end-to-end purchase test in CI with LS test mode | PATCHED |
+| 3 | 8 Oct | **First 1,000 lost KUBBE/KASET downloads** | Up to 1,000 claimants got 402; 573 of them also unverified | Entitlement code read only paid orders, not `launch_claims` | 00202/00204: uid launch claim counts, bounced/no-MX excluded | Single entitlement model (one function, one table of grant sources) with tests per source | FIXED |
+| 4 | 8 Oct | **Deploy failed to start** (00203) | No outage (old revision kept serving) | New server file `inbox.js` not in Dockerfile COPY list | Added; boot-check before deploy | Dockerfile `COPY *.js` or a build step that fails if an imported local module is missing; automated boot test in the deploy script | PATCHED |
+| 5 | 2–8 Oct | **Splitter out of memory** | 3 OOM crashes in 7 days (8.25–8.42 GiB of 8 GiB); 3 of 9 jobs lost; page polled a dead job 209 times | 316 MB HT-Demucs on CPU, finished jobs kept in memory-backed /tmp 30 min, concurrency/instance sharing | Phase B: stop polling after 3× 404 + credit release; `--session-affinity` | Memory 16 GiB or 1 job per instance; jobs and results on GCS, not /tmp; job queue (Cloud Tasks) instead of in-process | OPEN |
+| 6 | 8–9 Oct | **Blank tool after a tool deploy** (Splitter, Visualizer, Arrangement GPS) | Owner and users saw an empty Splitter two days running; 5× 404 on old bundle | HTML served without `Cache-Control: no-cache`; browsers keep the old page pointing at deleted asset files | Phase B: no-cache on HTML, immutable on hashed assets. Browsers that cached the OLD html before the fix still asked for the deleted bundle (owner's Chrome, 9 Oct): Splitter rev 00009 answers a missing `/assets/index-*.js` with a one-time self-heal script (refetch `/` with cache:'reload', reload; sessionStorage guard) — verified, Splitter opens again in the owner's Chrome | Same rule + the self-heal route in every tool (Visualizer next); keep the previous build's assets for 7 days | PATCHED |
+| 7 | 8 Oct | **Uncommitted site work lost** (`git reset --hard`, 7 Oct) | 4–7 Oct tracked changes gone; restored from the Cloud Run source archive | Site tree not committed between deploys | Restored + committed (fc2a153, 5a4922d), not pushed | Commit (and push) after every deploy; deploy script refuses a dirty tree or records the source archive | OPEN |
+| 8 | 8–9 Oct | **Fake / mistyped addresses at sign-up** | 5 hard bounces recorded; fake domains (fudd.com, rtyhtryhtreyh.com) | No address check at sign-up | 00206: `/api/email/check` (syntax, MX, bounced) before the account is created | Bounce webhook from the mail provider (#1) keeps `bounced_emails` current | PATCHED |
+| 9 | 9 Oct | **Desktop app terminal routes `claude` through the app proxy** | API-key sessions said "Credit balance too low" | Terminal panes inherit `ANTHROPIC_BASE_URL` | Start API sessions from a clean env (`env -i …`, `--settings ~/.claude/api-billing-settings.json`) | Documented; use the clean-env command or macOS Terminal | PATCHED |
+| 11 | 9 Oct | **Splitter and Visualizer slow** | Owner: both "very slow" | Splitter ran with CPU throttling ON (CPU only during requests, background separation starved) and 8 GiB; Visualizer 2 vCPU / 2 GiB, 8 renders per instance, 1 instance | Splitter: 8 vCPU, 16 GiB, no CPU throttling, startup boost (rev 00008). Visualizer: 4 vCPU, 8 GiB, 2 per instance (rev 00006). Regional CPU quota 20 vCPU blocked 8 vCPU for Visualizer | Quota increase refused by Google ("not eligible based on usage history"). DONE instead: Visualizer moved to europe-west4 (own 20 vCPU quota): 8 vCPU, 8 GiB, concurrency 2, max 2, same image and env; Firestore products/subverse-visualizer.deployment.tool_url → https://subverse-visualizer-il7bu2xxqa-ez.a.run.app. Old europe-west1 service left running (scales to 0) as fallback; delete after a week. Still open: GPU (L4) for Splitter | PATCHED |
+| 10 | 8 Oct | **Wrong facts reported to the owner** (Max API credit "$0", Fable "separate quota") | Lost time, wrong plans | Looked at the wrong Console org; assumed a quota | Corrected in memory | Verify at the primary source and name the account/org in every billing claim | FIXED |
+
+### Next permanent fixes, in order
+1. Resend on noreply@subverselab.com + bounce webhook (#1, #8). Owner: create the account; then DNS + Firebase SMTP + webhook.
+2. DONE 9 Oct: LS confirmation + receipt button "Go to your downloads" → subverselab.com/account on all 10 products; product images on all 10 and the store logo uploaded (Assets/LemonSqueezy/).
+3. Splitter jobs off /tmp + 1 job per instance (#5).
+4. Deploy script for the site: dirty-tree refusal, Dockerfile module check, boot test, commit after deploy (#4, #7).
+5. One entitlement module with a test per grant source (#3, #2).
+
+## 2026-11-06 — subverselab.com down 1 h 42 min (billing account suspended)
+- 06:37:15Z → 08:19:05Z (09:37–11:19 TR), every request 503 from Google Frontend ("service not available yet"). Cause: billing account 01A106-4B826A-F25EE0 suspended 06:35Z ("failure to pay / invalid payment information"); Mastercard ••8617 showed "Transaction declined" although the balance was ₺0.00. Gemini API tier moved to Suspended at the same time.
+- Fixed by the owner paying (card charged); site back at 08:19Z without any deploy.
+- Missed traffic estimate: the 1 h 42 min before the outage had 58 page requests from 38 IPs, 13 of them non-bot.
+- Prevent: a backup payment method on the billing account (the console asks for one); a declined threshold charge is the warning sign (26 Oct had one too).
+
+## 2026-11-06 (second time) — subverselab.com down again, billing account closed
+- Last 200 at 17:46:20Z (20:46 TR); at 19:12Z every URL (apex, www, /api) returns the Google Frontend 503 "service not available yet". `gcloud billing accounts list` shows 01A106-4B826A-F25EE0 OPEN=False; the service itself is healthy (Ready=True, revision subverselab-site-00245-heb). Same cause as the morning outage; no code or deploy involved.
+- Fix: the owner settles the payment / adds a working payment method in the Cloud Console billing page; the site returns on its own, no deploy.
+- Console read 19:20Z: balance TRY 0.00 ("No balance due"), last payment 1 Nov TRY 85.41 (monthly charge); November cost ₺155 fully covered by savings/credits, net ₺0. The suspension is not a debt: "Mastercard ••8617 was declined" — Google's periodic validation charge on the card (a debit Mastercard) fails, and the account closes again each time. Paying the balance cannot stop it. Real fix: a card that accepts foreign/online recurring charges (credit card, or bank set to allow them) as primary, plus a backup payment method.
+- Back at 19:17:25Z (22:17 TR) after the owner fixed the payment; billing OPEN=True. Second outage ~1 h 31 min (17:46Z → 19:17Z).
+- Owner paid ~85 TL tonight to reopen it. At 19:25Z the console still lists only the 1 Nov monthly charge (−TRY 85.41) and balance 0; tonight's 85 TL is not shown yet. Oct statement: 26 Oct threshold charge TRY 200 declined 'Insufficient funds', then paid manually. October usage TRY 237.86 + VAT 47.57. To check: the owner's bank statement for two 85.41 debits (1 Nov and 6 Nov).
+- 19:35Z: console now shows 'You have a credit −TRY 85.41', last payment 6 Nov TRY 85.41 (manual). Tonight's payment was a second payment of the October balance and sits as credit. Owner is adding a 280 TL prepayment through Make a payment (owner pays, agent only opened the page).
+- 19:40Z: owner prepaid TRY 280.00 (manual). Console: 'You have a credit −TRY 365.41', no balance due; billing OPEN=True; site 200. Monthly usage so far 85–285 TL, so the credit covers the next bills without touching the card. Still open: backup payment method (console keeps asking); ask the bank why Google's automatic charges are declined.
+- Billing Support chat (automated agent, 6 Nov ~19:50Z): decline on 26 Oct came from the card issuer as 'insufficient funds' (issuers also use it for daily limits / security holds); TRY 365.41 credit is applied before the card is charged (confirmed); suspensions are automatic and no grace period can be set per account; advice: add a backup card in Google Payments Center.

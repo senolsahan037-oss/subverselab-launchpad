@@ -37,9 +37,9 @@ The goal is to give producers a reproducible measurement surface: decoded wavefo
 The tool receives membership identity from the SubverseLab website and does not
 show a separate login screen.
 
-- Members receive one completed analysis per IP address per UTC calendar day.
+- One analysis a day is free (one per IP address per UTC calendar day). After that, an analysis costs 100 credits, taken from your balance before the analysis starts and given back if it fails. Credits come with any plugin purchase: every dollar you pay for a plugin gives you 100 credits.
 - Server-verified admins have no product usage quota.
-- Failed or undecodable analyses release their reservation and do not consume the allowance.
+- Failed or undecodable analyses release their reservation (or give back the credits) and do not consume the allowance.
 
 ## Error Behavior
 - **429 Too Many Requests:** "Today's free analysis has already been used for this network. Please return tomorrow."

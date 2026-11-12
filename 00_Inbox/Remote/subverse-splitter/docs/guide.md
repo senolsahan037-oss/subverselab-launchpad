@@ -2,11 +2,11 @@
 
 Subverse Splitter is a member-only web tool for analysing music and separating a track into stems. It offers three operations:
 
-- **Key and BPM** estimates tempo, musical key, Camelot code, and key confidence. It does not use the daily separation allowance.
+- **Key and BPM** estimates tempo, musical key, Camelot code, and key confidence. It is always free and does not use the daily separation.
 - **Vocal removal** returns the vocal and an instrumental version.
 - **Stem separation** returns drums, bass, vocals, and other instruments.
 
-Vocal removal and stem separation use the same HT-Demucs model and therefore cost the same daily separation run.
+Vocal removal and stem separation use the same HT-Demucs model and therefore cost the same: one free separation a day, then 50 credits.
 
 ## Requirements
 
@@ -17,11 +17,15 @@ Vocal removal and stem separation use the same HT-Demucs model and therefore cos
 
 Common WAV, MP3, FLAC, M4A, AAC and OGG files are accepted. Other formats that FFmpeg can decode may also work, but the listed formats are the supported choices.
 
+## Free use and credits
+
+One separation a day is free. After that, a separation costs 50 credits. Credits come with any plugin purchase: every dollar you pay for a plugin gives you 100 credits. Key and BPM analysis is always free.
+
 ## Limits and daily allowance
 
-- Key and BPM analysis: tracks up to **10 minutes**; no separation allowance is used.
-- Vocal removal: tracks up to **6 minutes**; uses one daily separation run.
-- Stem separation: tracks up to **6 minutes**; uses one daily separation run.
+- Key and BPM analysis: tracks up to **10 minutes**; always free.
+- Vocal removal: tracks up to **6 minutes**; uses the free daily separation, or 50 credits after that.
+- Stem separation: tracks up to **6 minutes**; uses the free daily separation, or 50 credits after that.
 - The separation allowance is enforced once per member and once per network address each day.
 
 People sharing the same public network address, such as an office or campus, share that network's daily separation run. Administrators are exempt from this product quota.
@@ -88,7 +92,8 @@ The main SubverseLab website supplies the existing member session to the tool th
 - Unsupported or damaged audio returns a decode error.
 - A full queue returns a retry message instead of accepting work that cannot be held safely.
 - An expired or unknown job returns a not-found message.
-- A failed separation restores the daily run.
+- A failed separation restores the daily run, or gives back the 50 credits if they paid for it.
+- If the server restarts while a job is running, the page stops waiting after three failed checks and says "The job was lost, please try again."
 
 If a separation fails, retry after checking the source file. If the same file fails repeatedly, convert it to WAV or FLAC and try again.
 

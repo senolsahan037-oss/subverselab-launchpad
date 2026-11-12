@@ -1,10 +1,10 @@
-# 08 — Deployment Registry
+# Deployment registry
 
-This is the single authoritative data source describing every production deployment target for SubverseLab. It is data, not policy — see `06_DEPLOYMENT.md` for the rules governing how this data is used.
+This is the single authoritative data source describing every production deployment target for SubverseLab. It is data, not policy — see [`SITE_RUNBOOK.md`](SITE_RUNBOOK.md) for how it is used and `CLAUDE.md` for who decides a deploy (the owner, in chat, every time).
 
 Agents must never determine deployment targets from repository names, folder names, previous conversations, or assumptions. Deployment destinations must always be resolved from this registry.
 
-Source: `Infrastructure/CloudRun/subverselab-v2/.agents/rules/deployment_registry.md` (and its identical mirror in `Infrastructure/MetadataSync/metadata-sync-service/.agents/rules/`), which remain the build-bundled copies for those two services.
+Carried over from `Rules/08_DEPLOYMENT_REGISTRY.md` on 2026-10-15 (original in `_arsiv/rules_2026-10/`), with the downloads bucket, Lemon Squeezy and the licence API added and two stale entries marked. **Nothing here was re-checked against the live account on 2026-10-15** (release freeze, no `gcloud`); dates next to each fact say when it was last verified.
 
 ## The four Google Cloud projects, and which one a thing belongs in
 
@@ -43,10 +43,16 @@ Two consequences worth stating, because both have already cost a mistake:
 - **Region:** `europe-west1`
 - **Production Domain:** `subverselab.com`
 - **Production URL:** `https://subverselab.com`
-- **Deployment Command:**
+- **Deployment Command** (only on the owner's go; rollout steps in `SITE_RUNBOOK.md`):
   ```bash
-  gcloud run deploy subverselab-site --source . --project project-62238635-aae4-41f4-880 --region europe-west1 --allow-unauthenticated
+  gcloud run deploy subverselab-site --source . --project project-62238635-aae4-41f4-880 --region europe-west1 --allow-unauthenticated --no-traffic --tag <name>
+  # smoke-test the tag URL, then:
+  gcloud run services update-traffic subverselab-site --project project-62238635-aae4-41f4-880 --region europe-west1 --to-latest
   ```
+  `--timeout 3600` has been set on the service since revision 00213 (2026-10-14) and is kept by later deploys unless overridden.
+- **Live revision on 2026-10-22:** `subverselab-site-00228-bir` with `subverselab-api-00008-dih` (light theme, store/info/tool-card fixes, JING FANG 1.1.0 room, Search Console fixes). Before (2026-10-20): `subverselab-site-00225-yop` with `subverselab-api-00006-her` (manuals, buy clicks, search titles). Before: `subverselab-site-00223-jax` with `subverselab-api-00004-rut` (JING FANG + SEDA on sale). Before that: `subverselab-site-00220-faj` (00218-qul before the RU-8 opening) (pages only; forwards every `/api/*` to `subverselab-api`, env `API_PROXY_ORIGIN`). Rollback: `subverselab-site-00215-pux` (single service). History in `Infrastructure/CloudRun/subverselab-v2/RELEASE_QUEUE.md`.
+- **API service (since 2026-10-17):** `subverselab-api`, same project/region, source `Infrastructure/CloudRun/subverselab-v2/api`, URL https://subverselab-api-v7tccgdmlq-ew.a.run.app, runs as 90909956035-compute; deploy `gcloud run deploy subverselab-api --source api ... --no-traffic --tag <name>` (docs/SPLIT_CUTOVER.md). Backend changes deploy HERE, not with the site.
+- **Not in this image any more:** `.agents/` (dropped from the Dockerfile 2026-10-15, queued for the next deploy; nothing read it at runtime).
 - **Verification Command:**
   ```bash
   curl -s -I https://subverselab.com | grep "200"
@@ -88,8 +94,8 @@ Two consequences worth stating, because both have already cost a mistake:
 - **Google Cloud Project:** `subverselab-project` — **not** `project-62238635-aae4-41f4-880`. Sensei is the one remote tool hosted outside the main project, and its absence from this registry is how a deployment ends up creating a second, competing `sensei` service in the main project while the real one goes stale. Verify with `gcloud run services list --project=subverselab-project` before deploying.
 - **Cloud Run Service:** `sensei`
 - **Region:** `europe-west1`
-- **Access:** `member`, policy `member_no_product_quota` — no quota, no credits (`00_PLATFORM_INVARIANTS.md`).
-- **Production URL:** `https://sensei-il7bu2xxqa-ew.a.run.app` (also reachable as `https://sensei-630319862116.europe-west1.run.app`). This is the value stored in `products/sensei.deployment.tool_url` and framed by the Tool Room; changing it means changing the manifest and Firestore together (`05_SYNC.md`).
+- **Access:** `member`, policy `member_no_product_quota` — no quota, no credits (`BROWSER_TOOLS.md`).
+- **Production URL:** `https://sensei-il7bu2xxqa-ew.a.run.app` (also reachable as `https://sensei-630319862116.europe-west1.run.app`). This is the value stored in `products/sensei.deployment.tool_url` and framed by the Tool Room; changing it means changing the manifest and Firestore together (`BROWSER_TOOLS.md`).
 - **Firestore Project:** `project-62238635-aae4-41f4-880`. The service is hosted in one project and writes its data to another; `FIREBASE_PROJECT_ID` / `VITE_FIREBASE_PROJECT_ID` must both be set to the data project on every deployment, or member ID tokens fail verification and generations are written nowhere.
 - **Deployment Command:**
   ```bash
@@ -99,7 +105,7 @@ Two consequences worth stating, because both have already cost a mistake:
   ```bash
   curl -s https://sensei-il7bu2xxqa-ew.a.run.app/api/tools/drum-generator/health
   ```
-- **Security Model:** No sign-in of its own. The website mints a short-lived custom token and hands the session across (`03_VALIDATION.md`, "Session handoff to a member remote tool"); the tool verifies membership server-side on generation, variation, and export.
+- **Security Model:** No sign-in of its own. The website mints a short-lived custom token and hands the session across (`BROWSER_TOOLS.md`, "Session handoff to a member remote tool"); the tool verifies membership server-side on generation, variation, and export.
 
 ## Remote Tool Target — SynthPulse
 
@@ -118,7 +124,7 @@ Two consequences worth stating, because both have already cost a mistake:
   ```bash
   curl -s https://synthpulse-il7bu2xxqa-ew.a.run.app/api/tools/synthpulse/health
   ```
-- **Security Model:** No sign-in of its own; the website hands the session across (`03_VALIDATION.md`). Generation, evolution and export are server endpoints, not bundle functions — this service was nginx serving a static bundle until 2026-08-24, which made its access model unenforceable by construction.
+- **Security Model:** No sign-in of its own; the website hands the session across (`BROWSER_TOOLS.md`). Generation, evolution and export are server endpoints, not bundle functions — this service was nginx serving a static bundle until 2026-08-24, which made its access model unenforceable by construction.
 - **Collections:** `synthpulse_generations`, `synthpulse_exports`, and `synthpulse_model/ranking-v1` — one shared ranking model trained on downloads.
 
 ## Remote Tool Target — Subverse Mix Check
@@ -184,6 +190,8 @@ Two consequences worth stating, because both have already cost a mistake:
 
 ## Remote Tool Target — Subverse Visualizer
 
+> **Update 2026-10-09** (`FAILURE_LOG.md` O, incident 11): moved to `europe-west4` for its own 20 vCPU quota — 8 vCPU, 8 GiB, concurrency 2, max 2, same image and env; `products/subverse-visualizer.deployment.tool_url` → `https://subverse-visualizer-il7bu2xxqa-ez.a.run.app`. The old `europe-west1` service was left running (scales to 0) as a fallback, to be deleted after a week. The settings table below describes the `europe-west1` service as of 2026-09-18. Not re-verified 2026-10-15.
+
 - **Product Slug:** `subverse-visualizer`. The Cloud Run service carries the same
   name.
 - **Google Cloud Project:** `subverselab-project` ("SubverseLab Backend
@@ -209,7 +217,7 @@ Two consequences worth stating, because both have already cost a mistake:
 
   | Flag | Value | Reason |
   |---|---|---|
-  | `--no-cpu-throttling` | on | A render runs on a background thread while the browser polls; throttled between polls it appears to hang. Exemption recorded with its measurement in `06_DEPLOYMENT.md`. |
+  | `--no-cpu-throttling` | on | A render runs on a background thread while the browser polls; throttled between polls it appears to hang. Exemption recorded with its measurement in `SITE_RUNBOOK.md`. |
   | `--use-http2` | on | Cloud Run's HTTP/1 path caps a request at 32 MiB. The tool advertises 40 MB of audio — which is exactly the 3.5-minute WAV case the limit was sized for — so without h2c that limit is a lie the interface tells. The container runs hypercorn, which speaks cleartext HTTP/2. |
   | `--max-instances` | **1** | The job store and the rendered file live in the instance that made them. Deployed at 3, the same job id returned 200 and 404 alternately depending on which instance a poll reached, while the render continued on a third and spent the visitor's daily allowance. A single poll returns 200 and looks correct; this is only visible by polling repeatedly. |
   | `--concurrency` | 8 | Polls are cheap and must not queue behind each other. Renders serialise through one worker regardless. |
@@ -233,7 +241,7 @@ extension that run on the reader's own machine. It appears in this registry
 because three things about it are published and have to be findable.
 
 - **Page:** `subverselab.com/loom` — a route in the website, not a product
-  (`02_PRODUCT_CREATION.md`, "Not everything published is a product"). It ships
+  (`BROWSER_TOOLS.md`, "Not everything published is a product"). It ships
   with the site's own Cloud Run deploy. Navbar link, footer link, sitemap entry
   and a prerendered body; a `Loom` section in `faqContent.js` puts the same
   answers on `/help`.
@@ -261,6 +269,8 @@ not because PyPI failed.
 
 ## Social Publish Service
 
+> **Status 2026-10-15: never deployed.** Social posting goes through Metricool (connected over MCP); the Meta path is closed. This entry is kept so the service is deployed to the right place if it is ever revived — it is not a live target. (From the owner's project notes; not re-checked with `gcloud`.)
+
 - **Google Cloud Project:** `project-62238635-aae4-41f4-880`
 - **Cloud Run Service:** `social-publish`
 - **Region:** `europe-west1`
@@ -277,6 +287,41 @@ not because PyPI failed.
   ```
   Unlike `metadata-sync-service`, this service defines a real `GET /health` route that returns 200 — do not apply that service's "404 is healthy" quirk here.
 - **Scheduled Publishing:** A Cloud Scheduler job hits `POST /internal/run-scheduled-publish` (with `X-Cron-Secret`) on an interval to auto-publish drafts whose `scheduledFor` time has passed. Job name/schedule must be recorded here once created.
+
+## Plug-in downloads — `gs://subverselab-downloads`
+
+- **Bucket:** `subverselab-downloads`, private (no public access). Read by `subverselab-site` through its service identity.
+- **Manifest:** `plugins/manifest.json` — which installer and version each product offers per platform. Served to the site as
+  `GET /api/download/manifest`; the site shows a new version within about 60 s, **no site deploy needed**.
+- **Publishing an installer:** `01_AI_Tools/subverselab-plugin-common/tools/publish_download.sh <slug> <mac|win> <file> <version>`
+  (only on the owner's go; release gate in `CLAUDE.md`).
+- **Download path:** `POST /api/download/ticket` (signed-in; checks ownership by launch: `launch`, `launch2`, `solo`, `free`, testers)
+  → short-lived ticket signed with `DOWNLOAD_TICKET_SECRET` → `GET /api/download/file` streams the object. Files over 30 MiB go out
+  chunked, without `Content-Length` — Cloud Run refuses an HTTP/1 response over 32 MiB that declares its length (ELEK outage,
+  2026-10-14, `FAILURE_LOG.md` O).
+- **Test builds:** `test-builds/<slug>/<version>/…` in the same bucket, private, downloaded by testers through the same ticket route
+  (`kind: 'test-build'`). Admin uploads use signed PUT URLs; the bucket CORS allows PUT from `https://subverselab.com` and `www`
+  (added 2026-10-15).
+
+## Lemon Squeezy (payments, licence keys)
+
+- **What it does:** hosted checkout for every paid and free ($0) plug-in, the plug-in family, receipts and licence keys. Payouts to
+  the owner start 28 Oct 2026. The checkout and receipt buttons send buyers to `https://subverselab.com/account`.
+- **Checkout links:** `CHECKOUT` in `Infrastructure/CloudRun/subverselab-v2/src/data/plugins.js`. A product with no entry shows a
+  closed button; nothing links to a checkout that does not exist.
+- **Webhook:** `POST /api/lemonsqueezy/webhook` on `subverselab-site`, verified with `LEMONSQUEEZY_WEBHOOK_SECRET`. Orders are bound to
+  the signed-in account through `checkout[custom][uid]` (`orders_by_uid`), or by e-mail / order-number claim.
+- **Which product opens what:** Cloud Run env `LS_PRODUCT_SLUGS` (`productId:slug,…`) and `LS_FAMILY_PRODUCT_ID` /
+  `LS_FAMILY_VARIANT_ID` for the family (1414121). Re-read the live value with `gcloud run services describe` before changing it —
+  a deploy that sets env replaces the whole list.
+- **Price floor:** see `CLAUDE.md` (no promotion is ever cheaper than any earlier one; family 19.99 $).
+
+## Licence API (SubverseLab's own keys)
+
+- **Routes:** `POST /api/license/activate`, `/api/license/validate`, `/api/license/deactivate` on `subverselab-site`
+  (`launchLicence.js`), Firestore-backed.
+- **Used by:** the launch keys and the revocable SVL tester keys (product 9021 SEDA, 9022 ADALET; activation limit 2), checked live
+  2026-10-15 (activate → validate → deactivate).
 
 ## Duplicate services — cleared 2026-08-24
 
@@ -320,4 +365,23 @@ Before deploying any service in this registry, confirm the project **and** regio
 - The `subverselab.com` domain mapping resolves to `subverselab-site` in `project-62238635-aae4-41f4-880` / `europe-west1` — the service this registry already names, deployed from `subverselab-v2`.
 - A local `~/subverselab-site-cloud` folder did exist: the pre-v2 site, 375 files last touched 2026-08-06, carrying its own `Dockerfile`, `.env` and `.gcloudignore` — a fully deployable second copy. Archived to `Archive/legacy/2026-08-24_subverselab-site-cloud.zip` (sample-pack content included, the duplicated Splitter binary excluded) and deleted.
 
-The README has been corrected. The lesson worth keeping: the hazard was never the stale folder on its own, it was a stale folder plus documentation telling you it was production. Either alone is survivable; together they make deploying to the wrong place the *documented* behaviour.
+The README has been corrected (and rewritten again on 2026-10-15). The lesson worth keeping: the hazard was never the stale folder on its own, it was a stale folder plus documentation telling you it was production. Either alone is survivable; together they make deploying to the wrong place the *documented* behaviour.
+
+## ROLL licensing preview (private pitch page, not a SubverseLab product)
+
+- **Google Cloud Project:** `project-62238635-aae4-41f4-880` (browser-only static page)
+- **Cloud Run Service:** `roll-preview`, region `europe-west1`, nginx static, `--min-instances 0 --max-instances 2 --memory 256Mi --cpu-throttling`
+- **URL:** https://roll-preview-90909956035.europe-west1.run.app (no custom domain; `X-Robots-Tag: noindex`). First revision `roll-preview-00001-9w4`, 2026-10-20, owner's go in chat.
+- **Source:** `01_AI_Tools/prototypes/ROLL/pitch/` → `gcloud run deploy roll-preview --source . --project project-62238635-aae4-41f4-880 --region europe-west1 --allow-unauthenticated --min-instances 0 --max-instances 2 --cpu 1 --memory 256Mi --cpu-throttling --port 8080`
+- **Verification:** `curl -s -o /dev/null -w "%{http_code}" https://roll-preview-90909956035.europe-west1.run.app/` → 200. Shared with one licensee prospect (Alex, Widow Audio); Revision roll-preview-00002-7gz (2026-10-20): the page now carries the ROLL 0.9.1 test-build download and the offer (owner's plan, same link). The 22 Oct deletion (owner, earlier the same day) is ON HOLD: ask the owner before deleting, the test build's download lives here. Delete: `gcloud run services delete roll-preview --project project-62238635-aae4-41f4-880 --region europe-west1` + its image in Artifact Registry `cloud-run-source-deploy`.
+
+## ROLL test licence server (switch-off licence for the ROLL test build)
+
+- **Google Cloud Project:** `project-62238635-aae4-41f4-880`, **Cloud Run Service:** `roll-licence`, region `europe-west1`, min 0 / max 2, 256Mi, CPU throttling. First deployed 2026-10-20 (owner: "kapatabileceğimiz bir lisansla gönderelim").
+- **URL:** https://roll-licence-90909956035.europe-west1.run.app/v1/check (built into the ROLL 0.9.0 test build; changing the URL means a new build).
+- **Secret:** `roll-licence-key` (Secret Manager, RSA private key; the compute service account has secretAccessor). Local copy: `01_AI_Tools/prototypes/ROLL/licence/keys/` (git-ignored).
+- **Source:** `01_AI_Tools/prototypes/ROLL/licence/server/` → `gcloud run deploy roll-licence --source . --project project-62238635-aae4-41f4-880 --region europe-west1 --allow-unauthenticated --min-instances 0 --max-instances 2 --cpu 1 --memory 256Mi --cpu-throttling --set-secrets RSA_KEY=roll-licence-key:latest --set-env-vars "LIC_WA_ROLL_T1=active|2026-11-20"`
+- **Switch a licence off / extend it:** `gcloud run services update roll-licence --project project-62238635-aae4-41f4-880 --region europe-west1 --update-env-vars "LIC_WA_ROLL_T1=revoked|2026-11-20"` (or `active|<new date>`).
+- **Do not delete while a test build is out:** without it every installed test build stops after 72 h. Not part of the 22 Oct roll-preview deletion.
+
+- 2026-10-20: ROLL ended (Xpider declined). roll-licence: LIC_WA_ROLL_T1=revoked (rev 00004-45t). roll-preview: ingress internal (public 404), not deleted. Both min 0, cost ~0; delete only on the owner's go.

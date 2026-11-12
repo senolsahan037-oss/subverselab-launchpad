@@ -16,7 +16,7 @@ Every style is previewed before anything long starts. Five seconds of each, on
 your audio and your cover, and it costs nothing — you can rebuild the previews
 as often as you like.
 
-Only the full render is rationed: one a day, per account and per network.
+Previews are always free. The full render is limited: one 1080p render a day is free, per account and per network. After that, a render costs 50 credits, taken from your balance before the render starts and given back if it fails. Credits come with any plugin purchase: every dollar you pay for a plugin gives you 100 credits.
 
 The reason for that split is worth stating. Rendering a three-minute track takes
 about six minutes of machine time. Choosing a style from a description, or from
@@ -36,6 +36,7 @@ track and previews that.
 |---|---|
 | Radial | The cover at the centre, inside a ring of spectrum bars that reacts to the track. At thumbnail size it reads as a record. |
 | Marquee | The cover high in the frame with the spectrum mirrored along a lit baseline below it. At thumbnail size it reads as a stage. |
+| Atom | The cover at the centre, the ring of spectrum bars, and three tilted orbits that circle the cover. Each orbit follows one part of the spectrum and spins with its energy; the far half of each orbit passes behind the cover. At thumbnail size it reads as an atom. |
 
 The two are deliberately opposite compositions rather than two colour schemes.
 Which one suits a release depends on the cover, which is why you look at both.
@@ -76,7 +77,7 @@ a 40 MB MP3 can be half an hour, which is why the two are capped separately.
 
 ## What it does not do
 
-It does not choose a style for you. Two styles look different on different
+It does not choose a style for you. Styles look different on different
 covers and that judgement belongs to whoever made the record.
 
 It does not upload anything anywhere. It writes a file you download.
@@ -90,7 +91,7 @@ the machine that made them when the job ages out.
 
 ## If something goes wrong
 
-A render that fails gives your daily render back. You are never charged for a
+A render that fails gives your daily render back, or the 50 credits if you paid for it. You are never charged for a
 video you did not receive, and the message says so when it happens.
 
 If the tool says your files could not be read, the message names which of the

@@ -3,7 +3,7 @@
 - **`Brand/`** — Finished, approved brand assets only (logos, wordmarks, official emblems, generated brand surfaces). When something here is "the real one," it lives here in its original/highest-quality form — not just as a reference screenshot buried in some other project. Before recreating or hunting for a brand asset, check here first.
 - **`Media/`** — General dropbox for everything else: assets found while browsing that might be useful later, and produced media (generated images/videos, drafts, one-off outputs) from work sessions. Less curated than `Brand/` — this is a working archive, not a polished library. Filenames are prefixed with the date they were added (`YYYY-MM-DD_description.ext`).
 
-Not part of the Rules-governed product certification pipeline (see `Rules/INDEX.md`) — this is just persistent storage so assets stop getting lost in whatever tool or folder happened to create them.
+Not part of any release pipeline — this is just persistent storage so assets stop getting lost in whatever tool or folder happened to create them.
 
 ## Brand visual language
 

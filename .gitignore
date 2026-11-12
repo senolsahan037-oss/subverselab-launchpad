@@ -51,3 +51,16 @@ Assets/Brand/
 *.wav
 *.aif
 *.aiff
+
+# RU-8 Drum Pack: product content for sale, never in the public repo (owner 2026-10-16)
+03_Presets/RU-8 Drum Pack/
+03_Presets/RU-8 Drum Pack.zip
+
+# Accounting documents (personal tax data, never commit)
+Muhasebe/
+Scripts/.subverselab_youtube_token.pickle
+
+# Working backup of the site before the trial work (7 Nov 2026); local only
+Infrastructure/CloudRun/subverselab-v2/_bak_trial/
+# macOS folder icon
+Icon?
