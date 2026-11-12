@@ -17,15 +17,19 @@ import AdminPanel from './components/AdminPanel';
 import ArticlePage from './components/ArticlePage';
 import ToolRoom from './components/ToolRoom';
 import HelpPage from './components/HelpPage';
+import SearchPage from './components/SearchPage';
 import LegalPage from './components/LegalPage';
 import { PRIVACY, TERMS, REFUNDS } from './data/legalContent';
 import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
 import PluginRoom from './components/PluginRoom';
-import CatalogPluginRoom from './components/CatalogPluginRoom';
+import CatalogPluginRoom, { LivePluginRoom } from './components/CatalogPluginRoom';
 import LabRoom from './components/lab/LabRoom';
 import ScrollToTop from './components/ScrollToTop';
 import LaunchPage from './components/LaunchPage';
+import ActivatePage from './components/ActivatePage';
+import PartnerReportPage from './components/PartnerReportPage';
+import RedeemPage from './components/RedeemCode';
 import TestersPage from './components/TestersPage';
 import SamplePacksPage from './components/SamplePacksPage';
 import SamplePackPage from './components/SamplePackPage';
@@ -258,6 +262,7 @@ export default function App() {
               <Route path="/tools/:slug" element={<ToolRoom {...sharedProps} />} />
 
               <Route path="/help" element={<HelpPage />} />
+              <Route path="/search" element={<SearchPage searchQuery={searchQuery} />} />
 
               {/* Loom's own page, not a product room: it has no web surface to frame.
                   The path is fixed — https://subverselab.com/loom is named as the
@@ -273,12 +278,15 @@ export default function App() {
               <Route path="/plugins" element={<PluginsPage />} />
               {/* Prototype, local review only: noindex, not prerendered, not in the sitemap. */}
               <Route path="/lab/:slug" element={<LabRoom />} />
-              {ROOM_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<PluginRoom key={p.slug} plugin={p} />} />)}
+              {ROOM_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<LivePluginRoom key={p.slug} plugin={p} />} />)}
               {/* Plug-ins added from /admin (the live catalogue) get the same room; a static room above wins for its own slug. */}
               <Route path="/plugins/:slug" element={<CatalogPluginRoom />} />
               {MANUALS.map((m) => <Route key={`${m.slug}-manual`} path={m.path} element={<PluginManualPage key={m.slug} manual={m} />} />)}
               <Route path="/launch" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/launch2" element={<LaunchPage user={user} onLoginClick={() => setAuthModalOpen(true)} launchId="launch2" />} />
+              <Route path="/activate" element={<ActivatePage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
+              <Route path="/partners/report" element={<PartnerReportPage />} />
+              <Route path="/redeem" element={<RedeemPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/testers" element={<TestersPage user={user} onLoginClick={() => setAuthModalOpen(true)} />} />
               <Route path="/sample-packs" element={<SamplePacksPage user={user} />} />
               <Route path="/sample-packs/:slug" element={<SamplePackPage />} />

@@ -105,7 +105,8 @@ const uniq = (a) => [...new Set(a)];
 export function parseLicence(text) {
   const lines = text.replace(/\r/g, '').split('\n');
   const draft = /^DRAFT\b/i.test(lines[0] || '');
-  const title = (lines.find((l) => /licence/i.test(l) && !/^DRAFT/i.test(l)) || '').trim();
+  // Owner 4 Nov 2026: no draft wording reaches a buyer, so a trailing "(draft)" leaves the title (re-applied 6 Nov: the 4 Nov edit was lost).
+  const title = (lines.find((l) => /licence/i.test(l) && !/^DRAFT/i.test(l)) || '').trim().replace(/\s*\(draft\)\s*$/i, '');
   const clauses = [];
   let cur = null;
   for (const l of lines) {

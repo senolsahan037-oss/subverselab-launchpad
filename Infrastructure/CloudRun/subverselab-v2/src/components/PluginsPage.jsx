@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import LaunchPrice from './LaunchPrice';
 import BuyButton from './BuyButton';
+import FamilyBand from './FamilyBand';
 import {
   PLUGINS_INDEX, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, CHECKOUT, PRICES, TRUST_LINE, BOX_IMG,
-  line2AvailableLine, launchPriceActive, launchEndLabel, BOX_LAYERS, BOX_SHELL, BOX_SHELL_DEFAULT,
+  line2AvailableLine, launchPriceActive, launchEndLabel, offerName, BOX_LAYERS, BOX_SHELL, BOX_SHELL_DEFAULT,
 } from '../data/plugins';
 import { byLatestRelease } from '../data/productDates';
 import { useCatalog, catalogPlugins } from '../catalog/catalog';
@@ -44,7 +45,7 @@ function bubble(p) {
 function badge({ p, group }) {
   if (group === 'free') return 'Free';
   if (group === 'soon') return line2AvailableLine(p);
-  if (p.launchId === 'solo') return <><LaunchPrice slug={p.slug} note={false} />{launchPriceActive(p.slug) ? ' · launch price' : ''}</>;
+  if (p.launchId === 'solo') return <><LaunchPrice slug={p.slug} note={false} />{offerName(p.slug) ? ` · ${offerName(p.slug)}` : ''}</>;
   return `$${PRICES[p.slug]}`;
 }
 
@@ -67,6 +68,9 @@ export default function PluginsPage() {
           Plugins and apps for macOS and Windows, each made for one job in your track. Open one to meet it: the real panel, what every control does, and how to make it yours.
         </p>
       </header>
+
+      {/* The family offer (owner 3 Nov): the one bundle, above the shelf; its products stay on the shelf as singles too. */}
+      <FamilyBand />
 
       <div className="plugin-filter" role="group" aria-label="Show">
         {GROUPS.filter((g) => g.key === 'all' || count(g.key) > 0).map((g) => (
@@ -126,7 +130,7 @@ export default function PluginsPage() {
                   <span className="box-buy-row">
                     <BuyButton place="showcase" slug={p.slug} className="btn btn-primary box-buy"
                       label={c.group === 'free' ? `Get ${p.displayName} free` : `Buy ${p.displayName}`} />
-                    {p.launchId === 'solo' && launchPriceActive(p.slug) && <span className="box-until">until {launchEndLabel(p.slug)}</span>}
+                    {p.launchId === 'solo' && launchEndLabel(p.slug) && <span className="box-until">until {launchEndLabel(p.slug)}</span>}
                   </span>
                 )}
               </div>

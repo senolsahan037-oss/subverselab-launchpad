@@ -33,9 +33,15 @@ pack; anything older that says otherwise (plans, STATUS logs, old task files) is
    <mp3> <slug>` and paste the URL), scenes (`seconds name` per line), publisher (if not SubverseLab), price, checkout,
    product id, *On sale from* (ISO moment; this is also the sweep cut-off and is never moved later), Released, Published on.
 3. Files: upload the zip under the same slug with its version (`catalog-cli.js file <slug> <version> zip <file>`).
-4. Check within a minute: the card on /sample-packs (sleeve, disc, play), `/sample-packs/<slug>` (waveform, price, Buy key),
-   `GET /api/download/manifest` lists the slug, a test order downloads from /account.
-5. A new version later: upload the new zip with the new version, set *Updated*; the pack moves to the top of the store.
+4. SoundCloud (owner 5 Nov 2026): upload the same preview mp3 with the cover at soundcloud.com/upload (account
+   soundcloud.com/subverselab; title `SVL <Name> (Demo)`, genre, description "Demo of the SVL <Name> sample pack. <Kind line>.
+   Get the pack: <page>", Buy link = the pack page, downloads off; the "continue without a paid plan" answer to the upsell), then
+   paste the track link into the pack's *SoundCloud track* field. The /sample-packs playlist picks it up in the store order;
+   nothing on SoundCloud needs reordering. (The SoundCloud set "SubverseLab Sample Packs" is a side copy: add the track at its top.)
+5. Check within a minute: the card on /sample-packs (sleeve, disc, play), the pack in the playlist under the grid,
+   `/sample-packs/<slug>` (waveform, price, Buy key, "Also on SoundCloud"), its page title and link picture (view source or a
+   link preview), `/sitemap.xml` lists it, `GET /api/download/manifest` lists the slug, a test order downloads from /account.
+6. A new version later: upload the new zip with the new version, set *Updated*; the pack moves to the top of the store.
 
 ## 4. The importer path (packs that live in the code)
 `node scripts/import-sample-packs.js` reads `01_AI_Tools/subverselab-packs/out/<work>/SVL_<Name>.zip` and `Preview/` (snippet

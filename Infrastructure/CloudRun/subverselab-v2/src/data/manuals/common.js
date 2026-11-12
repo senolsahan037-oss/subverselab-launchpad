@@ -57,7 +57,7 @@ export const gettingIt = (plugin) => {
   } else if (plugin.launchId === 'line2' && !CHECKOUT[plugin.slug]) {
     p = `${line2AvailableLine(plugin)}. Once you have bought ${name}, the download appears on ${where} and on your Account page. ${UPDATES_LINE}`;
   } else if (plugin.launchId === 'solo' || plugin.launchId === 'line2') {
-    p = `Buy ${name} on ${where} through Lemon Squeezy, then sign in with the e-mail you paid with: the download appears on that page and on your Account page. ${UPDATES_LINE} ${plugin.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT}`;
+    p = `Buy ${name} on ${where} through Lemon Squeezy, then sign in with the e-mail you paid with: the download appears on that page and on your Account page. ${UPDATES_LINE} ${plugin.activation || (plugin.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT)}`;   // the sign-in products (AHENK, JING FANG) say how; as PluginRoom buyText
   } else {
     p = `Buy ${name} on ${where} through Lemon Squeezy, then sign in with the e-mail you paid with: the download appears on that page and on your Account page. ${UPDATES_LINE} ${ACTIVATION_LINE}`;
   }

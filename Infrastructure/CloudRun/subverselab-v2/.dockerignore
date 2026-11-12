@@ -9,3 +9,6 @@ preview
 *.log
 .devdata
 _legacy
+_bak_trial
+# The panel snapshot (scripts/catalog-pull.js) is a local record, never part of a build.
+catalog-snapshot

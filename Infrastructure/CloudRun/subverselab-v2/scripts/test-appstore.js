@@ -103,6 +103,8 @@ const transformed = (await readFile(resolve(root, 'api/server.js'), 'utf8'))
   .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
   .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
   .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './trialGrant.js';", `from '${url('api/trialGrant.js')}';`)
+  .replace("from './partners.js';", `from '${url('api/partners.js')}';`)
   .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
   .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
@@ -477,6 +479,203 @@ await test('setAppleTestRoots is refused without APPLE_TEST_ROOTS=1; firestore.r
   const docker = await readFile(resolve(root, 'api/Dockerfile'), 'utf8');
   assert.match(docker, /COPY server\.js [^\n]*appstore\.js[^\n]* \.\//);
   assert.match(docker, /COPY AppleRootCA-G3\.cer \.\//);
+});
+
+// ---- AHENK (7 Nov 2026): the same App Store table row as RU-8, slug `ahenk`; desktop sign-in through the device flow. ----
+const AHENK = { bundleId: 'com.subverselab.ahenk', productId: 'com.subverselab.ahenk.full' };
+const ahenkTx = (over = {}) => txPayload({ ...AHENK, ...over });
+const ahenkEntitlement = (uid) => call('/api/ahenk/ios/entitlement', { token: `valid-${uid}` });
+const ahenkLink = (uid, j) => call('/api/ahenk/ios/apple-purchase', { token: `valid-${uid}`, body: { jws: j } });
+function ahenkNotification(type, tx, over = {}) {
+  return notification(type, tx, { ...over, data: { bundleId: AHENK.bundleId, ...(over.data || {}) } });
+}
+{
+  const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+  process.env.GRANT_SIGNING_KEY = privateKey.export({ type: 'pkcs1', format: 'pem' });
+}
+state.auth.getUser = async (uid) => {
+  if (state.deletedUsers.has(uid)) { const e = new Error('no user'); e.code = 'auth/user-not-found'; throw e; }
+  return { uid, email: `${uid}@example.com`, emailVerified: !uid.startsWith('unv-'), providerData: [] };
+};
+const MACHINE = 'svl-machine:0123456789abcdef0123456789abcdef';
+// Desktop sign-in for `uid`: device/start -> approve (as the signed-in buyer) -> poll. Returns {approve, poll}.
+async function desktopSignIn(uid) {
+  const start = await call('/api/device/start', { body: { product: 'ahenk', machine: MACHINE, name: 'Studio Mac' } });
+  assert.equal(start.status, 200, JSON.stringify(start.body));
+  const approve = await call('/api/device/approve', { token: `valid-${uid}`, body: { user_code: start.body.user_code } });
+  const poll = await call('/api/device/poll', { body: { device_code: start.body.device_code } });
+  return { approve, poll };
+}
+const refresh = (grant) => call('/api/grant/refresh', { body: { grant } });
+
+await test('AHENK: an App Store purchase links (200), entitlement via appstore, ownedVia ahenk = appstore, ru8 stays not owned', async () => {
+  reset();
+  const tx = ahenkTx();
+  const r = await ahenkLink('ah1', jws(tx, chain));
+  assert.equal(r.status, 200, JSON.stringify(r.body)); assert.deepEqual(r.body, { owned: true, via: 'appstore' });
+  const p = state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`);
+  assert.equal(p.uid, 'ah1'); assert.equal(p.productId, 'com.subverselab.ahenk.full'); assert.equal(p.bundleId, 'com.subverselab.ahenk');
+  assert.deepEqual((await ahenkEntitlement('ah1')).body, { owned: true, via: 'appstore' });
+  assert.deepEqual((await entitlement('ah1')).body, { owned: false, via: null }, 'an AHENK purchase does not open RU-8');
+  const admin = { db: state.db, auth: state.auth };
+  assert.equal(await entitlements.ownedVia(admin, { email: 'ah1@example.com', uid: 'ah1', proven: true }, 'ahenk'), 'appstore');
+  assert.equal(await entitlements.ownedVia(admin, { email: 'ah1@example.com', uid: 'ah1', proven: true }, 'ru8'), null);
+  const orders = await appstore.readAppleOrders(state.db, 'ah1');
+  assert.deepEqual(Object.values(orders).map((o) => [o.product, o.status, o.source]), [['ahenk', 'paid', 'appstore']]);
+  // A RU-8 purchase still reads as ru8 next to it.
+  assert.equal((await link('ah1', jws(txPayload(), chain))).status, 200);
+  assert.deepEqual(Object.values(await appstore.readAppleOrders(state.db, 'ah1')).map((o) => o.product).sort(), ['ahenk', 'ru8']);
+  assert.deepEqual((await entitlement('ah1')).body, { owned: true, via: 'appstore' });
+  assert.ok(entitlements.UNLISTED_SLUGS.includes('ahenk'), 'ahenk stays unlisted');
+});
+
+await test('AHENK: crossed apps and the trial item are refused (400, nothing stored); wording names the app', async () => {
+  reset();
+  const a = await link('ah2', jws(ahenkTx(), chain));
+  assert.equal(a.status, 400); assert.equal(a.body.error, 'This purchase is not for RU-8.');
+  const b = await ahenkLink('ah2', jws(txPayload(), chain));
+  assert.equal(b.status, 400); assert.equal(b.body.error, 'This purchase is not for AHENK.');
+  const c = await ahenkLink('ah2', jws(ahenkTx({ productId: 'com.subverselab.ahenk.trial30', price: 0 }), chain));
+  assert.equal(c.status, 400); assert.equal(c.body.error, 'This purchase is not AHENK.');
+  assert.equal((await ahenkLink('ah2', jws(ahenkTx({ revocationDate: Date.now() }), chain))).status, 403);
+  assert.equal((await ahenkLink('ah2', jws(ahenkTx({ environment: 'Sandbox' }), chain))).status, 400);
+  assert.equal([...state.db.docs.keys()].filter((k) => k.startsWith('apple_')).length, 0);
+  assert.equal((await ahenkEntitlement('ah2')).body.owned, false);
+});
+
+await test('AHENK: a second uid gets 409; the same uid again (restore) 200; Sandbox only with APPLE_ALLOW_SANDBOX=1', async () => {
+  reset();
+  const tx = ahenkTx();
+  assert.equal((await ahenkLink('ah3', jws(tx, chain))).status, 200);
+  const other = await ahenkLink('ah3other', jws(tx, chain));
+  assert.equal(other.status, 409); assert.match(other.body.error, /another SubverseLab account/);
+  assert.equal((await ahenkLink('ah3', jws(tx, chain))).status, 200);
+  assert.equal(state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`).uid, 'ah3');
+  assert.equal((await ahenkEntitlement('ah3other')).body.owned, false);
+  const sb = ahenkTx({ environment: 'Sandbox' });
+  process.env.APPLE_ALLOW_SANDBOX = '1';
+  try { assert.equal((await ahenkLink('ah3sb', jws(sb, chain))).status, 200); assert.equal((await ahenkEntitlement('ah3sb')).body.via, 'appstore'); }
+  finally { delete process.env.APPLE_ALLOW_SANDBOX; }
+  assert.equal((await ahenkEntitlement('ah3sb')).body.owned, false, 'a Sandbox purchase stops counting when the flag goes');
+});
+
+await test('AHENK desktop sign-in for an App Store buyer: approve ok, poll gives an owned grant, refresh ok; not owned before the purchase', async () => {
+  reset();
+  const before = await desktopSignIn('ah4');
+  assert.equal(before.approve.status, 200); assert.equal(before.approve.body.ok, false); assert.equal(before.approve.body.error, 'not owned');
+  assert.deepEqual(before.poll.body, { status: 'pending' });
+  const tx = ahenkTx();
+  assert.equal((await ahenkLink('ah4', jws(tx, chain))).status, 200);
+  const after = await desktopSignIn('ah4');
+  assert.deepEqual(after.approve.body, { ok: true, product: 'ahenk', name: 'Studio Mac' });
+  assert.equal(after.poll.body.status, 'approved');
+  const payload = JSON.parse(after.poll.body.grant.payload);
+  assert.equal(payload.kind, 'owned'); assert.equal(payload.product, 'ahenk'); assert.equal(payload.uid, 'ah4'); assert.equal(payload.machine, MACHINE);
+  const r = await refresh(after.poll.body.grant);
+  assert.equal(r.status, 200); assert.equal(r.body.ok, true); assert.equal(JSON.parse(r.body.grant.payload).uid, 'ah4');
+});
+
+await test('AHENK refund through a notification: entitlement false, grant refresh "not owned", new desktop sign-in refused; REFUND_REVERSED reopens', async () => {
+  reset();
+  const tx = ahenkTx();
+  assert.equal((await ahenkLink('ah5', jws(tx, chain))).status, 200);
+  const { poll } = await desktopSignIn('ah5');
+  const grant = poll.body.grant;
+  assert.equal((await refresh(grant)).body.ok, true);
+  const refund = await notify(ahenkNotification('REFUND', tx));
+  assert.equal(refund.status, 200); assert.equal(refund.body.result, 'revoked');
+  assert.equal(state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`).revoked, true);
+  assert.deepEqual((await ahenkEntitlement('ah5')).body, { owned: false, via: null });
+  assert.deepEqual((await refresh(grant)).body, { ok: false, error: 'not owned' });
+  assert.equal((await desktopSignIn('ah5')).approve.body.error, 'not owned');
+  assert.equal((await ahenkLink('ah5', jws(tx, chain))).status, 403);
+  assert.equal((await notify(ahenkNotification('REFUND_REVERSED', tx))).body.result, 'restored');
+  assert.equal((await refresh(grant)).body.ok, true);
+  assert.equal((await notify(ahenkNotification('REVOKE', tx))).body.result, 'revoked');
+  assert.equal((await ahenkEntitlement('ah5')).body.owned, false);
+});
+
+await test('AHENK notifications: the trial item and a RU-8 transaction inside an AHENK notification are ignored; a RU-8 refund leaves AHENK alone', async () => {
+  reset();
+  const tx = ahenkTx();
+  const ru = txPayload();
+  assert.equal((await ahenkLink('ah6', jws(tx, chain))).status, 200);
+  assert.equal((await link('ah6', jws(ru, chain))).status, 200);
+  const trial = ahenkTx({ productId: 'com.subverselab.ahenk.trial30' });
+  assert.equal((await notify(ahenkNotification('REFUND', trial))).body.result, 'ignored:other-product');
+  assert.equal((await notify(ahenkNotification('REFUND', ru))).body.result, 'ignored:other-product');
+  assert.equal((await notify(notification('REFUND', ru))).body.result, 'revoked');
+  assert.deepEqual((await ahenkEntitlement('ah6')).body, { owned: true, via: 'appstore' });
+  assert.equal((await entitlement('ah6')).body.owned, false);
+  assert.equal(state.db.docs.has(`apple_purchases/${trial.originalTransactionId}`), false);
+});
+
+await test('AHENK account deletion: the purchase loses the uid, the grant stops refreshing, a new account may link it again', async () => {
+  reset();
+  const tx = ahenkTx();
+  assert.equal((await ahenkLink('ah7', jws(tx, chain))).status, 200);
+  const { poll } = await desktopSignIn('ah7');
+  const del = await call('/api/account/delete', { token: 'valid-ah7', body: { confirm: 'DELETE' } });
+  assert.equal(del.status, 200, JSON.stringify(del.body));
+  const p = state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`);
+  assert.equal(p.uid, null); assert.equal(p.productId, 'com.subverselab.ahenk.full');
+  assert.equal(state.db.docs.has('apple_by_uid/ah7'), false);
+  assert.deepEqual((await refresh(poll.body.grant)).body, { ok: false, error: 'not owned' });
+  assert.equal((await ahenkLink('ah7new', jws(tx, chain))).status, 200);
+  assert.deepEqual((await ahenkEntitlement('ah7new')).body, { owned: true, via: 'appstore' });
+});
+
+await test('AHENK iPad sign-in carries the App Store purchase: device/apple attaches it, approve links it to the account and succeeds; desktop then signs in', async () => {
+  reset();
+  const tx = ahenkTx();
+  const start = await call('/api/device/start', { body: { product: 'ahenk', machine: MACHINE, name: 'iPad', platform: 'ios' } });
+  assert.equal(start.status, 200);
+  assert.equal(state.db.docs.get(`device_codes/${start.body.device_code}`).platform, 'ios');
+  const att = await call('/api/device/apple', { body: { device_code: start.body.device_code, jws: jws(tx, chain) } });
+  assert.equal(att.status, 200, JSON.stringify(att.body)); assert.deepEqual(att.body, { ok: true });
+  assert.equal(state.db.docs.get(`device_codes/${start.body.device_code}`).apple.originalTransactionId, tx.originalTransactionId);
+  const look = await call('/api/device/lookup', { token: 'valid-ah8', body: { user_code: start.body.user_code } });
+  assert.equal(look.body.device, 'ios');
+  const ok = await call('/api/device/approve', { token: 'valid-ah8', body: { user_code: start.body.user_code } });
+  assert.deepEqual(ok.body, { ok: true, product: 'ahenk', name: 'iPad' });
+  assert.equal(state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`).uid, 'ah8');
+  const poll = await call('/api/device/poll', { body: { device_code: start.body.device_code } });
+  assert.equal(poll.body.status, 'approved'); assert.equal(JSON.parse(poll.body.grant.payload).uid, 'ah8');
+  // the same account on the Mac: owned through the App Store purchase
+  assert.deepEqual((await desktopSignIn('ah8')).approve.body, { ok: true, product: 'ahenk', name: 'Studio Mac' });
+});
+
+await test('device/apple: a second account approving a code that carries a linked purchase gets "linked elsewhere"; iOS "not owned" has no buy link; refused inputs', async () => {
+  reset();
+  const tx = ahenkTx();
+  assert.equal((await ahenkLink('ah9', jws(tx, chain))).status, 200);
+  const start = await call('/api/device/start', { body: { product: 'ahenk', machine: MACHINE, name: 'iPad', platform: 'ios' } });
+  assert.equal((await call('/api/device/apple', { body: { device_code: start.body.device_code, jws: jws(tx, chain) } })).status, 200);
+  const other = await call('/api/device/approve', { token: 'valid-ah9other', body: { user_code: start.body.user_code } });
+  assert.deepEqual(other.body, { ok: false, error: 'linked elsewhere' });
+  assert.equal(state.db.docs.get(`apple_purchases/${tx.originalTransactionId}`).uid, 'ah9');
+  // an iOS code without a purchase, for an account that owns nothing: no buy_url
+  const s2 = await call('/api/device/start', { body: { product: 'ahenk', machine: MACHINE, name: 'iPad', platform: 'ios' } });
+  assert.deepEqual((await call('/api/device/approve', { token: 'valid-ah9none', body: { user_code: s2.body.user_code } })).body, { ok: false, error: 'not owned' });
+  // a desktop code keeps its buy_url
+  const s3 = await call('/api/device/start', { body: { product: 'ahenk', machine: MACHINE, name: 'Mac' } });
+  assert.equal((await call('/api/device/approve', { token: 'valid-ah9none', body: { user_code: s3.body.user_code } })).body.buy_url, 'https://subverselab.com/plugins/ahenk');
+  const dc = s2.body.device_code;
+  assert.equal((await call('/api/device/apple', { body: { device_code: dc, jws: jws(ahenkTx({ productId: 'com.subverselab.ahenk.trial30' }), chain) } })).status, 400, 'the trial item');
+  assert.equal((await call('/api/device/apple', { body: { device_code: dc, jws: jws(ahenkTx({ revocationDate: Date.now() }), chain) } })).status, 403, 'refunded');
+  assert.equal((await call('/api/device/apple', { body: { device_code: dc, jws: jws(ahenkTx({ environment: 'Sandbox' }), chain) } })).status, 400, 'Sandbox');
+  assert.equal((await call('/api/device/apple', { body: { device_code: dc, jws: 'garbage' } })).status, 400, 'garbage');
+  assert.equal((await call('/api/device/apple', { body: { device_code: 'f'.repeat(48), jws: jws(ahenkTx(), chain) } })).status, 404, 'unknown code');
+  assert.equal((await call('/api/device/apple', { body: { device_code: dc, jws: jws(txPayload(), chain) } })).status, 400, 'a RU-8 purchase on an AHENK code');
+  assert.equal(state.db.docs.get(`device_codes/${dc}`).apple, undefined);
+});
+
+await test('both apps have both routes; no AHENK token -> 401', async () => {
+  for (const slug of ['ru8', 'ahenk']) {
+    assert.ok(routeHandlers.has(`/api/${slug}/ios/entitlement`)); assert.ok(routeHandlers.has(`/api/${slug}/ios/apple-purchase`));
+  }
+  assert.equal((await call('/api/ahenk/ios/entitlement')).status, 401);
+  assert.equal((await call('/api/ahenk/ios/apple-purchase', { body: { jws: 'x' } })).status, 401);
 });
 
 const failed = results.filter((r) => !r.ok);

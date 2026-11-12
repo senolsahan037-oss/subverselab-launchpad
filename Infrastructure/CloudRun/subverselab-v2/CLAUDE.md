@@ -20,7 +20,8 @@ Old rules, past states, deploy logs, audits and task briefs are in `_legacy/` �
   revision's `--tag`: a tagged old revision keeps its own warm instance and bills (26 Oct: 156 of 175 TRY were idle tags).
 - Release rhythm (owner 1 Nov): new products and news go in through /admin → Catalogue, no deploy. The site itself is
   deployed about once a month as general maintenance, batching the NEXT DEPLOY entries; an earlier deploy only when the
-  panel turns out to be missing something it needs (still on the owner's go).
+  panel turns out to be missing something it needs (still on the owner's go). Never several deploys in one day unless something
+  is seriously broken (owner 1 Nov: "büyük bir sorun olmadıkça günde 3 tane deploy yapmayalım"); small fixes wait for the batch.
 - Themes (owner 28 Oct): the light theme is cream everywhere and the dark theme dark green everywhere. Only the products' own
   pictures and device displays (panel screenshots, VFD/key readouts, waveform strips, the JING FANG film) keep their dark ground
   in both. Colours come only from the tokens in `src/index.css` (`:root` and `:root[data-theme="dark"]`); a component never
@@ -63,8 +64,10 @@ upload the zip and write the manifest (it has objectAdmin on the Firebase media 
 API (+ the seven `id:slug` pairs in RELEASE_QUEUE "prepared 29 Oct, checkouts") → tests → deploy → check the rooms, checkouts and
 `/api/download/manifest` live; download TORNA end to end. If `VITE_MEDIA_BASE` is set, upload the new public media.
 
-**Known test failures until 1 Nov:** one sweep case each in `test-sample-packs` and `test-download` (the six packs are listed
-on 2026-11-01, a sweep bought earlier rightly excludes them). Everything else passes; build exit 0 (29 Oct).
+**3 Nov (local, API only, for the 1 Dec deploy):** admin Members counts pack (zip) downloads and joins an order to the account
+by its uid when the checkout e-mail differs (RELEASE_QUEUE "Admin → Members, orders and downloads").
+
+**Tests (2 Nov):** every `scripts/test-*.js` passes; the two sweep cases were stale expectations (orders dated 17 Oct), fixed 2 Nov.
 
 **30 Oct (local, queued for 1 Nov, details in RELEASE_QUEUE "prepared 30 Oct, news"):** one JING FANG news item; new news pictures
 (BOE-B floor pedal, TORNA box, JING FANG device, tester studio, ALEV cut-out with the lockup bent on its bezel, ELEK stem drawing,
@@ -99,3 +102,78 @@ start with its §6 order; §4b is the password-account journey (buy, receipt, ke
 **Open with the owner:** TORNA manual naming the original hardware; the 16/17 Oct pack listing date in `api/entitlements.js`;
 Firebase Auth mail still goes out through the owner's Gmail (CUSTOM_SMTP decision). (29 Oct: the footer's two drifting logo strips,
 hosts and stores (MuseHub/KVR/Gumroad/itch.io), not links; queued for 1 Nov.)
+
+**3 Nov 2026 (panel, no deploy):** sample pack Woodpanel added from /admin → Catalogue (first live panel product): LS 1498221 at $5,
+zip via publish_download.sh (346 MB, over the 32 MB panel limit), manifest checked. A real order end to end is not yet verified.
+
+**3 Nov 2026 (owner decision, not built yet):** the family comes back on the site as the same seven products as on MuseHub
+(KUBBE, KASET, KORO, YANKI, HAVA, TUTKAL, MIHENK) at $39.99, the MuseHub price; this replaces the 28 Oct "family is over" rule in
+`src/data/plugins.js`. No upgrade price: everyone pays $39.99 (owner: hardly anyone owns many singles). No deploy (owner): a news item and a plug-in
+item from /admin → Catalogue with a new slug (not `family`, which `knownSlug` skips) and the existing family checkout; the
+webhook already maps that Lemon Squeezy product to 'family' first (`isFamilyOrder`, server.js ~2671) whatever the date, so
+the seven open as before. Check locally with ?devpreview=1 first that the plug-in room template reads right for a bundle.
+Picture: one inward-leaning stack of equal boxes, built in Blender (the 2D composites in box_renders_2026-10-31 are drafts).
+**3 Nov evening (local, for one deploy, owner):** the family band on /plugins (#family) + the `family` news item, $39.99, the 3D
+stack v11 as picture; catalogue sample packs get Technical details / Inside the folder / Licence from panel fields. This replaces
+the panel-only plan above. Details and the pre-deploy step (LS family price 19.99 -> 39.99): RELEASE_QUEUE "FOR THE 1 DEC DEPLOY".
+
+**4 Nov 2026 evening (panel, no deploy):** sample pack 8-Bit Orchestral added from /admin → Catalogue (LS 1501277, $5; zip 364.9 MB via publish_download.sh; listed 18:30 TR). Real order end to end not verified. Details: 01_AI_Tools/subverselab-packs/status/atari.md.
+
+**4 Nov 2026 (DEPLOYED, not committed):** site `00239-noc` (upgrade key; before it `00236-yaz`) + api `00015-cem` (tag nov04), RELEASE_QUEUE "DEPLOYED 4 Nov". The family is
+back on /plugins at $39.99 (v6 box stack, stage light on hover), Woodpanel's technical details and folder list are in the panel and
+live, Woodpanel preview v8 live. Rollback: 00233-yik + 00012-ziv.
+
+**5 Nov 2026 (DEPLOYED, not committed):** site `00242-vor` (tag nov05; rollback 00239-noc): the family band shows its list price, struck $79.99 → $39.99 (−50 %, MuseHub's 50 % rule, owner), and the footer store marks. MuseHub bundle the same night: base 79.99 + discount 39.99 (5 Nov → 4 Jan 2027). Still open: the 15 importer pack pages show "Licence (draft)" (`samplePacks.js` not regenerated), RELEASE_QUEUE 5 Nov.
+
+**5 Nov 2026 afternoon/evening (local, NEXT DEPLOY for site AND api, RELEASE_QUEUE "SoundCloud + products from the panel"):**
+soundcloud.com/subverselab has the 19 pack demos (live). Panel field *SoundCloud track* per pack; /sample-packs builds its playlist from
+those links in store order; the site server gives panel-only products their own head and sitemap line and the panel's picture on link
+previews; the panel deletes uploads it no longer uses. After the deploy: write the 19 links (list in RELEASE_QUEUE). A new pack: demo on
+SoundCloud + its link in the panel (docs/PACK_DELIVERY.md §3.4).
+
+**6 Nov 2026 (DEPLOYED, not committed):** site `00245-heb` + api `00018-yoy` (tag nov06; rollback 00242-vor + 00015-cem), RELEASE_QUEUE "DEPLOYED 6 Nov": everything prepared 4-6 Nov, plus the JING FANG Black Friday news (27 Nov 00:00 - 1 Dec 00:00 TR) as the first static frame. Open, needs the desktop session with Chrome (it hit its limit): (1) Lemon Squeezy product 1453169 free on 27 Nov and $150 on 1 Dec, owner says scheduled, not checked (UTC vs TR); (2) panel news `ru8-update` order 5 -> 15 so Black Friday leads (needs the agent key in `~/.config/subverselab/agent_key`; `catalog-cli.js` reads it; the current key expires about 13 Nov); (3) post-deploy browser checks (light/dark, 1440 and 375 px, download ticket, checkout links); (4) the 19 SoundCloud links in the panel; (5) Audio Plugin Deals vs the free week (owner).
+
+**6 Nov 2026 evening:** done from the list above: (4) the 19 SoundCloud links are in the live catalogue (written through the local
+`subverselab-api-dev` with the dev-preview key: the old `~/.config/subverselab/agent_key` was not an agent key (the API read it as an
+expired Google token, 401), kept as `agent_key.old-invalid-2026-11-06`). New admin agent key made the same evening through the local API
+(label "Claude desktop Launchpad 6 Nov 2026", id 771b2c5f…, written straight to `agent_key`, 600, never printed); `catalog-cli.js get`
+works against the live API with it. Agent keys do not expire; revoke in /admin → Catalogue → Agents. New, local, NEXT DEPLOY (site AND api together): sample pack preview plays
+counted per pack and place (card / page / soundcloud), Admin → Stats table; RELEASE_QUEUE "prepared 6 Nov 2026, evening".
+
+**12 Nov 2026 (DEPLOYED, not committed):** site `00260-vef` + api `00027-lig` (tag nov12; rollback 00257-heb + 00024-hid): affiliate partners
+(30-day ?aff= after consent, partner code auto-applied at checkout, partner_sales ledger from the webhook, private report /partners/report#token,
+`scripts/partner-cli.js`; LS_API_KEY from Secret Manager `ls-api-key`). Firestore rules released the same night. Rekkerd registered
+(lsAffiliateId 74517). Every new affiliate: its line in `src/data/partners.js` + `partner-cli add`. RELEASE_QUEUE "DEPLOYED 12 Nov".
+
+**12 Nov 2026 midday (DEPLOYED, API only, not committed):** api `00030-nat` (tag nov12b; rollback 00027-lig): TABAN, ALEV and KIYMA redeemable as
+store codes (Loot Audio gift with purchase; 500 codes each sent to Glyn). RELEASE_QUEUE "DEPLOYED 12 Nov ~12:20".
+
+## PARKED — hyphenated lockup on 94 product pictures (lead 8 Nov 2026, OCR over public/plugins + public/news)
+- TORNA, YANKI, ALEV, ELEK, KORO, TABAN, SEDA, KUBBE, KASET, MIHENK, HAVA, TUTKAL panel shots / heroes / cards / og, and news elek, manuals,
+  free-alev show SUBVERSE-LAB (root CLAUDE.md: one word in any image). RU-8, JING FANG, ADALET, AHENK are clean since 8 Nov. Each needs its
+  product's snapshot tool rebuilt (most build dirs were deleted); per the 7 Nov rule the icon-only mark comes with each plug-in's next update.
+  OCR check: tesseract --psm 11 on the 2x upscaled picture, look for SUBVERSE-LAB.
+
+## PARKED — drag from the store into a DAW (owner 6 Nov 2026: "şimdilik kalsın")
+- Local only, not in NEXT DEPLOY, not tried in Live: a "Drag to DAW" key on each pack page's preview strip
+  (`DragOut` in `src/components/packs/Snippet.jsx`, `.pk-drag` in `packsCss.js`, also beside the plain player in
+  `SamplePackPage.jsx`). Chrome `DownloadURL` → `SVL_<Name>_Preview.mp3`; Safari only drags the link. Before queuing it the
+  owner drags it into Live once; if Live refuses Chrome's file promise, remove it.
+- A browser cannot drag a plug-in into a DAW (VST3/AU must be installed and scanned). The idea that does it: a SubverseLab
+  store plug-in (JUCE, VST3/AU) that shows the store inside any DAW, drags pack audio/MIDI straight onto tracks
+  (`performExternalDragDropOfFiles`, proven by RU-8's clip drag in Live, AU + VST3) and installs our plug-ins into
+  `~/Library/Audio/Plug-Ins` (the DAW still rescans). Alternative: an Ableton-only Live Extension (.ablx). Not started; do not
+  propose it again until the owner opens it.
+
+**7 Nov 2026 (DEPLOYED, not committed):** site `00248-fiq` + api `00021-har` (tag nov07; rollback 00245-heb + 00018-yoy), RELEASE_QUEUE
+"DEPLOYED 7 Nov". The JING FANG free days are internal (owner: nothing announces them before 27 Nov; the Black Friday item appears only
+while the offer runs, without dates); JING FANG $99 (regular $150 struck) from 1 Dec with no end date (SALE_PRICES); no updates term
+anywhere ("2 years of updates" removed, owner); AHENK trial + browser sign-in live on the API (GRANT_SIGNING_KEY mounted). Open:
+Firestore rules for trials/ device_codes/ (owner's go), Lemon Squeezy JING FANG price by hand on 27 Nov (free) and 1 Dec ($99).
+
+**12 Nov 2026 afternoon (local, no deploy, not committed):** `node scripts/catalog-pull.js` copies what /admin → Catalogue holds into
+`catalog-snapshot/` (one JSON per item, the download manifest, every picture / preview / peaks file; read-only, admin view with the agent
+key, else the public one; `--check` exits 1 when the snapshot is behind). First pull: 3 news, 2 plug-in edits (ru8, tutkal), 19 sample packs,
+30 media files, 17 MB. The folder is in `.dockerignore` / `.gcloudignore` (never built). Run it after every panel change and before a commit.
+Sold zips and installers are not copied (downloads bucket; `manifest.json` lists them). Not built yet: the build (prerender, sitemap) reading
+the snapshot, and a push back from the tree to the panel.

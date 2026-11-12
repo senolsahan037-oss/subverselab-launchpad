@@ -34,7 +34,7 @@ await test('keyLabel / notePitch: Fsmin -> F# minor, Fs1 -> F#1, A#1 sorts below
 });
 await test('parseLicence: DRAFT flag, titled clauses, an untitled last clause keeps its sentence', () => {
   const l = imp.parseLicence('DRAFT — review.\n\nSVL X - Licence (draft)\n===\n\n1. Grant. You may use\n   the sounds.\n\n2. All rights are reserved by SubverseLab.\n');
-  assert.equal(l.draft, true); assert.equal(l.title, 'SVL X - Licence (draft)');
+  assert.equal(l.draft, true); assert.equal(l.title, 'SVL X - Licence');
   assert.deepEqual(l.clauses, [{ title: 'Grant', text: 'You may use the sounds.' }, { title: null, text: 'All rights are reserved by SubverseLab.' }]);
 });
 await test('zip-read: lists entries and reads a WAV header (stored and deflated) from a real zip', () => {
@@ -111,7 +111,11 @@ await test('entitlements: per-pack order, sweep by listing date, $0 orders and r
   assert.deepEqual(ent.ownedFromOrders(o('kerbstone', { amount_usd_cents: 0, total: 0 })), [], '$0');
   assert.deepEqual(ent.ownedFromOrders(o('kerbstone', { amount_usd_cents: null })), [], 'no amount at all');
   assert.deepEqual(ent.ownedFromOrders(o('kerbstone', { refunded: true })), []);
-  assert.deepEqual(ent.ownedFromOrders(o('sweep', { amount_usd_cents: 2500 })), ent.SAMPLE_PACK_SLUGS);
+  // A sweep opens the packs listed when it was bought: one from 17 Oct has the first packs, one from 2 Nov all of them.
+  const listedBy = (iso) => ent.SAMPLE_PACK_SLUGS.filter((s) => Date.parse(ent.SAMPLE_PACK_LISTED[s]) <= Date.parse(iso));
+  assert.deepEqual(ent.ownedFromOrders(o('sweep', { amount_usd_cents: 2500 })), listedBy('2026-10-17T01:00:00Z'));
+  assert.ok(!ent.ownedFromOrders(o('sweep', { amount_usd_cents: 2500 })).includes('mirage'), 'a 17 Oct sweep does not open a pack listed on 1 Nov');
+  assert.deepEqual(ent.ownedFromOrders(o('sweep', { created: '2026-11-02T10:00:00Z', amount_usd_cents: 2500 })), ent.SAMPLE_PACK_SLUGS, 'a sweep bought after 1 Nov opens every listed pack');
   assert.deepEqual(ent.ownedFromOrders(o('sweep', { created: '2026-10-15T00:00:00Z', amount_usd_cents: 2500 })), [], 'bought before any pack was listed');
   assert.deepEqual(ent.ownedFromOrders(o('preset-sweep', { amount_usd_cents: 900 })), ent.PRESET_PACK_SLUGS);
   for (const plugin of ['family', 'bundle', 'ru8', 'elek', 'taban', 'kubbe']) assert.ok(!ent.ownedFromOrders(o(plugin)).some((s) => ent.PACK_SLUGS.includes(s)), plugin);
@@ -155,7 +159,7 @@ const distFile = (f) => join(root, 'dist', f);
 if (!existsSync(distFile('index.html'))) {
   console.log('SKIP prerendered pages: dist/ missing (run npm run build first)');
 } else {
-  await test('prerender: /sample-packs lists every visible pack; each pack page has its specs, technical details, scenes, honesty line, licence (draft) and no offer while the checkout is null', () => {
+  await test('prerender: /sample-packs lists every visible pack; each pack page has its specs, technical details, scenes, honesty line, licence (never marked draft) and no offer while the checkout is null', () => {
     const cat = readFileSync(distFile('sample-packs/index.html'), 'utf8');
     for (const p of facts.visiblePacks()) {
       assert.ok(cat.includes(`href="/sample-packs/${p.slug}"`), `catalogue links ${p.slug}`);
@@ -163,7 +167,7 @@ if (!existsSync(distFile('index.html'))) {
       assert.match(html, /Technical details/); assert.match(html, /Listen/); assert.ok(html.includes('Every sound you hear is in this pack. Nothing added.'));
       assert.ok(html.includes(`canonical" href="https://subverselab.com/sample-packs/${p.slug}"`), "canonical");
       if (!prices.packOffer(p).buyable) { assert.doesNotMatch(html, /"offers"/, `${p.slug} no offer`); assert.match(html, /Available soon/); }
-      if (p.licence?.draft) assert.match(html, /Licence summary \(draft\)/);
+      assert.doesNotMatch(html, /Licence summary \(draft\)|Draft wording/);
       assert.doesNotMatch(html.replace(/<script[\s\S]*?<\/script>/g, ''), BANNED, p.slug);
     }
   });

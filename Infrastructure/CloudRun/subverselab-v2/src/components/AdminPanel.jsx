@@ -467,7 +467,7 @@ export default function AdminPanel({ user, packs, packsLoading, refreshProducts 
                         <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '180px', wordBreak: 'break-all' }}>
                           {a.link ? <a href={a.link} target="_blank" rel="noopener noreferrer">{a.link}</a> : '—'}
                         </td>
-                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '340px', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{a.answer}{a.heard && <div style={{ marginTop: '6px', fontStyle: 'italic' }}>Heard via: {a.heard}</div>}</td>
+                        <td style={{ padding: '12px', fontSize: '0.85rem', maxWidth: '340px', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)' }}>{a.answer}{a.heard && <div style={{ marginTop: '6px', fontStyle: 'italic' }}>Heard via: {a.heard}</div>}{a.musehubEmail && <div style={{ marginTop: '6px', fontStyle: 'italic' }}>MuseHub e-mail: {a.musehubEmail}</div>}</td>
                         <td style={{ padding: '12px', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
                           {a.tester?.agreementVersion
                             ? <>v{a.tester.agreementVersion}<div>{a.tester.agreementAcceptedAt ? new Date(a.tester.agreementAcceptedAt).toLocaleString('en-GB') : ''}</div><div>via {a.tester.agreementVia || 'e-mail'}</div></>

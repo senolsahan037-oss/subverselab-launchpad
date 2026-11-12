@@ -63,8 +63,7 @@ export function BuyingFlow() {
     <figure className="if-fig">
       <Steps steps={BUY_STEPS} label="How buying works" />
       <div className="if-updates" aria-label="Updates">
-        <div className="if-bar"><span className="if-bar-fill">2 years of updates from the purchase date</span><span className="if-bar-rest">your version keeps working</span></div>
-        <div className="if-bar-scale"><span>Purchase</span><span>+2 years</span></div>
+        <div className="if-bar"><span className="if-bar-fill">Updates on your Account page</span><span className="if-bar-rest">your version keeps working</span></div>
       </div>
     </figure>
   );
@@ -167,7 +166,7 @@ function Licence() {
             <li><Icon name="user" />One person</li>
             <li><Icon name="computer" />Your own computers</li>
             <li><Icon name="music" />Personal and commercial music, released or sold</li>
-            <li><Icon name="refresh" />2 years of updates; your version keeps working</li>
+            <li><Icon name="refresh" />Updates on your Account page; your version keeps working</li>
           </ul>
         </div>
         <div className="if-col if-col-no">
@@ -224,7 +223,6 @@ export const infoFiguresCss = `
 .if-bar { display: flex; border-radius: 8px; overflow: hidden; font-size: .78rem; font-weight: 700; }
 .if-bar-fill { flex: 2; padding: 8px 10px; background: var(--color-primary); color: var(--color-on-primary); }
 .if-bar-rest { flex: 1; padding: 8px 10px; background: var(--color-surface-2); color: var(--color-text-muted); }
-.if-bar-scale { display: grid; grid-template-columns: 2fr 1fr; margin-top: 4px; font-size: .72rem; color: var(--color-text-muted); }
 .if-timeline { margin-bottom: 14px; }
 .if-tl-track { position: relative; height: 34px; border-radius: 8px; background: var(--color-surface-2); overflow: hidden; }
 .if-tl-window { position: absolute; left: 0; top: 0; bottom: 0; width: 72%; display: flex; align-items: center; padding: 0 12px; background: var(--color-primary); color: var(--color-on-primary); font-weight: 800; font-size: .82rem; }

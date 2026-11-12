@@ -11,7 +11,7 @@ import { join } from 'path';
 import { fetchContent, isoDate, ROOT, SITE_URL } from './lib/fetchContent.js';
 import { stripToolPrefix } from '../src/utils/toolName.js';
 import { REFUNDS } from '../src/data/legalContent.js';
-import { RU8_ON_SALE, JINGFANG_ON_SALE } from '../src/data/plugins.js';
+import { RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE } from '../src/data/plugins.js';
 import { MANUALS } from '../src/data/pluginManuals.js';
 import { llmsProductIndex, llmsProductSections } from './lib/llmsProducts.js';
 
@@ -81,7 +81,8 @@ const AI_CRAWLERS = [
 // /account were fair game. The intent was "allow the AI crawlers"; the effect
 // was "allow the AI crawlers everywhere, including the two places nobody
 // should be".
-const DISALLOWED = ['/admin', '/account'];
+// /partners (12 Nov 2026): the affiliate partner report, private.
+const DISALLOWED = ['/admin', '/account', '/activate', '/redeem', '/partners'];
 
 function group(userAgent) {
   const disallow = DISALLOWED.map((path) => `Disallow: ${path}`).join('\n');
@@ -200,6 +201,7 @@ async function main() {
     urlEntry(`${SITE_URL}/plugins/kiyma`, new Date().toISOString().slice(0, 10), '0.8'),
     ...(RU8_ON_SALE ? [urlEntry(`${SITE_URL}/plugins/ru8`, new Date().toISOString().slice(0, 10), '0.8')] : []),
     ...(JINGFANG_ON_SALE ? [urlEntry(`${SITE_URL}/plugins/jingfang`, new Date().toISOString().slice(0, 10), '0.8')] : []),   // only once on sale   // RU-8 only once on sale
+    ...(AHENK_ON_SALE ? [urlEntry(`${SITE_URL}/plugins/ahenk`, new Date().toISOString().slice(0, 10), '0.8')] : []),   // AHENK only once on sale (AHENK_CHECKOUT)
     urlEntry(`${SITE_URL}/plugins/adalet`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/seda`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/torna`, new Date().toISOString().slice(0, 10), '0.8'),

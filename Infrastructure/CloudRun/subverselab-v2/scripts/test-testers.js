@@ -156,6 +156,8 @@ const transformed = serverSource
   .replace("from './catalog.js';", `from '${pathToFileURL(resolve(root, 'api/catalog.js')).href}';`)
   .replace("from './catalogSchema.js';", `from '${pathToFileURL(resolve(root, 'api/catalogSchema.js')).href}';`)
   .replace("from './agents.js';", `from '${pathToFileURL(resolve(root, 'api/agents.js')).href}';`)
+  .replace("from './trialGrant.js';", `from '${pathToFileURL(resolve(root, 'api/trialGrant.js')).href}';`)
+  .replace("from './partners.js';", `from '${pathToFileURL(resolve(root, 'api/partners.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__testersTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__testersTestAdminFirestore)')
@@ -265,6 +267,19 @@ await test('apply validation: bad OS, short answer, bad DAW/format/link/years; n
   assert.equal(state.db.docs.has('tester_applications/a1@example.com'), false);
 });
 
+await test('apply stores the optional MuseHub e-mail: valid accepted, malformed rejected, empty allowed', async () => {
+  assert.equal((await apply('m1', { musehubEmail: ' Muse.User@Example.com ' })).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/m1@example.com').musehubEmail, 'muse.user@example.com');
+  for (const bad of ['not-an-email', 'a@b', 'a b@c.com', `${'x'.repeat(250)}@e.com`]) {
+    assert.equal((await apply('m2', { musehubEmail: bad })).response.status, 400, bad);
+  }
+  assert.equal(state.db.docs.get('tester_applications/m2@example.com'), undefined);
+  assert.equal((await apply('m3')).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/m3@example.com').musehubEmail, '');
+  assert.equal((await apply('m4', { musehubEmail: '   ' })).response.status, 200);
+  assert.equal(state.db.docs.get('tester_applications/m4@example.com').musehubEmail, '');
+});
+
 await test('apply stores the optional "heard" line, clamped to 120 characters', async () => {
   resetDb();
   assert.equal((await apply('h1', { heard: 'From a friend' })).response.status, 200);
@@ -314,7 +329,7 @@ await test('approve opens the launch-2 ticket without a purchase; a non-tester s
   }
   // Agreement 4.2 (owner 2026-10-14): every released product, TUTKAL, the free ones and ELEK included, and the account lists them.
   const mine = await as('erin', 'GET', '/api/purchases/status');
-  assert.deepEqual(mine.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
+  assert.deepEqual(mine.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'adalet', 'ahenk', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
   assert.equal((await ticket('erin', 'kubbe', 'launch2')).response.status, 400, 'launch 2 ticket never hands out Kubbe');
   assert.equal((await ticket('frank')).response.status, 402, 'someone who neither paid nor was approved');
   assert.equal((await ticket('frank', 'tutkal')).response.status, 402, 'TUTKAL stays closed for a non-tester');
@@ -745,7 +760,7 @@ await test('owned never opens a product that is not a released one, and a pre-ag
   const panel = (await as('old1', 'GET', '/api/testers/panel')).body;
   assert.equal(panel.status, 'active');
   assert.equal(panel.agreement, null, 'no agreement recorded yet');
-  state.db.docs.set('launch2_testers/old2@example.com', { email: 'old2@example.com', status: 'ended', owned: { adalet: '2026-10-14', koro: '2026-10-14' } });   // adalet: not released (SEDA is, since 19 Oct)
+  state.db.docs.set('launch2_testers/old2@example.com', { email: 'old2@example.com', status: 'ended', owned: { nope: '2026-10-14', koro: '2026-10-14' } });   // nope: no such released product (ADALET went on sale 8 Nov, SEDA 19 Oct)
   assert.deepEqual((await as('old2', 'GET', '/api/purchases/status')).body.owned, ['koro']);
 });
 
@@ -756,7 +771,7 @@ await test('panel: agreement line, downloads, this month\'s tester credits and t
   assert.equal(panel.response.status, 200);
   assert.equal(panel.body.status, 'active');
   assert.deepEqual(panel.body.agreement, { version: '1.1', acceptedAt: '2026-10-14T08:30:00.000Z' });
-  assert.deepEqual(panel.body.downloads, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'taban', 'alev', 'kiyma', 'elek', 'ru8', 'jingfang', 'seda', 'torna']);
+  assert.deepEqual(panel.body.downloads, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'taban', 'alev', 'kiyma', 'adalet', 'ahenk', 'elek', 'ru8', 'jingfang', 'seda', 'torna']);
   assert.equal(panel.body.credits.left, 2000);
   assert.equal(panel.body.credits.monthly, 2000);
   assert.equal(panel.body.credits.month, new Date().toISOString().slice(0, 7));
@@ -998,12 +1013,13 @@ await test('the agreement text is served to a tester who is not revoked, for a r
   assert.equal((await as('gr3', 'GET', '/api/testers/agreement?v=1.1')).response.status, 403);
 });
 
-await test('Learn content: the customer Learn states the update promise from UPDATE_YEARS / UPDATES_LINE; the tester Learn says released products carry no obligation', async () => {
+await test('Learn content: the customer Learn states the updates line (UPDATES_LINE, no term promised); the tester Learn says released products carry no obligation', async () => {
   const plugins = await import(pathToFileURL(resolve(root, 'src/data/plugins.js')).href);
   const learn = await import(pathToFileURL(resolve(root, 'src/data/learnContent.js')).href);
   const customer = learn.CUSTOMER_LEARN.map((i) => i.body.join(' ')).join(' ');
   assert.ok(customer.includes('keeps working forever'), 'the update promise (owner 28 Oct: said once, in the Help block)');
-  assert.ok(customer.includes(`all of its updates for ${plugins.UPDATE_YEARS} years`));
+  assert.ok(customer.includes(plugins.UPDATES_LINE));
+  assert.doesNotMatch(customer, /\d+ years?/, 'no updates term is promised (owner 7 Nov 2026)');
   assert.ok(customer.includes('rescan'));
   assert.ok(customer.includes(learn.VISION_SHORT));
   const tester = learn.TESTER_LEARN.map((i) => `${i.title} ${i.body.join(' ')}`).join(' ');

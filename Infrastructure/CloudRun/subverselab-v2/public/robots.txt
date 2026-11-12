@@ -8,80 +8,128 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: GPTBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: OAI-SearchBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: ChatGPT-User
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: ClaudeBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: Claude-Web
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: anthropic-ai
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: PerplexityBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: Perplexity-User
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: Google-Extended
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: Applebot-Extended
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: CCBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: Amazonbot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: meta-externalagent
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: cohere-ai
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 User-agent: DuckAssistBot
 Allow: /
 Disallow: /admin
 Disallow: /account
+Disallow: /activate
+Disallow: /redeem
+Disallow: /partners
 
 Sitemap: https://subverselab.com/sitemap.xml

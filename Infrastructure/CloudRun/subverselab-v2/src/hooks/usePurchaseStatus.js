@@ -41,7 +41,7 @@ export function expectingOrder(slug, now = Date.now()) {
   return !started || started === slug || (started === 'family' && slug !== 'family');
 }
 
-const EMPTY = { loaded: false, owned: [], packs: [], standing: null, unverified: false };
+const EMPTY = { loaded: false, owned: [], packs: [], standing: null, unverified: false, purchased: {} };
 let user = null;
 let state = { ...EMPTY };
 let fetchedAt = 0;
@@ -63,7 +63,7 @@ async function refresh(force = false) {
       const body = await r.json().catch(() => ({}));
       if (user !== forUser) return;
       fetchedAt = Date.now();
-      if (r.ok && Array.isArray(body.owned)) state = { loaded: true, owned: body.owned, packs: Array.isArray(body.packs) ? body.packs : [], standing: body.standing || null, unverified: body.unverified === true };
+      if (r.ok && Array.isArray(body.owned)) state = { loaded: true, owned: body.owned, packs: Array.isArray(body.packs) ? body.packs : [], standing: body.standing || null, unverified: body.unverified === true, purchased: body.purchased && typeof body.purchased === 'object' ? body.purchased : {} };
       else state = { ...EMPTY, loaded: true };
     } catch { /* keep what we had; the buttons stay as they are */ } finally { inflight = null; }
     emit();
@@ -104,7 +104,8 @@ function watchAuth() {
   });
 }
 
-// {signedIn, loaded, owned: [slugs], packs: [pack slugs], standing, unverified, expecting(slug)}
+// {signedIn, loaded, owned: [slugs], packs: [pack slugs], standing, unverified, purchased: {slug: 'YYYY-MM-DD'} of paid orders,
+// expecting(slug)}
 export default function usePurchaseStatus() {
   const [, setTick] = useState(0);
   useEffect(() => {

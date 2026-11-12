@@ -26,6 +26,14 @@ function Block({ block }) {
   if (block.note) return <p className="manual-note"><Inline text={block.note} /></p>;
   if (block.list) return <ul>{block.list.map((t) => <li key={t}><Inline text={t} /></li>)}</ul>;
   if (block.steps) return <ol className="manual-steps">{block.steps.map((t) => <li key={t}><Inline text={t} /></li>)}</ol>;
+  if (block.img) {
+    return (
+      <figure className="manual-figure">
+        <img src={block.img} width={block.w} height={block.h} alt={block.alt} loading="lazy" decoding="async" />
+        {block.caption && <figcaption><Inline text={block.caption} /></figcaption>}
+      </figure>
+    );
+  }
   if (block.table) {
     return (
       <div className="manual-table-wrap">

@@ -14,7 +14,8 @@ export const HOW_TO_VIDEOS = {
   koro: [{ youtube: '7fjPE0Hix0w', caption: 'How to use every control: auto key, doubling and harmony.' }],
   yanki: [{ youtube: 'Ht8lVPnDp4M', caption: 'How to use every control: tempo-synced echo that swells into a loop.' }],
   hava: [{ youtube: 'rWoYw7a2SDM', caption: 'How to use every control: air and spring sheen on a master.' }],
-  tutkal: [{ youtube: 'AuAGjv7M2NA', caption: 'GLUE, LA and PUMP explained on a drum bus, a vocal and a sidechain.' }],
+  // TUTKAL v3 (5 Nov): SVL Woodpanel music, ElevenLabs v3 narration; the 21 Oct AuAGjv7M2NA is replaced. Also in the panel (live item tutkal).
+  tutkal: [{ youtube: 'UxIeWqMjRXM', caption: 'GLUE, LA and PUMP explained on SVL Woodpanel breaks, a bass line and a sidechain.' }],
   taban: [{ youtube: 'jyHV9ZbCU_4', caption: 'How to use it: set a floor, lift the quiet parts.' }],
   alev: [{ youtube: 'UlNxrDGTjjA', caption: 'How to use every control: three-band heat on a mix.' }],
   kiyma: [{ youtube: 'okFHKJZzWrE', caption: 'How to use every control: chop and replay the last phrase in time.' }],

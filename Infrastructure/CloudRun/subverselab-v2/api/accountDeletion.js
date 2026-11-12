@@ -20,6 +20,8 @@
 // App Store purchases (appstore.js): apple_by_uid/{uid} is deleted; each apple_purchases/{originalTransactionId} this account
 // linked keeps Apple's record (product, environment, dates, revoked: needed for refunds) but loses the uid, so the buyer can link
 // it again from the iOS app after signing up. Like orders_by_uid, nothing in either names the person.
+// Store codes (redeem.js): redeemed_by_uid/{uid} is deleted and the uid (with its e-mail) is taken out of each redemptions/{hash}
+// it redeemed; the code stays used (uses is not lowered), so a deleted account's code cannot be redeemed a second time.
 // Tool credits (credits/{uid} with its tester slice, credit_ledger incl. the monthly tester lines, pending_credits) and the inbox (inbox/{uid}/messages) are deleted outright, nothing is kept.
 // No e-mail address, name, receipt link or licence key is kept. The privacy
 // text (src/data/legalContent.js, "How long we keep it") describes this; change
@@ -27,6 +29,7 @@
 
 import { createHmac } from 'crypto';
 import { APPLE_BY_UID, APPLE_PURCHASES } from './appstore.js';
+import { REDEMPTIONS, REDEEMED_BY_UID } from './redeem.js';
 
 export const ERASED_COLLECTION = 'erased_emails';
 // orders_by_uid/{uid}.orders: the index of orders bound to an account (webhook writes it, entitlements.js reads it); it goes with the account.
@@ -276,6 +279,22 @@ export function createAccountDeleter({ getAdmin, now = () => new Date().toISOStr
       bump('apple_purchases_unlinked');
     }
     if (appleIndex.exists) planDelete(appleIndexRef, APPLE_BY_UID);
+
+    // 11. Store codes: take this uid out of every redemption it made (the code stays used), drop the index.
+    const codeIndexRef = db.collection(REDEEMED_BY_UID).doc(uid);
+    const codeIndex = await codeIndexRef.get();
+    for (const hash of Object.keys(codeIndex.exists ? codeIndex.data()?.items || {} : {})) {
+      if (!/^[0-9a-f]{64}$/.test(hash)) continue;
+      const ref = db.collection(REDEMPTIONS).doc(hash);
+      const snap = await ref.get();
+      const r = snap.exists ? snap.data() || {} : null;
+      if (!r?.by?.[uid]) continue;
+      const by = { ...r.by };
+      delete by[uid];
+      await ref.set({ ...r, by, updatedAt: now() });
+      bump('redemptions_unlinked');
+    }
+    if (codeIndex.exists) planDelete(codeIndexRef, REDEEMED_BY_UID);
 
     // Markers first, then the deletions.
     for (const [hash, patch] of markers) await db.collection(ERASED_COLLECTION).doc(hash).set(patch, { merge: true });

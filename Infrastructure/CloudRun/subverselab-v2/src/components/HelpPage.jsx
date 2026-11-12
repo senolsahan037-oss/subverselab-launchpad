@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../data/faqContent';
 import { HELP } from '../data/siteMeta';
@@ -9,17 +9,20 @@ import { BuyingFlow, infoFiguresCss } from './InfoFigures';
 // answer stays in the DOM (just visually collapsed), so a crawler that
 // never executes JS still sees the full text, and the FAQPage JSON-LD
 // below actually matches what's really on the page.
-function FaqSection({ title, items }) {
+// Each answer has an id (faq-<n>, n its place in ALL_FAQ) so the site search can link to it; arriving on #faq-<n> opens it.
+function FaqSection({ title, items, offset = 0 }) {
+  const { hash } = useLocation();
   return (
     <section style={{ marginBottom: '40px' }}>
       <h2 style={{ fontSize: '1.15rem', fontWeight: '800', marginBottom: '16px' }}>{title}</h2>
       {items.map((item, i) => (
-        <details key={i} style={{
+        <details key={i} id={`faq-${offset + i}`} open={hash === `#faq-${offset + i}` || undefined} style={{
           border: '1px solid var(--color-border)',
           borderRadius: '10px',
           padding: '14px 18px',
           marginBottom: '10px',
           background: 'var(--color-surface-2, rgba(255,255,255,0.02))',
+          scrollMarginTop: '90px',
         }}>
           <summary style={{ fontWeight: '600', cursor: 'pointer' }}>{item.q}</summary>
           <p style={{ color: 'var(--color-text-muted)', marginTop: '10px', lineHeight: '1.6' }}>{item.a}</p>
@@ -30,6 +33,9 @@ function FaqSection({ title, items }) {
 }
 
 export default function HelpPage() {
+  const { hash } = useLocation();
+  // An answer linked from the site search (#faq-<n>) is opened by FaqSection; bring it into view.
+  React.useEffect(() => { if (/^#faq-\d+$/.test(hash)) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })); }, [hash]);
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -67,10 +73,10 @@ export default function HelpPage() {
         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Refunds and what they change: <Link to="/refunds" style={{ color: 'var(--color-primary)' }}>Purchases and Refunds</Link>.</p>
       </section>
 
-      <FaqSection title="General" items={GENERAL_FAQ} />
-      <FaqSection title="Tools" items={TOOL_FAQ} />
-      <FaqSection title="Loom" items={LOOM_FAQ} />
-      <FaqSection title="Contact" items={CONTACT_FAQ} />
+      <FaqSection title="General" items={GENERAL_FAQ} offset={0} />
+      <FaqSection title="Tools" items={TOOL_FAQ} offset={GENERAL_FAQ.length} />
+      <FaqSection title="Loom" items={LOOM_FAQ} offset={GENERAL_FAQ.length + TOOL_FAQ.length} />
+      <FaqSection title="Contact" items={CONTACT_FAQ} offset={GENERAL_FAQ.length + TOOL_FAQ.length + LOOM_FAQ.length} />
     </div>
   );
 }

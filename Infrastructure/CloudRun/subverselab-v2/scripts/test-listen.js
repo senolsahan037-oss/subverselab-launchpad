@@ -125,12 +125,22 @@ await test('The homepage is the news, read by scrolling; the tools are on /tools
   assert.ok(!/\b(seven|six|eight|nine|ten|three|four|five)\b[^<]{0,20}plugins/i.test(homeBody), 'a product count in the prerendered home');
   const { NEWS, liveNews } = await import('../src/data/news.js');
   // owner 30 Oct: the JING FANG launch price and GENERATE are one item
-  assert.deepEqual(NEWS.map((n) => n.key), ['boeb', 'torna', 'family-thanks', 'jingfang', 'testers', 'elek', 'free-plugins', 'manuals', 'tool-credits']);
-  assert.equal(NEWS[0].date, '19 November');
+  assert.deepEqual(NEWS.map((n) => n.key), ['jingfang-bf', 'boeb', 'torna', 'family', 'jingfang', 'testers', 'elek', 'free-plugins', 'manuals', 'tool-credits']);
+  assert.equal(NEWS[1].date, '19 November');
   const during = liveNews(Date.parse('2026-11-02T12:00:00Z')).find((n) => n.key === 'jingfang');
   const after = liveNews(Date.parse('2026-12-15T12:00:00Z')).find((n) => n.key === 'jingfang');
   assert.ok(/instead of/.test(during.title) && /Launch price until/.test(during.line) && /GENERATE/.test(during.line), 'JING FANG during the launch price');
-  assert.ok(after && !/\$/.test(after.title) && !/Launch price/.test(after.line) && /GENERATE/.test(after.line), 'JING FANG stays after the launch price, without it');
+  // owner 7 Nov: from 1 Dec the standing sale ($99, regular $150, no end date) leads the title; no launch-price words in the line
+  assert.ok(after && after.title === '$99 instead of $150.' && !/Launch price/.test(after.line) && /GENERATE/.test(after.line), 'JING FANG after the launch price: the standing sale, no launch words');
+  // owner 7 Nov: the free days are internal. Before the offer nothing announces it (no item, no date anywhere in the news);
+  // while it runs the Black Friday item leads, with no start date, and replaces the older JING FANG frame.
+  const before = liveNews(Date.parse('2026-11-26T20:59:00Z'));
+  assert.ok(!before.some((n) => n.key === 'jingfang-bf'), 'no Black Friday item before the offer starts');
+  assert.ok(!before.some((n) => /27 November|Black Friday|free instead/i.test(`${n.title} ${n.line} ${n.date || ''} ${n.kicker || ''}`)), 'no free days announced before the offer');
+  const bf = liveNews(Date.parse('2026-11-28T12:00:00Z'));
+  assert.ok(!/27 November|\d{1,2} (November|December)/.test(`${bf[0].line} ${bf[0].date}`), 'the Black Friday item names no dates');
+  assert.ok(bf[0].key === 'jingfang-bf' && !bf.some((n) => n.key === 'jingfang'), 'during Black Friday one JING FANG frame');
+  assert.ok(!liveNews(Date.parse('2026-12-02T12:00:00Z')).some((n) => n.key === 'jingfang-bf'), 'the Black Friday frame leaves with the offer');
   for (const n of [...liveNews(Date.parse('2026-11-02T12:00:00Z')), after]) {
     await readFile(resolve(root, 'public' + n.image));   // throws if the frame's panel is missing
     const text = [n.kicker, n.date, n.title, n.line, n.cta].filter(Boolean).join(' ');
@@ -140,7 +150,7 @@ await test('The homepage is the news, read by scrolling; the tools are on /tools
   }
 });
 
-await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET on their own; retired 28 Oct (FAMILY_RETIRED), never on sale again', async () => {
+await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET on their own; the launch offer retired 28 Oct (FAMILY_RETIRED); back 3 Nov at $39.99 on /plugins#family only', async () => {
   const pl = await import('../src/data/plugins.js');
   assert.ok(!pl.FAMILY_SLUGS.includes('adalet'), 'ADALET stays out of the family');
   assert.ok(pl.SOLO_PLUGINS.some((p) => p.slug === 'seda'), 'SEDA is sold on its own (owner 27 Oct)');
@@ -153,11 +163,14 @@ await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET o
   assert.equal(pl.familyOnSale(Date.parse('2026-10-31T20:59:59Z')), false);
   assert.equal(pl.familyOnSale(Date.parse('2026-10-31T21:00:00Z')), false);
   // nothing on a public page names the family any more (src, build-time scripts included)
-  for (const f of ['src/components/LaunchPage.jsx', 'src/components/PluginsPage.jsx', 'src/components/PluginRoom.jsx', 'src/components/HomeIntro.jsx', 'src/components/Footer.jsx', 'src/components/InfoFigures.jsx', 'src/components/BuyButton.jsx', 'src/data/legalContent.js', 'src/data/faqContent.js']) {   // news.js: the owner's 28 Oct thank-you item names it on purpose
+  // owner 2026-11-03: the family is back, at the MuseHub price, in one place: FamilyBand.jsx on /plugins (+ the news item)
+  assert.equal(pl.FAMILY_BUNDLE_ON, true); assert.equal(pl.PRICES.family, 39.99);
+  assert.ok(pl.PRICES.family >= 19.99, 'price floor: never below the $19.99 earlier buyers paid');
+  for (const f of ['src/components/LaunchPage.jsx', 'src/components/PluginRoom.jsx', 'src/components/HomeIntro.jsx', 'src/components/Footer.jsx', 'src/components/InfoFigures.jsx', 'src/components/BuyButton.jsx', 'src/data/legalContent.js', 'src/data/faqContent.js']) {   // news.js: the owner's 28 Oct thank-you item names it on purpose
     const text = (await readFile(new URL(`../${f}`, import.meta.url), 'utf8')).split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(l)).join('\n');
     assert.ok(!/plugin family|whole family|Get the family|In the family|own the family|refunded family|Plugin family/i.test(text), `${f} still names the family`);
   }
-  for (const route of ['launch2', 'plugins', 'launch', 'help', 'terms', 'refunds']) {
+  for (const route of ['launch2', 'launch', 'help', 'terms', 'refunds']) {
     const html = await readFile(new URL(`../dist/${route}/index.html`, import.meta.url), 'utf8').catch(() => '');
     assert.ok(!/\bfamily\b/i.test(html.replace(/font-family/gi, '')), `dist/${route} still names the family`);
   }
@@ -170,7 +183,7 @@ await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET o
 await test('RU-8: one rhythm on several kits — no bypass button, a measured readout each, files matched within 0.5 LU and at most -1 dBTP', async () => {
   const room = LISTEN.ru8;
   assert.ok(room, 'no ru8 entry');
-  assert.ok(room.buttons.length >= 4 && room.buttons.length <= 5, 'four or five kits');
+  assert.ok(room.buttons.length >= 4 && room.buttons.length <= 8, 'four to eight kits (1.1: five synth + three sample kits, 8 Nov)');
   assert.ok(room.buttons.every((b) => !b.bypass), 'an instrument has no dry / bypass button');
   assert.ok(room.buttons.every((b) => /measured/.test(b.readout.label) && typeof b.readout.value === 'number'), 'every readout is a measurement');
   assert.equal(new Set(room.buttons.map((b) => b.panel.src)).size, room.buttons.length, 'one panel per kit');

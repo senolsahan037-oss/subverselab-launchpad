@@ -79,19 +79,33 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
       return <button type="button" className="btn plugin-btn plugin-buy-closed" disabled>{line2AvailableLine(plugin)}</button>;
     }
     if (kind === 'free') return <BuyButton place="room" slug={plugin.slug} className="btn plugin-btn" label={`Get ${name} free`} />;
-    return <><BuyButton place="room" slug={plugin.slug} className="btn plugin-btn" /><MuseHubButton slug={plugin.slug} /></>;
+    return (
+      <>
+        <BuyButton place="room" slug={plugin.slug} className="btn plugin-btn" /><MuseHubButton slug={plugin.slug} />
+        {/* A product with a free trial (AHENK): its installer is free for any signed-in account (ticket launchId 'trial');
+            signed out, the button opens sign-in / a free account and the download starts after it. */}
+        {plugin.trial && kind === 'solo' && (
+          <DownloadButtons slug={plugin.slug} launchId="trial" verb="Download free trial" outline
+            className={where === 'hero' ? 'plugin-downloads plugin-cta-downloads' : 'plugin-downloads'} />
+        )}
+      </>
+    );
   };
 
   // Shown under the action, never as a second button: how to get in if you already paid.
+  // Paid rooms also point store buyers (Loot Audio, Audio Plugin Deals, ...) to /redeem (owner 8 Nov: nowhere linked it).
   const already = !owned && kind !== 'soon' && (
-    <button type="button" className="plugin-link-btn" onClick={openSignIn}>
-      {kind === 'free' ? 'Got it already? Sign in to download' : 'Bought it already? Sign in to download'}
-    </button>
+    <>
+      <button type="button" className="plugin-link-btn" onClick={openSignIn}>
+        {kind === 'free' ? 'Got it already? Sign in to download' : 'Bought it already? Sign in to download'}
+      </button>
+      {kind !== 'free' && <Link to="/redeem" className="plugin-link-btn">Have a code from a store? Redeem it</Link>}
+    </>
   );
 
   const buyText = {
     family: `Sold through Lemon Squeezy. After you pay, sign in with the e-mail you paid with: the download appears here and on your Account page, with your licence key. ${UPDATES_LINE} ${ACTIVATION_LINE}`,
-    solo: `Sold through Lemon Squeezy. After you pay, sign in with the e-mail you paid with: the download appears here and on your Account page. ${UPDATES_LINE} ${plugin.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT}`,
+    solo: `Sold through Lemon Squeezy. After you pay, sign in with the e-mail you paid with: the download appears here and on your Account page. ${UPDATES_LINE} ${plugin.activation || (plugin.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT)}`,
     line2: `Sold through Lemon Squeezy. After you pay, sign in with the e-mail you paid with: the download appears here and on your Account page. ${UPDATES_LINE}`,
     soon: `${line2AvailableLine(plugin)}.${(plugin.updatesNote ?? UPDATES_LINE) ? ` ${plugin.updatesNote ?? UPDATES_LINE}` : ''}`,
     free: `Free, forever. Sign in first so the order lands on your account; the checkout asks only for an e-mail address, no card. The download then appears here and on your Account page. Used another e-mail at the checkout? Claim the order on your Account page with the order number from the receipt. ${ACTIVATION_LINE_FREE}`,
@@ -140,6 +154,8 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
             <div>
               <p className="plugin-offer-head">{owned ? `You own ${name}` : priceHead}</p>
               <p className="plugin-offer-sub">{plugin.formats || FORMATS}</p>
+              {/* A product with a free trial (AHENK): the trial and what stays free after it, under the price, in plain words. */}
+              {!owned && plugin.trialLines?.length > 0 && <p className="plugin-offer-sub">{plugin.trialLines.join(' ')}</p>}
             </div>
             {kind === 'soon' && RELEASE3_AT && <LaunchCountdown target={RELEASE3_AT} hideWhenOut />}
           </div>
@@ -147,6 +163,7 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
           <div className="plugin-cta-row">
             {action('hero')}
             {kind === 'free' && !owned && <span className="plugin-cta-note">An e-mail address, no card.</span>}
+            {plugin.trial && !owned && <span className="plugin-cta-note">Free trial: a free SubverseLab account, no card.</span>}
           </div>
           <p className="plugin-trust">{trust}</p>
 
@@ -205,6 +222,7 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
 
         <section className="plugin-section" id="buy">
           <h2>{kind === 'soon' ? 'Price and availability' : kind === 'free' ? 'Get it and download' : 'Buy and download'}</h2>
+          {!owned && plugin.trialLines?.length > 0 && <p>{plugin.trialLines.join(' ')}</p>}
           <p>{owned ? `You own ${name}. Download it for macOS or Windows; it is also on your Account page.` : buyText}</p>
           <div className="plugin-buy-row">{action('section')}</div>
           {already && <p className="plugin-already">{already}</p>}

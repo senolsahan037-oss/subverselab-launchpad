@@ -54,7 +54,7 @@ export default function PackKey({ pack, name, small = false }) {
   if (pack.free) return <PackDownload slug={slug} name={label} className={cls} launchId="member" free />;
   if (user && status.loaded && status.owns(slug)) return <PackDownload slug={slug} name={label} />;
   if (!offer.buyable) return <button type="button" className={cls} disabled aria-disabled="true">Available soon</button>;
-  const url = withBuyer(offer.checkout, user?.email, user?.uid);
+  const url = withBuyer(offer.checkout, user?.email, user?.uid, slug);
   return (
     <a href={url} className={cls} target="_blank" rel="noopener noreferrer" onClick={() => markCheckoutStarted(slug)}>
       Buy {label} &mdash; {priceLabel(offer.price)}
@@ -80,7 +80,7 @@ export function SweepBlock({ packs, small = false, preset = false }) {
       <p><span className="pk-sweep-price">{priceLabel(s.price)}</span>{sum != null && sum > s.price ? <> instead of {priceLabel(sum)} one by one</> : null}</p>
       {!small && <p>One order, every {what} in the store today: {packs.map((p) => p.name).join(', ')}. Each one downloads from your Account page.</p>}
       {end && <p>Until {end}.</p>}
-      <a className="pk-sweep-key" href={withBuyer(s.checkout, user?.email, user?.uid)} target="_blank" rel="noopener noreferrer"
+      <a className="pk-sweep-key" href={withBuyer(s.checkout, user?.email, user?.uid, preset ? 'preset-sweep' : 'sweep')} target="_blank" rel="noopener noreferrer"
         onClick={() => markCheckoutStarted(preset ? 'preset-sweep' : 'sweep')}>
         {preset ? 'Get every preset pack' : 'Sweep the store'}
       </a>

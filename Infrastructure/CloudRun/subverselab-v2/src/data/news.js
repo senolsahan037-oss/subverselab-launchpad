@@ -5,9 +5,25 @@
 // removed on 2026-10-27: the family stays as sold).
 // No product counts and no "coming soon" in the copy (CLAUDE.md); BOE-B may tell its dedication (owner 2026-10-24).
 import { media } from '../utils/endpoints.js';
-import { FAMILY_IMAGE, FAMILY_ONLY_PLUGINS, LAUNCH_PRICES, PRICES, launchEndLabel, launchPriceActive } from './plugins.js';
+import { byLatestRelease } from './productDates.js';
+import { FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FAMILY_SINGLES_TOTAL, FAMILY_STACK_IMG, LAUNCH_PRICES, OFFERS, PRICES, formatDay, launchEndLabel, launchPriceActive, offerActive, currentPrice } from './plugins.js';
 
 export const NEWS = [
+  {
+    // Owner 7 Nov: the free days are internal ("bunlar iç bilgi hiç bir yerde geçmemeli"; announcing them stops sales before
+    // them, as Loot Audio's Glyn said). The item appears only WHILE the offer runs (OFFERS.jingfang) and names no start date;
+    // before it nothing on the site says that JING FANG will be free. While it runs it replaces the JING FANG frame below.
+    key: 'jingfang-bf',
+    kicker: 'JING FANG · Black Friday',
+    date: 'Black Friday',
+    show: (now) => offerActive('jingfang', now),
+    title: 'Black Friday: JING FANG is free.',
+    line: `The whole microtonal synthesizer is free instead of $${PRICES.jingfang}: the current release, the full instrument, yours to keep.`,
+    image: media('/news/jf-device.webp'),
+    alt: 'JING FANG as a hardware synthesizer on a studio desk, two red dragons coiled around its sides',
+    to: '/plugins/jingfang',
+    cta: 'See JING FANG',
+  },
   {
     key: 'boeb',
     kicker: 'BOE-B · free vocal plugin',
@@ -36,26 +52,29 @@ export const NEWS = [
     cta: 'See TORNA',
   },
   {
-    // Owner 28 Oct: thank everyone for the family offer and say it has ended (asked for in these words; the rest of the site
-    // no longer names the bundle).
-    key: 'family-thanks',
-    kicker: 'Launch offer · ended',
-    title: 'Thank you for the welcome you gave our plugin family.',
-    line: 'The launch offer has ended, and we are grateful to every producer who took a chance on a young studio. If you bought it, every one of its plugins and its updates are yours to keep. From here on each plugin is sold on its own, and each one keeps growing with your feedback.',
-    image: FAMILY_IMAGE,
-    alt: 'The SubverseLab plugin family panels',
-    to: '/plugins',
-    cta: 'See the plugins',
+    // Owner 3 Nov: the family is back, at the MuseHub price. This replaces the 28 Oct "thank you, the offer has ended" frame
+    // (its line said every plugin is sold on its own from here on, no longer true). The offer itself lives on /plugins#family.
+    key: 'family',
+    kicker: 'Back by popular demand · the plugin family',
+    title: 'You asked for it: the SubverseLab plugin family is back.',
+    line: `When the launch offer closed, the messages did not stop, so we put the whole family back in one box. ${byLatestRelease(FAMILY_PLUGINS, (p) => p.slug).map((p) => p.displayName).join(', ').replace(/, ([^,]*)$/, ' and $1')}: reverb, tape colour, vocal doubling, echo, air, bus glue and mastering, for $${PRICES.family} instead of $${FAMILY_SINGLES_TOTAL} one by one. One checkout, and every one of them opens on your account for macOS and Windows.`,
+    image: FAMILY_STACK_IMG[0],
+    alt: 'The SubverseLab family in their cream boxes, stacked on a dark green floor',
+    to: '/plugins#family',
+    cta: 'Get the family',
   },
   {
     // Owner 30 Oct: the launch-price and GENERATE frames are one JING FANG item. While the launch price runs it leads the
     // title and closes the line; afterwards the item stays, without the price.
     key: 'jingfang',
+    show: (now) => !offerActive('jingfang', now),   // during Black Friday the first frame says it
     kicker: 'JING FANG · microtonal synthesizer',
-    title: (now) => (launchPriceActive('jingfang', now)
-      ? `$${LAUNCH_PRICES.jingfang} instead of $${PRICES.jingfang}.`
-      : 'Play between the keys, and let it write the first idea.'),
-    line: (now) => `A synthesizer that plays between the keys. Three keyboard rows on a 53-step grid put the notes of maqam and other non-Western melodies exactly where they belong, and it can learn a tuning from a recording. Stuck on a blank pattern? GENERATE writes a melody, a bass line, chords, an arp rhythm or a beat straight onto the piano roll, where you shape every note; not quite it, mutate it and keep what works.${launchPriceActive('jingfang', now) ? ` Launch price until ${launchEndLabel('jingfang')}.` : ''}`,
+    title: (now) => (offerActive('jingfang', now)
+      ? `${OFFERS.jingfang.label}: free instead of $${PRICES.jingfang}.`
+      : launchPriceActive('jingfang', now)
+        ? `$${currentPrice('jingfang', now)} instead of $${PRICES.jingfang}.`
+        : 'Play between the keys, and let it write the first idea.'),
+    line: (now) => `A synthesizer that plays between the keys. Three keyboard rows on a 53-step grid put the notes of maqam and other non-Western melodies exactly where they belong, and it can learn a tuning from a recording. Stuck on a blank pattern? GENERATE writes a melody, a bass line, chords, an arp rhythm or a beat straight onto the piano roll, where you shape every note; not quite it, mutate it and keep what works.${offerActive('jingfang', now) ? ` Free until ${launchEndLabel('jingfang', now)}: the current release, the full instrument, yours to keep.` : launchEndLabel('jingfang', now) ? ` Launch price until ${launchEndLabel('jingfang', now)}.` : ''}`,
     // Owner 30 Oct: the device picture (Flow, from the real panel; branding/out/device_2026-10-30/jf_device_3.jpg). News
     // only: its small lettering is redrawn by the model, so store and room keep the real panel.
     image: media('/news/jf-device.webp'),

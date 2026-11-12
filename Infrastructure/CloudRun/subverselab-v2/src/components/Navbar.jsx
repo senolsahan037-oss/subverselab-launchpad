@@ -2,6 +2,7 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import useTheme from '../hooks/useTheme';
 import InboxBell from './InboxBell';
+import SiteSearch from './SiteSearch';
 
 export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '', onSearch }) {
   const location = useLocation();
@@ -44,38 +45,9 @@ export default function Navbar({ user, onLoginClick, onLogout, searchQuery = '',
         <span className="navbar-wordmark" style={{ fontSize: '1.2rem', fontWeight: '800', letterSpacing: '1px', color: 'var(--color-text)' }}>SUBVERSELAB</span>
       </Link>
       
-      {/* Search. This used to be an input with no state, no handler and no
-          consumer — typing in it did nothing. It now filters the storefront,
-          and typing from another page navigates back to the results. The old
-          placeholder still advertised loops and racks, neither of which the
-          site has sold since the pivot to tools. */}
-      <div className="navbar-search" style={{ flex: 1, maxWidth: '400px', margin: '0 20px', position: 'relative' }}>
-        <label htmlFor="site-search" className="sr-only">Search tools and guides</label>
-        <input
-          id="site-search"
-          type="search"
-          value={searchQuery}
-          placeholder="Search tools and guides"
-          onChange={(e) => {
-            onSearch?.(e.target.value);
-            if (e.target.value && location.pathname !== '/tools') navigate('/tools');   // the tool search results live on /tools (2026-10-26)
-          }}
-          style={{
-            width: '100%',
-            padding: '10px 15px 10px 40px',
-            borderRadius: 'var(--radius-pill)',
-            border: '1px solid var(--color-control-border)',
-            backgroundColor: 'var(--color-surface)',
-            color: 'var(--color-text)',
-            outline: 'none'
-          }}
-        />
-        <svg style={{ position: 'absolute', left: '15px', top: '12px', color: 'var(--color-text-muted)' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-      </div>
-      
+      {/* One search for the whole site (owner 6 Nov 2026): names, tools, questions, a licence key or an order number. */}
+      <SiteSearch value={searchQuery} onChange={onSearch} />
+
       {/* Navigation & Controls */}
       <div className="navbar-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <Link to="/tools" style={{ 

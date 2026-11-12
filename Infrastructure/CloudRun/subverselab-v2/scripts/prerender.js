@@ -43,8 +43,8 @@ import {
   PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, SAMPLE_PACKS, PRESET_PACKS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, CHECKOUT,
   FAMILY_NAME, FAMILY_PRICE, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, isFamilyOfferOver, LAUNCH2_NAME,
   ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS, SHOWCASE_NEW_SLUGS,
-  priceText, currentPrice, launchPriceActive, launchNote, ACTIVATION_SHORT, ACTIVATION_NO_KEY,
-  ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor, RU8_ON_SALE, JINGFANG_ON_SALE, STORE_PLUGINS, DOWNLOAD_ROOM_PLUGINS,
+  priceText, currentPrice, priceWord, launchPriceActive, launchNote, ACTIVATION_SHORT, ACTIVATION_NO_KEY,
+  ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor, RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE, STORE_PLUGINS, DOWNLOAD_ROOM_PLUGINS,
 } from '../src/data/plugins.js';
 import { byLatestRelease } from '../src/data/productDates.js';
 // Store order (root CLAUDE.md, owner 2026-10-28): every product list newest release first (src/data/productDates.js).
@@ -279,6 +279,12 @@ const ORGANIZATION = {
   sameAs: [
     'https://www.youtube.com/@SubverseLab',
     'https://www.instagram.com/subverse_lab/',
+    'https://soundcloud.com/subverselab',
+    'https://www.tiktok.com/@subverselab',
+    'https://mastodon.social/@SubverseLab',
+    'https://bsky.app/profile/subverselab.bsky.social',
+    'https://ko-fi.com/subverselab',
+    'https://x.com/SubverseLab',
   ],
 };
 
@@ -723,6 +729,9 @@ async function main() {
     if (b.note) return `<p>${manualInline(b.note)}</p>`;
     if (b.list) return `<ul>${b.list.map((t) => `<li>${manualInline(t)}</li>`).join('')}</ul>`;
     if (b.steps) return `<ol>${b.steps.map((t) => `<li>${manualInline(t)}</li>`).join('')}</ol>`;
+    if (b.img) {
+      return `<figure><img src="${escapeHtml(b.img)}" width="${b.w}" height="${b.h}" alt="${escapeHtml(b.alt || '')}" loading="lazy">${b.caption ? `<figcaption>${manualInline(b.caption)}</figcaption>` : ''}</figure>`;
+    }
     if (b.table) {
       return `<table><thead><tr>${b.table.head.map((h) => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead><tbody>${
         b.table.rows.map((r) => `<tr>${r.map((c) => `<td>${manualInline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
@@ -887,7 +896,8 @@ async function main() {
       <ul>${pl.controls.map(([n, w]) => `<li><strong>${escapeHtml(n)}</strong> &mdash; ${escapeHtml(w)}</li>`).join('')}</ul>
       <p>${escapeHtml(pl.controlsNote)}</p>
       <h2>Price and download</h2>
-      <p>${launchPriceActive(pl.slug) ? `<s>$${PRICES[pl.slug]}</s> $${currentPrice(pl.slug)} &mdash; ${escapeHtml(launchNote(pl.slug))}` : `$${PRICES[pl.slug]}`}. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(pl.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT)}</p>
+      <p>${launchPriceActive(pl.slug) ? `<s>$${PRICES[pl.slug]}</s> ${priceWord(currentPrice(pl.slug))} ${launchNote(pl.slug) ? ` &mdash; ${escapeHtml(launchNote(pl.slug))}` : ''}` : `$${PRICES[pl.slug]}`}. ${escapeHtml(UPDATES_LINE)} ${escapeHtml(pl.activation || (pl.noKey ? ACTIVATION_NO_KEY : ACTIVATION_SHORT))}</p>${pl.trialLines?.length ? `
+      <p>${escapeHtml(pl.trialLines.join(' '))}</p>` : ''}
       <p>${escapeHtml(trustLineFor(pl.slug))}</p>
       ${manualHtml(pl)}
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
@@ -928,7 +938,7 @@ async function main() {
       <nav><a href="/plugins">Plugins</a> &middot; <a href="/">Tools</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
   }
 
-  const roomPrice = (pl) => (pl.free ? 'free' : `$${currentPrice(pl.slug)}`);
+  const roomPrice = (pl) => (pl.free || Number(currentPrice(pl.slug)) === 0 ? 'free' : `$${currentPrice(pl.slug)}`);
   writePage('launch2', buildHead({
     title: LAUNCH2.title,
     description: LAUNCH2.description,
@@ -1051,6 +1061,12 @@ async function main() {
     '<h1>Your account</h1>\n      <p>Sign in to see your plugins, downloads, licence keys and credits.</p>');
   writePage('admin', buildHead({ title: 'Admin | SubverseLab', robots: 'noindex, nofollow', bare: true }),
     '<h1>Admin</h1>\n      <p>Sign in with an admin account.</p>');
+  // A plug-in's browser sign-in (TRIAL_AND_SIGNIN.md): private, not in the sitemap.
+  writePage('activate', buildHead({ title: 'Activate | SubverseLab', robots: 'noindex, nofollow', bare: true }),
+    '<h1>Activate a plugin</h1>\n      <p>Sign in with your SubverseLab account to activate the plugin on this computer.</p>');
+  // Store codes (api/redeem.js): private, not in the sitemap. Stores may link /redeem?code=XXXX.
+  writePage('redeem', buildHead({ title: 'Redeem a code | SubverseLab', robots: 'noindex, nofollow', bare: true }),
+    '<h1>Redeem a code</h1>\n      <p>Bought a SubverseLab product from a store? Sign in and enter your code to add the product to your account.</p>');
 
   // dist/404.html: served by server.js with status 404 for unknown URLs. Same app shell (the in-app 404 page paints
   // after load), but no canonical and noindex, so previews and crawlers do not read the homepage's head.
@@ -1146,6 +1162,11 @@ async function main() {
   if (!JINGFANG_ON_SALE) {
     rmSync(join(ROOT, 'dist', 'plugins', 'jingfang'), { recursive: true, force: true });
     console.log('prerender: JING FANG is not on sale, dist/plugins/jingfang removed');
+  }
+  // AHENK the same way (src/data/plugins.js AHENK_CHECKOUT): no page is written above, and its images stay out of dist.
+  if (!AHENK_ON_SALE) {
+    rmSync(join(ROOT, 'dist', 'plugins', 'ahenk'), { recursive: true, force: true });
+    console.log('prerender: AHENK is not on sale, dist/plugins/ahenk removed');
   }
 }
 

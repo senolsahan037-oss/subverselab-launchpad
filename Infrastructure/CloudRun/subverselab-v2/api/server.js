@@ -9,14 +9,16 @@ import { existsSync, readFileSync } from 'fs';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { isIP } from 'net';
 import { createLaunchService, tokenBucket } from './launchLicence.js';
-import { holdsLaunch1Claim, holdsLaunch1UidClaim, addressExists, addressProblem, LAUNCH1_SLUGS, ownedOrderSlugs, purchasedByOrders, purchasedByUidOrders, ownedUidOrderSlugs, uidHadOrderFor, uidOrderEntry, ownedFromOrders, ORDERS_BY_UID, readUidOrders, addYears, ALL_SLUGS, FREE_SLUGS, SOLO_SLUGS, PLUGIN_SLUGS, PACK_SLUGS, MEMBER_PACK_SLUGS, SWEEP_SLUGS, UPDATE_YEARS, ADMIN_EMAILS, ADMIN_PREVIEW_KEY, isAdminPreview, ownedVia, AppleJwsError, verifyAppleJws, transactionProblem, linkApplePurchase, handleAppleNotification } from './entitlements.js';
+import { holdsLaunch1Claim, holdsLaunch1UidClaim, addressExists, addressProblem, LAUNCH1_SLUGS, ownedOrderSlugs, purchasedByOrders, purchasedByUidOrders, ownedUidOrderSlugs, uidHadOrderFor, uidOrderEntry, ownedFromOrders, ORDERS_BY_UID, readUidOrders, addYears, ALL_SLUGS, FREE_SLUGS, SOLO_SLUGS, PLUGIN_SLUGS, PACK_SLUGS, MEMBER_PACK_SLUGS, SWEEP_SLUGS, UPDATE_YEARS, ADMIN_EMAILS, ADMIN_PREVIEW_KEY, isAdminPreview, ownedVia, AppleJwsError, verifyAppleJws, transactionProblem, linkApplePurchase, handleAppleNotification, APPLE_APPS, redeemCode, redeemedFamilyAt, loadRedeemCodes } from './entitlements.js';
 import { createAccountDeleter, purgeResolvedReports, emailMarker, ERASED_COLLECTION } from './accountDeletion.js';
 import { addMessage, listMessages, markRead, welcomeMessage, orderMessage } from './inbox.js';
 import { createCreditsService, orderAmount, CREDIT_COSTS, verifyGoogleOidc } from './credits.js';
-import { createHitCounter, computeStats, joinMembers } from './stats.js';
+import { createHitCounter, computeStats, joinMembers, countDownloads } from './stats.js';
 import { createCatalogService, MEDIA_KINDS, FILE_PLATFORMS } from './catalog.js';
 import { KINDS as CATALOG_KINDS, KIND_LABELS as CATALOG_KIND_LABELS, FIELDS as CATALOG_FIELDS, PRODUCT_KINDS as CATALOG_PRODUCT_KINDS } from './catalogSchema.js';
 import { createAgentStore, isAgentKey } from './agents.js';
+import { createTrialService, loadSigningKey, NotConfigured, TRIAL_PRODUCTS } from './trialGrant.js';
+import { createPartnerService } from './partners.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -159,6 +161,8 @@ const launch = createLaunchService({ getAdmin: adminFirestore });
 const launch2 = createLaunchService({ getAdmin: adminFirestore, launchId: 'launch2', product: 'bundle4', productId: 9015 });
 const launches = { launch, launch2 };
 const credits = createCreditsService({ getAdmin: adminFirestore });
+// Affiliate partners (api/partners.js): the sales ledger the webhook writes and the partner's own report.
+const partnerService = createPartnerService({ getAdmin: adminFirestore });
 const validLaunchId = (value) => value === 'launch2' ? 'launch2' : value === 'launch' ? 'launch' : null;
 const smallBody = [express.urlencoded({ extended: false, limit: '4kb' }), express.json({ limit: '4kb' })];
 
@@ -284,6 +288,8 @@ async function launch2Access(admin, decoded, proven = emailProven(decoded)) {
   if (isAdminPreview(decoded)) return 'paid'; // admin preview: behaves like a family buyer, nothing is stored
   const uidStanding = await launch2UidStanding(admin, decoded.uid);
   if (uidStanding === 'paid') return uidStanding;
+  // A family code redeemed on /redeem (redeem.js) is bound to the uid like a paid family order: same answer, no seat counted.
+  if (launch2Uid(decoded.uid) && await redeemedFamilyAt(admin.db, decoded.uid)) return 'paid';
   const standing = proven ? launch2Standing(await launch2Purchase(admin, decoded.email)) : 'none';
   if (standing === 'paid') return standing;
   // The tester record does not need a proven e-mail: it is bound to the uid that applied (testerOwn).
@@ -380,13 +386,17 @@ app.post('/api/download/ticket', smallBody, async (req, res) => {
   // non-refunded order for that pack or the launch sweep (SWEEP_SLUGS) opens it; no tester, family, admin-preview or free path.
   // 'member' (download ticket only): the free rack packs (MEMBER_PACK_SLUGS, platform 'zip'). Any signed-in account whose e-mail
   // passes requireDeliverable opens them; no order (owner 17 Oct: "üye ol indir"). Downloads are counted like every other.
-  const launchId = req.body?.launchId === 'free' ? 'free' : req.body?.launchId === 'solo' ? 'solo' : req.body?.launchId === 'pack' ? 'pack' : req.body?.launchId === 'member' ? 'member' : validLaunchId(req.body?.launchId) || 'launch';
+  // 'trial' (download ticket only, owner 7 Nov 2026): the installer of a product with a 30-day trial (trialGrant.js TRIAL_PRODUCTS,
+  // AHENK) for any signed-in account whose e-mail passes requireDeliverable; no order (the Pianoteq / Arturia / NI model: the
+  // installer is free, the plug-in itself decides trial / owned / free mode through its server-signed grants). Products without a
+  // trial (JING FANG, ELEK, ...) are not in TRIAL_PRODUCTS and stay owned-only. Counted in trial/counter + downloads/{uid}.
+  const launchId = req.body?.launchId === 'free' ? 'free' : req.body?.launchId === 'solo' ? 'solo' : req.body?.launchId === 'pack' ? 'pack' : req.body?.launchId === 'member' ? 'member' : req.body?.launchId === 'trial' ? 'trial' : validLaunchId(req.body?.launchId) || 'launch';
   // No e-mail verification (owner 9 Oct): the only e-mail rule is addressExists (not bounced, domain has a mail server).
   try { if (!(await requireDeliverable(admin, decoded, res))) return; } catch (err) { return res.status(503).json({ error: 'Download service unavailable' }); }
   // A test build assigned to this tester (tester_builds): its own kind, its own gate (testBuildTicket in the testers block).
   if (req.body?.kind === 'test-build') return testBuildTicket(admin, decoded, req.body, res);
   const launchService = launches[launchId];
-  const launchSlugs = launchId === 'launch2' ? LAUNCH2_SLUGS : launchId === 'free' ? FREE_SLUGS : launchId === 'solo' ? SOLO_SLUGS : launchId === 'pack' ? PACK_SLUGS : launchId === 'member' ? MEMBER_PACK_SLUGS : ['kubbe', 'kaset'];
+  const launchSlugs = launchId === 'launch2' ? LAUNCH2_SLUGS : launchId === 'free' ? FREE_SLUGS : launchId === 'solo' ? SOLO_SLUGS : launchId === 'pack' ? PACK_SLUGS : launchId === 'member' ? MEMBER_PACK_SLUGS : launchId === 'trial' ? TRIAL_PRODUCTS : ['kubbe', 'kaset'];
   const platforms = launchId === 'pack' || launchId === 'member' ? ['zip'] : ['mac', 'win'];
   if (!launchSlugs.includes(slug) || !platforms.includes(platform)) return res.status(400).json({ error: 'Invalid plugin or platform' });
   try {
@@ -566,7 +576,7 @@ async function freeByEmail(admin, decoded) {
 async function emailOnlyOpens(admin, decoded, slug, launchId) {
   if (emailProven(decoded)) return false;
   if ((await ownedOrderSlugs(admin, decoded.email, decoded.uid)).includes(slug)) return true;
-  if (launchId === 'free' || launchId === 'solo' || launchId === 'pack' || launchId === 'member') return false;
+  if (launchId === 'free' || launchId === 'solo' || launchId === 'pack' || launchId === 'member' || launchId === 'trial') return false;
   const standing = await launch2Access(admin, decoded, true);
   if (standing === 'paid') return true;
   return launchId === 'launch' && holdsLaunch1Claim(admin, decoded.uid, decoded.email);
@@ -637,7 +647,7 @@ async function accountEntitlements(admin, decoded) {
   // One of the first 1,000: KUBBE + KASET stay on the account (no purchase date, so no updates line).
   if (launch1) for (const slug of ['kubbe', 'kaset']) owned.add(slug);
   if (standing === 'paid') {
-    const day = isAdminPreview(decoded) ? new Date().toISOString().slice(0, 10) : addYears((await launch2PurchaseFor(admin, decoded))?.paidAt, 0);
+    const day = isAdminPreview(decoded) ? new Date().toISOString().slice(0, 10) : addYears((await launch2PurchaseFor(admin, decoded))?.paidAt || await redeemedFamilyAt(admin.db, decoded.uid), 0);
     for (const slug of ALL_SLUGS) {
       owned.add(slug);
       if (day && (!purchased[slug] || day > purchased[slug])) purchased[slug] = day;
@@ -678,7 +688,45 @@ app.get('/api/purchases/status', async (req, res) => {
   }
 });
 
-/* ---- RU-8 on iPhone / iPad (appstore.js; contract 01_AI_Tools/subverselab-ru8/docs/api_runs/contract_ru8_ios_unlock.md) ----
+/* ---- Store codes: POST /api/redeem (redeem.js; owner 7 Nov 2026) ------------------------------------------------------------
+   A buyer who got a single-use code from a store (Loot Audio, Audio Plugin Deals, ...) signs in and types it on /redeem or in the
+   /account block; the product is added to the account (redemptions/{hash}, redeemed_by_uid/{uid}) and then counts like a paid
+   order of that product (entitlements.js readUidOwnership / ownedVia 'code'; a family code through launch2Access).
+   Unverified e-mail: a redeemed code is bound to the uid, like orders_by_uid and App Store purchases, so no proven e-mail is
+   needed; the address must still be able to receive mail (requireDeliverable), the same rule as every download ticket, so a
+   code is never spent on an account that could not download it. Env: REDEEM_CODE_PEPPER (Secret Manager); without it, or with
+   a pepper that does not match api/redeemCodes.json, every code answers 503 (never "not valid").
+   -> 200 {ok, product, name} | 400 not valid | 401 not signed in | 403 outside its dates (names the date) | 409 used | 429 */
+const redeemTable = loadRedeemCodes(process.env.REDEEM_CODES_PATH || join(__dirname, 'redeemCodes.json'));
+const redeemIpLimit = tokenBucket({ perMinute: 10 });
+const redeemUidLimit = tokenBucket({ perMinute: 10 });
+const redeemBody = express.json({ limit: '2kb' });
+app.post('/api/redeem', redeemBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!redeemIpLimit(req.ip)) return res.status(429).json({ error: 'Too many tries. Wait a minute and try again.' });
+  const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return res.status(401).json({ error: 'Sign in first.' });
+  let admin, decoded;
+  try { admin = await adminFirestore(); decoded = await admin.auth.verifyIdToken(token); } catch (err) {
+    return res.status(serviceDown(err) ? 503 : 401).json({ error: serviceDown(err) ? 'Service unavailable' : 'Your sign-in has expired — sign in again' });
+  }
+  const uid = launch2Uid(decoded.uid);
+  if (!uid) return res.status(400).json({ error: 'This account cannot hold a purchase' });
+  if (!redeemUidLimit(`uid:${uid}`)) return res.status(429).json({ error: 'Too many tries. Wait a minute and try again.' });
+  try {
+    if (!(await requireDeliverable(admin, decoded, res))) return;
+    const { status, body } = await withTimeout(redeemCode(admin.db, { uid, email: decoded.email, code: req.body?.code, table: redeemTable, pepper: process.env.REDEEM_CODE_PEPPER }), 8000);
+    if (status === 200 && !body.already) console.log(`redeem: ${body.product} for uid ${uid.slice(0, 6)}…`);
+    if (status === 503) console.error('redeem: REDEEM_CODE_PEPPER missing or does not match redeemCodes.json');
+    return res.status(status).json(body);
+  } catch (err) {
+    console.error('redeem:', err.message);
+    return res.status(503).json({ error: 'Service unavailable' });
+  }
+});
+
+/* ---- RU-8 and AHENK on iPhone / iPad (appstore.js; contracts 01_AI_Tools/subverselab-ru8/docs/api_runs/contract_ru8_ios_unlock.md
+   and 01_AI_Tools/subverselab-plugin-common/docs/TRIAL_AND_SIGNIN.md "App Store") ----
    One $25 purchase = RU-8 on Mac, Windows and iOS. The iOS app asks whether a signed-in account owns RU-8 (a Lemon Squeezy order
    or a linked App Store purchase), links an App Store purchase to the account (which then opens the desktop downloads through
    the 'solo' ticket like a paid order), and Apple tells us about refunds. Env: APPLE_ALLOW_SANDBOX=1 accepts Sandbox
@@ -701,50 +749,55 @@ async function iosCaller(req, res) {
   }
 }
 
-// GET /api/ru8/ios/entitlement   Authorization: Bearer <Firebase ID token>  -> {owned, via: 'lemonsqueezy' | 'appstore' | null}
-// The same order rules as the ru8 download ticket (by e-mail and uid for a proven e-mail, by uid otherwise) plus App Store
-// purchases linked to this uid. Testers and the admin preview are not owners here (the iOS app is sold, not tested, this way).
-app.get('/api/ru8/ios/entitlement', async (req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  if (!iosLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
-  const caller = await iosCaller(req, res);
-  if (!caller) return;
-  const { admin, decoded } = caller;
-  try {
-    const via = await withTimeout(ownedVia(admin, { email: decoded.email, uid: decoded.uid, proven: emailProven(decoded) }, 'ru8'), 8000);
-    return res.json({ owned: Boolean(via), via });
-  } catch (err) {
-    console.error('ios entitlement:', err.message);
-    return res.status(503).json({ error: 'Service unavailable' });
-  }
-});
+// The same two routes for every iOS app in appstore.js APPLE_APPS: /api/ru8/ios/... (RU-8) and /api/ahenk/ios/... (AHENK,
+// 7 Nov 2026; TRIAL_AND_SIGNIN.md "App Store"). Rate limits are per address and shared by the apps.
+for (const { slug } of APPLE_APPS) {
+  // GET /api/<slug>/ios/entitlement   Authorization: Bearer <Firebase ID token>  -> {owned, via: 'lemonsqueezy' | 'appstore' | null}
+  // The same order rules as the download ticket (by e-mail and uid for a proven e-mail, by uid otherwise) plus App Store
+  // purchases linked to this uid. Testers and the admin preview are not owners here (the iOS app is sold, not tested, this way).
+  app.get(`/api/${slug}/ios/entitlement`, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!iosLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+    const caller = await iosCaller(req, res);
+    if (!caller) return;
+    const { admin, decoded } = caller;
+    try {
+      const via = await withTimeout(ownedVia(admin, { email: decoded.email, uid: decoded.uid, proven: emailProven(decoded) }, slug), 8000);
+      return res.json({ owned: Boolean(via), via });
+    } catch (err) {
+      console.error('ios entitlement:', err.message);
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+  });
 
-// POST /api/ru8/ios/apple-purchase   Authorization: Bearer <Firebase ID token>   body {jws: <StoreKit 2 signedTransaction>}
-// -> 200 {owned: true, via: 'appstore'} | 400 bad signature / not RU-8 / Sandbox | 403 refunded | 409 linked to another account.
-app.post('/api/ru8/ios/apple-purchase', appleBody, async (req, res) => {
-  res.setHeader('Cache-Control', 'no-store');
-  if (!applePurchaseLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
-  const caller = await iosCaller(req, res);
-  if (!caller) return;
-  const { admin, decoded } = caller;
-  const uid = launch2Uid(decoded.uid);
-  if (!uid) return res.status(400).json({ error: 'This account cannot hold a purchase' });
-  let tx;
-  try { tx = verifyAppleJws(req.body?.jws); } catch (err) {
-    if (err instanceof AppleJwsError) return res.status(400).json({ error: 'This is not a valid App Store purchase.', reason: err.reason });
-    throw err;
-  }
-  const problem = transactionProblem(tx);
-  if (problem) return res.status(problem.status).json({ error: problem.error });
-  try {
-    const { status, body } = await withTimeout(linkApplePurchase(admin.db, { uid, tx }), 8000);
-    if (status === 200) console.log(`apple purchase linked: uid ${uid.slice(0, 6)}… env ${tx.environment}`);
-    return res.status(status).json(body);
-  } catch (err) {
-    console.error('apple purchase:', err.message);
-    return res.status(503).json({ error: 'Service unavailable' });
-  }
-});
+  // POST /api/<slug>/ios/apple-purchase   Authorization: Bearer <Firebase ID token>   body {jws: <StoreKit 2 signedTransaction>}
+  // -> 200 {owned: true, via: 'appstore'} | 400 bad signature / not this app's full purchase / Sandbox | 403 refunded |
+  // 409 linked to another account.
+  app.post(`/api/${slug}/ios/apple-purchase`, appleBody, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!applePurchaseLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+    const caller = await iosCaller(req, res);
+    if (!caller) return;
+    const { admin, decoded } = caller;
+    const uid = launch2Uid(decoded.uid);
+    if (!uid) return res.status(400).json({ error: 'This account cannot hold a purchase' });
+    let tx;
+    try { tx = verifyAppleJws(req.body?.jws); } catch (err) {
+      if (err instanceof AppleJwsError) return res.status(400).json({ error: 'This is not a valid App Store purchase.', reason: err.reason });
+      throw err;
+    }
+    const problem = transactionProblem(tx, { slug });
+    if (problem) return res.status(problem.status).json({ error: problem.error });
+    try {
+      const { status, body } = await withTimeout(linkApplePurchase(admin.db, { uid, tx }), 8000);
+      if (status === 200) console.log(`apple purchase linked (${slug}): uid ${uid.slice(0, 6)}… env ${tx.environment}`);
+      return res.status(status).json(body);
+    } catch (err) {
+      console.error('apple purchase:', err.message);
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+  });
+}
 
 // POST /api/apple/notifications   App Store Server Notifications V2, body {signedPayload}. No account: the signature is the proof.
 // 400 when a signature does not verify; 200 for every verified notification, handled or not (REFUND / REVOKE close the
@@ -1113,8 +1166,7 @@ app.get('/api/admin/members', async (req, res) => {
     for (const d of snap.docs) {
       const m = byUid.get(d.id);
       if (!m) continue;
-      const v = d.data() || {};
-      for (const slug of PLUGIN_SLUGS) for (const platform of ['mac', 'win']) m.downloads += Number(v?.[slug]?.[platform]?.count) || 0;
+      m.downloads += countDownloads(d.data());
     }
     const licences = await withTimeout(admin.db.collection('plugin_licenses').get(), 15000);
     const rows = joinMembers(members, licences.docs.map((d) => ({ id: d.id, data: d.data() })));
@@ -1127,8 +1179,8 @@ app.get('/api/admin/members', async (req, res) => {
 });
 
 /* ---- Own traffic numbers (stats.js) -----------------------------------------
-   POST /api/hit {path, ref, landing}: a cookieless page-view counter. The page address is mapped to a known route, the
-   referrer to its host; nothing identifying is stored (no IP, no user agent, no uid). The IP only feeds the in-memory
+   POST /api/hit {path, ref, landing, src}: a cookieless page-view counter. The page address is mapped to a known route, the
+   referrer to its host, src (the landing link's utm_source) to one of our social channel names or nothing; nothing identifying is stored (no IP, no user agent, no uid). The IP only feeds the in-memory
    rate limit, the user agent only decides "bot or not". Counted in memory, flushed to site_stats/{day} about every minute
    and on SIGTERM. Always answers 204: a counter must never break a page. */
 const hits = createHitCounter({ getAdmin: adminFirestore });
@@ -1257,7 +1309,7 @@ app.get('/api/admin/pack-applications', async (req, res) => {
    Launch 2 is given free to 100 hand-picked testers, chosen so that operating
    systems and DAWs are covered and the people know enough to report bugs.
    tester_applications/{lowercased e-mail} {status, os, osVersion, daws, dawOther,
-                                            formats, years, link, answer, heard, production, at, decidedAt}
+                                            formats, years, link, answer, heard, production, musehubEmail (optional), at, decidedAt}
    launch2_testers/{lowercased e-mail}     {approvedAt, os, daws, reports, reportMonth: {month, count},
                                             status: 'active' | 'ended' | 'revoked', agreementVersion,
                                             agreementAcceptedAt, agreementVia: 'email', endedAt?, revokedAt?,
@@ -1427,7 +1479,13 @@ function readApplication(body) {
   const heard = cleanText(b.heard, 120);
   // Optional: the studio / production name the tester panel greets them with.
   const production = cleanText(b.production, 80);
-  return { value: { os, osVersion, daws, dawOther, formats, years: Math.min(60, Math.floor(years)), link, answer, heard, production } };
+  // Optional: the e-mail of the tester's MuseHub account, for beta builds on MuseHub (same check as the other e-mail fields).
+  let musehubEmail = '';
+  if (typeof b.musehubEmail === 'string' && b.musehubEmail.trim()) {
+    musehubEmail = b.musehubEmail.trim().toLowerCase();
+    if (musehubEmail.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(musehubEmail)) return { error: 'Enter a valid MuseHub account e-mail address, or leave it empty' };
+  }
+  return { value: { os, osVersion, daws, dawOther, formats, years: Math.min(60, Math.floor(years)), link, answer, heard, production, musehubEmail } };
 }
 
 // GET /api/testers/seats → {total, approved}. Public: the page shows the seats left.
@@ -2651,6 +2709,112 @@ app.post('/api/license/validate', licenceRoute(launch.validate,
 app.post('/api/license/deactivate', licenceRoute(launch.deactivate,
   (b) => ({ licenseKey: b.license_key, instanceId: b.instance_id })));
 
+/* ---- Plug-in trial + browser sign-in (AHENK first) ------------------------------------------------------------
+   Contract: 01_AI_Tools/subverselab-plugin-common/docs/TRIAL_AND_SIGNIN.md; logic in trialGrant.js (tests:
+   scripts/test-trial.js). Grants are signed with GRANT_SIGNING_KEY (RSA 2048 PEM, Secret Manager on the owner's go);
+   without it every route below answers 503 plain text. A service failure is plain text 503/429/413, never {ok:false},
+   so the plug-in keeps what it has. Firestore trials/ and device_codes/ are Admin SDK only (firestore.rules). */
+// Parsed once per value of the variable (a Secret Manager env var is fixed for the revision; tests change it).
+let grantKeyCache = { env: undefined, key: null };
+function grantSigningKey() {
+  const env = process.env.GRANT_SIGNING_KEY || '';
+  if (grantKeyCache.env === env) return grantKeyCache.key;
+  const pem = env.replace(/\\n/g, '\n').trim();
+  let key = null;
+  try { key = pem ? loadSigningKey(pem) : null; } catch (err) { console.error('GRANT_SIGNING_KEY is not a usable RSA private key:', err.message); }
+  grantKeyCache = { env, key };
+  return key;
+}
+// Grant refresh has no ID token: the account is read by uid and "proven" is decided as close to emailProven() as a user
+// record allows (a verified address, or a Google sign-in linked to the account). A deleted account owns nothing.
+async function grantAccount(admin, uid) {
+  try {
+    const u = await admin.auth.getUser(uid);
+    return { email: u.email || '', proven: u.emailVerified === true || (u.providerData || []).some((p) => p.providerId === 'google.com') };
+  } catch (err) {
+    if (err?.code === 'auth/user-not-found') return null;
+    throw err;
+  }
+}
+// An App Store purchase attached to a device code (POST /api/device/apple) is linked to the approving account like
+// POST /api/<slug>/ios/apple-purchase would (the AHENK iOS app signs in through the browser and has no Firebase token).
+async function grantLinkApple(admin, uid, tx) {
+  const id = launch2Uid(uid);
+  if (!id) return { status: 400 };
+  const { status } = await linkApplePurchase(admin.db, { uid: id, tx });
+  if (status === 200) console.log(`apple purchase linked via device code (${tx.product}): uid ${id.slice(0, 6)}… env ${tx.environment}`);
+  return { status };
+}
+const trials = createTrialService({ getAdmin: adminFirestore, getKey: grantSigningKey, ownedVia, lookupUser: grantAccount, linkApple: grantLinkApple });
+const trialLimit = tokenBucket({ perMinute: 30 });
+const deviceStartLimit = tokenBucket({ perMinute: 30 });
+const devicePollLimit = tokenBucket({ perMinute: 30 });
+const deviceApproveLimit = tokenBucket({ perMinute: 30 });
+const grantRefreshLimit = tokenBucket({ perMinute: 30 });
+function grantRoute(limit, fn, { signedIn = false } = {}) {
+  return [smallBody, async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    if (!limit(req.ip)) return res.status(429).type('text/plain').send('Too many requests');
+    if (!grantSigningKey()) return res.status(503).type('text/plain').send('Service not configured');
+    let caller = null;
+    if (signedIn) {
+      const token = (req.get('Authorization') || '').match(/^Bearer\s+(.+)$/i)?.[1];
+      if (!token) return res.status(401).json({ ok: false, error: 'sign in' });
+      try {
+        const admin = await adminFirestore();
+        const decoded = await admin.auth.verifyIdToken(token);
+        caller = { uid: decoded.uid, email: decoded.email || '', proven: emailProven(decoded) };
+      } catch (err) {
+        if (serviceDown(err)) return res.status(503).type('text/plain').send('Service unavailable');
+        return res.status(401).json({ ok: false, error: 'sign in' });
+      }
+    }
+    try {
+      const { status, body } = await withTimeout(fn(req.body || {}, caller), 10000);
+      res.status(status).json(body);
+    } catch (err) {
+      if (!(err instanceof NotConfigured)) console.error(`grant ${req.path}:`, err.message);
+      res.status(503).type('text/plain').send(err instanceof NotConfigured ? 'Service not configured' : 'Service unavailable');
+    }
+  }];
+}
+const pickDevice = (b) => ({ product: b.product, machine: b.machine, name: b.name, platform: b.platform === 'ios' ? 'ios' : undefined });
+app.post('/api/trial/start', grantRoute(trialLimit, (b) => trials.trialStart(pickDevice(b))));
+app.post('/api/device/start', grantRoute(deviceStartLimit, (b) => trials.deviceStart(pickDevice(b))));
+app.post('/api/device/poll', grantRoute(devicePollLimit, (b) => trials.devicePoll({ device_code: b.device_code })));
+app.post('/api/device/approve', grantRoute(deviceApproveLimit, (b, caller) => trials.deviceApprove({ user_code: b.user_code, caller }), { signedIn: true }));
+// For the /activate page only (not part of the plug-in contract): product + computer name before the button is pressed.
+app.post('/api/device/lookup', grantRoute(deviceApproveLimit, (b) => trials.deviceLookup({ user_code: b.user_code }), { signedIn: true }));
+app.post('/api/grant/refresh', grantRoute(grantRefreshLimit, (b) => trials.grantRefresh({ grant: b.grant })));
+// POST /api/device/apple {device_code, jws}: the iOS app attaches its App Store purchase (StoreKit 2 signed transaction) to a
+// pending sign-in code; /api/device/approve then links it to the account that approves (TRIAL_AND_SIGNIN.md "App Store").
+// 200 {ok:true} | 400 bad signature / not the full purchase of an app in APPLE_APPS / Sandbox | 403 refunded | 404 expired code.
+const deviceAppleLimit = tokenBucket({ perMinute: 10 });
+app.post('/api/device/apple', appleBody, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!deviceAppleLimit(req.ip)) return res.status(429).type('text/plain').send('Too many requests');
+  let tx;
+  try { tx = verifyAppleJws(req.body?.jws); } catch (err) {
+    if (err instanceof AppleJwsError) return res.status(400).json({ ok: false, error: 'bad purchase', reason: err.reason });
+    throw err;
+  }
+  const appRow = APPLE_APPS.find((a) => a.bundleId === tx.bundleId);
+  const problem = appRow ? transactionProblem(tx, { slug: appRow.slug }) : { status: 400, error: 'Unknown app.' };
+  if (problem) return res.status(problem.status).json({ ok: false, error: problem.error });
+  const summary = {
+    product: appRow.slug, originalTransactionId: String(tx.originalTransactionId), transactionId: tx.transactionId != null ? String(tx.transactionId) : null,
+    productId: tx.productId, bundleId: tx.bundleId, environment: tx.environment,
+    originalPurchaseDate: Number(tx.originalPurchaseDate) || null, purchaseDate: Number(tx.purchaseDate) || null,
+  };
+  try {
+    const { status, body } = await withTimeout(trials.deviceAttachApple({ device_code: req.body?.device_code, tx: summary }), 8000);
+    return res.status(status).json(body);
+  } catch (err) {
+    console.error('device apple:', err.message);
+    return res.status(503).type('text/plain').send('Service unavailable');
+  }
+});
+
 // A body over the cap or unparseable JSON. Express's default handler would
 // answer with an HTML stack trace (NODE_ENV is not set on Cloud Run); this
 // says only the status. Plain text, for the same reason as above.
@@ -2715,6 +2879,20 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
   const handled = ['order_created', 'order_refunded', 'license_key_created', 'license_key_updated'];
   // Anything else is acknowledged, so Lemon Squeezy does not retry it.
   if (!handled.includes(event)) return res.json({ ok: true, ignored: event || null });
+
+  // Affiliate partners (api/partners.js): an order that came through a partner's link (meta.custom_data.aff) or with a
+  // partner's reader discount code is written to partner_sales. Before every early return below (the family branch returns
+  // early, and Rekkerd's product is the family). Never changes this answer: an error is only logged.
+  if (event === 'order_created' || event === 'order_refunded') {
+    try {
+      const item = a.first_order_item || {};
+      const product = isFamilyOrder(item) ? 'family' : productSlugFor(item.product_id ?? a.product_id, item.product_name);
+      const out = await partnerService.recordOrder({ event, orderId: data.id, attrs: a, customData: payload?.meta?.custom_data || {}, product });
+      if (out.partnerId) console.log(`partners: order ${data.id} ${out.result} (${out.partnerId}${out.source ? `, ${out.source}` : ''})`);
+    } catch (err) {
+      console.error('partners webhook:', err.message);
+    }
+  }
 
   const email = String(a.user_email || '').trim().toLowerCase();
   if (!email || !data.id) return res.json({ ok: true, ignored: 'no e-mail' });
@@ -2865,6 +3043,24 @@ app.post('/api/lemonsqueezy/webhook', express.raw({ type: '*/*', limit: '1mb' })
 /* ---- The live catalogue: GET /api/catalog for the pages, /api/admin/catalog/* for the panel (api/catalog.js) ------------
    Public: published items only, cached a minute (the pages fetch it once per load and lay it over src/data/*).
    Admin: a verified admin address, exactly like /api/admin/members (or the local preview token under SVL_DEV_ADMIN). */
+// GET /api/partner-report  (Authorization: Bearer svlp_…)
+// An affiliate partner's own sales: every order credited to it (no buyer data), newest first, and monthly totals without
+// refunded orders. The token is made by scripts/partner-cli.js and only its hash is stored. A bad token is a bare 401.
+const partnerReportLimit = tokenBucket({ perMinute: 10 });
+app.get('/api/partner-report', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  if (!partnerReportLimit(req.ip)) return res.status(429).json({ error: 'Too many requests' });
+  const m = /^Bearer\s+(\S+)$/.exec(req.get('Authorization') || '');
+  try {
+    const out = m ? await partnerService.report(m[1]) : null;
+    if (!out) return res.status(401).json({ error: 'unauthorized' });
+    return res.json(out);
+  } catch (err) {
+    console.error('partner report:', err.message);
+    return res.status(503).json({ error: 'unavailable' });
+  }
+});
+
 app.get('/api/catalog', async (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=60');
   const cat = await catalog.load();

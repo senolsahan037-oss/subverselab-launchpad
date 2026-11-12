@@ -13,7 +13,7 @@ import { apiUrl } from '../utils/endpoints';
 const DAWS = ['Ableton Live', 'FL Studio', 'Logic Pro', 'Cubase', 'Studio One', 'Reaper', 'Pro Tools', 'Bitwig Studio', 'Other'];
 // The seat counter comes back once this many seats are approved (decisions 2026-10-10); until then it would only show an empty room.
 const TESTER_COUNTER_MIN = 25;
-const EMPTY = { os: '', osVersion: '', daws: [], dawOther: '', formats: [], years: '', link: '', answer: '', heard: '', production: '' };
+const EMPTY = { os: '', osVersion: '', daws: [], dawOther: '', formats: [], years: '', link: '', answer: '', heard: '', production: '', musehubEmail: '' };
 
 function useSeats() {
   const [seats, setSeats] = useState(null);
@@ -91,6 +91,9 @@ function ApplicationForm({ user, onSent, replacing }) {
       </Field>
       <Field id="tp-heard" label="Where did you hear about SubverseLab? (optional)">
         <input id="tp-heard" className="input-field" value={f.heard} maxLength={120} onChange={(e) => set({ heard: e.target.value })} />
+      </Field>
+      <Field id="tp-muse" label="MuseHub account e-mail (for beta builds on MuseHub)" hint="Optional. The e-mail of your MuseHub account, if you have one.">
+        <input id="tp-muse" type="email" className="input-field" value={f.musehubEmail} maxLength={254} onChange={(e) => set({ musehubEmail: e.target.value })} />
       </Field>
       {error && <p role="alert">{error}</p>}
       <button type="submit" className="btn btn-primary" disabled={sending || !f.os || !f.daws.length || !f.formats.length}>{sending ? 'Sending…' : 'Send application'}</button>

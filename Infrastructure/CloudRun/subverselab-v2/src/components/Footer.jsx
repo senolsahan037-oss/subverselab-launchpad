@@ -1,12 +1,22 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { openConsentSettings } from '../consent';
-import FooterStrips from './FooterStrips';
+import FooterStrips, { FooterStores } from './FooterStrips';
 import { media } from '../utils/endpoints';
+import { sendSocialClick } from '../hooks/useHitCounter';
 
 const SOCIAL = [
-  { name: 'YouTube', href: 'https://www.youtube.com/@SubverseLab', icon: media('/social/youtube.svg') },
-  { name: 'Instagram', href: 'https://www.instagram.com/subverse_lab/', icon: media('/social/instagram.svg') },
+  { name: 'YouTube', ch: 'youtube', href: 'https://www.youtube.com/@SubverseLab', icon: media('/social/youtube.svg') },
+  { name: 'Instagram', ch: 'instagram', href: 'https://www.instagram.com/subverse_lab/', icon: media('/social/instagram.svg') },
+  { name: 'SoundCloud', ch: 'soundcloud', href: 'https://soundcloud.com/subverselab', icon: media('/social/soundcloud.svg') },
+  { name: 'TikTok', ch: 'tiktok', href: 'https://www.tiktok.com/@subverselab', icon: media('/social/tiktok.svg') },
+  // rel="me": Mastodon shows subverselab.com as a verified link on the profile once this page carries it (owner 5 Nov 2026).
+  { name: 'Mastodon', ch: 'mastodon', href: 'https://mastodon.social/@SubverseLab', icon: media('/social/mastodon.svg'), rel: 'me' },
+  // Bluesky and Ko-fi (owner 6 Nov 2026). Threads joins once the SubverseLab Threads profile exists.
+  { name: 'Bluesky', ch: 'bluesky', href: 'https://bsky.app/profile/subverselab.bsky.social', icon: media('/social/bluesky.svg') },
+  { name: 'Ko-fi', ch: 'kofi', href: 'https://ko-fi.com/subverselab', icon: media('/social/kofi.svg') },
+  // X: the owner's old personal account @SenolSahan50530 (0 posts) renamed to @SubverseLab on 6 Nov 2026.
+  { name: 'X', ch: 'x', href: 'https://x.com/SubverseLab', icon: media('/social/x.svg') },
 ];
 
 // The footer's links in three columns (owner 31 Oct). Store first, then what a signed-in person needs, then the studio.
@@ -15,7 +25,7 @@ const FOOTER_COLUMNS = [
     { label: 'Plugins', to: '/plugins' }, { label: 'Sample packs', to: '/sample-packs' }, { label: 'Preset packs', to: '/preset-packs' }, { label: 'Browser tools', to: '/tools' },
   ] },
   { title: 'Account', links: [
-    { label: 'Download Room', to: '/launch2' }, { label: 'Your account', to: '/account' }, { label: 'Testers', to: '/testers' }, { label: 'Forum', to: '/forum' },
+    { label: 'Download Room', to: '/launch2' }, { label: 'Your account', to: '/account' }, { label: 'Redeem a code', to: '/redeem' }, { label: 'Testers', to: '/testers' }, { label: 'Forum', to: '/forum' },
   ] },
   { title: 'SubverseLab', links: [
     { label: 'Loom', to: '/loom' }, { label: 'Help', to: '/help' }, { label: 'Privacy', to: '/privacy' }, { label: 'Terms', to: '/terms' }, { label: 'Refunds', to: '/refunds' },
@@ -67,12 +77,15 @@ export default function Footer() {
               the link's accessible label. */}
           <div className="footer-social">
             {SOCIAL.map((x) => (
-              <a key={x.name} href={x.href} target="_blank" rel="noopener noreferrer" className="footer-social-link" aria-label={x.name} title={x.name}>
+              <a key={x.name} href={x.href} target="_blank" rel={x.rel ? `${x.rel} noopener noreferrer` : 'noopener noreferrer'} className="footer-social-link" aria-label={x.name} title={x.name} onClick={() => sendSocialClick(x.ch)}>
                 <span className="footer-social-mark" style={{ WebkitMaskImage: `url(${x.icon})`, maskImage: `url(${x.icon})` }} />
               </a>
             ))}
           </div>
         </div>
+
+        {/* Middle (owner 5 Nov): the stores take turns in the gap between the two columns. */}
+        <FooterStores />
 
         {/* Right side (owner 31 Oct, "derin boşluk"): the links as three short columns, Store / Account / SubverseLab, so the
             right half stands as tall as the brand column instead of one line with a hole under it. */}

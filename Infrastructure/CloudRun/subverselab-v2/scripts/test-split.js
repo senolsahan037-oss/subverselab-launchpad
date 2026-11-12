@@ -49,6 +49,8 @@ const apiTransformed = apiSource
   .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
   .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
   .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './trialGrant.js';", `from '${url('api/trialGrant.js')}';`)
+  .replace("from './partners.js';", `from '${url('api/partners.js')}';`)
   .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
   .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
@@ -169,6 +171,17 @@ await test('site: unknown URL answers a real 404 with the 404 page', async () =>
   assert.equal((await fetch(`${SITE}/no-such-file.png`)).status, 404);
 });
 
+// AHENK (src/data/plugins.js AHENK_CHECKOUT): while switched off the production build has no page, no images and no mention of it.
+await test('site: AHENK switched off = no /plugins/ahenk page, no dist/plugins/ahenk, not on /plugins, the homepage or llms.txt', async () => {
+  const { AHENK_ON_SALE } = await import('../src/data/plugins.js');
+  if (AHENK_ON_SALE) return;   // switched on: the sitemap test above covers the page
+  assert.equal(existsSync(join(root, 'dist', 'plugins', 'ahenk')), false, 'dist/plugins/ahenk must not ship');
+  assert.equal((await fetch(`${SITE}/plugins/ahenk`)).status, 404);
+  for (const p of ['/', '/plugins', '/launch2', '/llms.txt', '/llms-full.txt', '/sitemap.xml']) {
+    assert.doesNotMatch(await (await fetch(`${SITE}${p}`)).text(), /\/plugins\/ahenk|\bAHENK\b/, p);
+  }
+});
+
 await test('site: security.txt, robots, llms.txt and llms-full.txt answer 200; sitemap lists 34 URLs (32 + /refunds + /tools; /plugins/torna joined 28 Oct) + one per manual page + /plugins/ru8 only while RU-8 is on sale + one per visible sample pack', async () => {
   const sec = await fetch(`${SITE}/.well-known/security.txt`);
   assert.equal(sec.status, 200);
@@ -177,11 +190,12 @@ await test('site: security.txt, robots, llms.txt and llms-full.txt answer 200; s
   for (const p of ['/robots.txt', '/llms.txt', '/llms-full.txt', '/favicon.ico', '/og-image.jpg']) assert.equal((await fetch(`${SITE}${p}`)).status, 200, p);
   const sm = await (await fetch(`${SITE}/sitemap.xml`)).text();
   const { visiblePacks } = await import('../src/data/packFacts.js');
-  const { RU8_ON_SALE, JINGFANG_ON_SALE } = await import('../src/data/plugins.js');   // RU-8 and JING FANG are on the site only once on sale
+  const { RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE } = await import('../src/data/plugins.js');   // RU-8, JING FANG and AHENK are on the site only once on sale
   const { MANUALS } = await import('../src/data/pluginManuals.js');   // every owner's manual page, KUBBE and KASET included
-  assert.equal(sm.match(/<loc>/g).length, 34 + MANUALS.length + (RU8_ON_SALE ? 1 : 0) + (JINGFANG_ON_SALE ? 1 : 0) + visiblePacks().length);
+  assert.equal(sm.match(/<loc>/g).length, 34 + MANUALS.length + (RU8_ON_SALE ? 1 : 0) + (JINGFANG_ON_SALE ? 1 : 0) + (AHENK_ON_SALE ? 1 : 0) + visiblePacks().length);
   assert.equal(/\/plugins\/ru8</.test(sm), RU8_ON_SALE);
   assert.equal(/\/plugins\/jingfang</.test(sm), JINGFANG_ON_SALE);
+  assert.equal(/\/plugins\/ahenk</.test(sm), AHENK_ON_SALE);
 });
 
 await test('site: prerendered pages are crawlable HTML with their own title (home, a plugin room, /plugins)', async () => {

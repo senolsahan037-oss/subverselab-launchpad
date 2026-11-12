@@ -30,6 +30,8 @@ const transformed = serverSource
   .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
   .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
   .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './trialGrant.js';", `from '${url('api/trialGrant.js')}';`)
+  .replace("from './partners.js';", `from '${url('api/partners.js')}';`)
   .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
   .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')

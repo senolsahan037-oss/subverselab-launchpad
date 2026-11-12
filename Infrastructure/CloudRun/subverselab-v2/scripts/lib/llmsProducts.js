@@ -4,7 +4,7 @@
 // No product counts (owner 17 Oct): lists come from the data, sentences never say how many.
 import {
   FAMILY_PLUGINS, LINE2_PLUGINS, PRICES, SOLD_SINGLY, FAMILY_NAME, FAMILY_PRICE,
-  FAMILY_SINGLES_TOTAL, familyOfferEndLabel, isFamilyOfferOver, priceText, trustLineFor, TRUST_LINE_FREE,
+  FAMILY_SINGLES_TOTAL, FAMILY_LIST_PRICE, familyOfferEndLabel, isFamilyOfferOver, priceText, trustLineFor, TRUST_LINE_FREE,
   UPDATES_LINE, line2AvailableLine, STORE_PLUGINS,
 } from '../../src/data/plugins.js';
 import { visiblePacks, packPath, contentsLine, formatLine } from '../../src/data/packFacts.js';
@@ -19,7 +19,7 @@ const names = (list) => list.map((p) => p.displayName).join(', ');
 function familyLine() {
   if (isFamilyOfferOver()) return '';
   const end = familyOfferEndLabel();
-  return `- [${FAMILY_NAME}](${url('/launch2')}): ${names(FAMILY_PLUGINS)} together, $${FAMILY_PRICE}${end ? ` until ${end}` : ''} (the single prices add up to $${FAMILY_SINGLES_TOTAL}). Each is also sold on its own.\n`;
+  return `- [${FAMILY_NAME}](${url('/launch2')}): ${names(FAMILY_PLUGINS)} together, $${FAMILY_PRICE} (list price $${FAMILY_LIST_PRICE})${end ? ` until ${end}` : ''} (the single prices add up to $${FAMILY_SINGLES_TOTAL}). Each is also sold on its own.\n`;
 }
 
 function priceFor(p) {

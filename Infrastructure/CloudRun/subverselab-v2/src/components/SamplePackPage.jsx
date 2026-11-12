@@ -4,11 +4,11 @@ import PageMeta from './PageMeta';
 import NotFound from './NotFound';
 import { css } from './SamplePacksPage';
 import { packsCss } from './packs/packsCss';
-import { PreviewStrip } from './packs/Snippet';
+import { DragOut, PreviewStrip } from './packs/Snippet';
 import PackKey, { SweepBlock } from './packs/PackKey';
 import { SITE_URL } from '../data/siteMeta';
 import {
-  visiblePacks, visiblePackBySlug, packTitle, packDescription, packPath, plateRows, specList, folderLabel,
+  visiblePacks, visiblePackBySlug, packTitle, packDescription, packPath, detailRows, packLicence, specList, folderLabel,
 } from '../data/packFacts';
 import { packOffer, priceLabel } from '../data/samplePackPrices';
 import { PACK_MADE_LINES } from '../data/packMadeLines';
@@ -32,6 +32,11 @@ export default function SamplePackPage() {
   const madeLine = pack.madeLine || PACK_MADE_LINES[pack.slug];
   const by = publisherOf(cat, pack.publisher);   // a producer's or label's pack (owner 31 Oct): "by <name>" under the kind line
   const specs = pack.catalogOnly ? (pack.inside || []) : specList(pack);
+  // the folded sections: a catalogue pack draws them from its panel fields (owner 3 Nov), an importer pack from its measurements
+  const rows = detailRows(pack);
+  const folderRows = pack.catalogOnly ? (pack.folderRows || []) : null;
+  const licence = packLicence(pack);
+  const hasDetails = rows.length > 0 || (folderRows ? folderRows.length > 0 : true) || Boolean(licence);
   const schema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -79,26 +84,33 @@ export default function SamplePackPage() {
         <section className="st-section" aria-labelledby="pk-prev">
           <h2 id="pk-prev">Listen</h2>
           {pack.catalogOnly && !pack.peaks   /* a catalogue pack without its waveform file yet: a plain player; with one, the same strip as the importer's packs */
-            ? <audio className="pp-audio" controls preload="none" src={pack.snippet.src} style={{ width: '100%' }} />
+            ? <div className="pk-strip-row"><audio className="pp-audio" controls preload="none" src={pack.snippet.src} style={{ flex: 1, minWidth: 0 }} /><DragOut pack={pack} /></div>
             : <PreviewStrip key={pack.slug} pack={pack} />}
+          {pack.soundcloud && <p className="st-small"><a href={pack.soundcloud} target="_blank" rel="noopener noreferrer">Also on SoundCloud</a></p>}
         </section>
       )}
 
       <SweepBlock packs={all} small />
 
-      {!pack.catalogOnly && <section className="st-section" aria-label="Details">
-        <details className="st-fold">
+      {hasDetails && <section className="st-section" aria-label="Details">
+        {rows.length > 0 && <details className="st-fold">
           <summary>Technical details</summary>
           <div>
             <dl className="st-rows">
-              {plateRows(pack).map(([k, v]) => (
+              {rows.map(([k, v]) => (
                 <React.Fragment key={k}><dt>{k}</dt><dd>{v}</dd></React.Fragment>
               ))}
             </dl>
-            <p className="st-small" style={{ marginTop: 10 }}>Our own measurements of every file in the zip. The full table, file by file, is inside the pack as measurements.csv and measurements.html.</p>
+            <p className="st-small" style={{ marginTop: 10 }}>Our own measurements of every file in the zip. The full table, file by file, is inside the pack as measurements.csv{pack.catalogOnly ? '' : ' and measurements.html'}.</p>
           </div>
-        </details>
-        <details className="st-fold">
+        </details>}
+        {folderRows ? (folderRows.length > 0 && <details className="st-fold">
+          <summary>Inside the folder</summary>
+          <div className="pk-tree">
+            <div>{pack.fullName ? pack.fullName.replace(/\s+/g, '_') : `SVL_${pack.name}`}/</div>
+            <ul>{folderRows.map(([f, what]) => <li key={f}>{f}/ <span className="ex">({what})</span></li>)}</ul>
+          </div>
+        </details>) : <details className="st-fold">
           <summary>Inside the folder</summary>
           <div className="pk-tree">
             <div>SVL_{pack.name}/</div>
@@ -114,14 +126,14 @@ export default function SamplePackPage() {
               ))}
             </ul>
           </div>
-        </details>
-        {pack.licence && (
+        </details>}
+        {licence && (
           <details className="st-fold" id="licence">
-            <summary>Licence summary{pack.licence.draft ? ' (draft)' : ''}</summary>
+            {/* owner 4 Nov 2026: no draft / review wording ever reaches a buyer */}
+            <summary>Licence summary</summary>
             <div>
-              {pack.licence.draft && <p className="st-small" style={{ marginBottom: 10 }}>Draft wording, under review before release; the final licence text ships inside the pack.</p>}
               <ol className="pk-lic">
-                {pack.licence.clauses.map((c) => <li key={c.text}>{c.title && <strong>{c.title}. </strong>}{c.text}</li>)}
+                {licence.clauses.map((c) => <li key={c.text}>{c.title && <strong>{c.title}. </strong>}{c.text}</li>)}
               </ol>
             </div>
           </details>

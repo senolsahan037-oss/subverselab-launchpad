@@ -22,6 +22,6 @@ export function applyCatalogData(cat, now = Date.now()) {
     if (d.launchPrice != null && d.launchEnds) { LAUNCH_PRICES[d.id] = d.launchPrice; LAUNCH_ENDS[d.id] = d.launchEnds; }
     if (d.released || d.updated) PRODUCT_DATES[d.id] = { released: d.released || d.updated, updated: d.updated || d.released };
     if (d.musehub) MUSEHUB[d.id] = d.musehub;
-    CATALOG_PLUGIN_INDEX[d.id] = pluginFromDoc(d);
+    if (!d.edits) CATALOG_PLUGIN_INDEX[d.id] = pluginFromDoc(d);
   }
 }

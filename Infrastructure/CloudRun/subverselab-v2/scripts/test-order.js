@@ -22,7 +22,7 @@ async function test(name, fn) {
   try { await fn(); passed += 1; console.log(`PASS ${name}`); } catch (error) { failed += 1; console.log(`FAIL ${name}: ${error.message}`); }
 }
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const notOnSale = (p) => pl.LINE2_PLUGINS.includes(p) && !pl.CHECKOUT[p.slug];   // ADALET: "Coming soon", no date by design
+const notOnSale = (p) => pl.LINE2_PLUGINS.includes(p) && !pl.CHECKOUT[p.slug];   // a second-line product without checkout: "Coming soon", no date by design
 const assertNewestFirst = (ids, what) => {
   for (let i = 1; i < ids.length; i += 1) {
     assert.ok(latestRelease(ids[i - 1]) >= latestRelease(ids[i]), `${what}: ${ids[i - 1]} (${latestRelease(ids[i - 1]) || 'no date'}) before ${ids[i]} (${latestRelease(ids[i])})`);
@@ -31,13 +31,14 @@ const assertNewestFirst = (ids, what) => {
 const src = (f) => readFile(join(root, f), 'utf8');
 
 await test('byLatestRelease: newest first, ties keep their order, undated last, input untouched', () => {
-  const items = ['taban', 'adalet', 'kubbe', 'jingfang', 'kaset', 'nope'];
+  const items = ['taban', 'nope', 'kubbe', 'jingfang', 'kaset', 'adalet'];
   const copy = [...items];
-  assert.deepEqual(byLatestRelease(items), ['jingfang', 'kubbe', 'kaset', 'taban', 'adalet', 'nope']);
+  // jingfang (1.4.0) and adalet share the deploy day: the tie keeps the given order
+  assert.deepEqual(byLatestRelease(items), ['jingfang', 'adalet', 'kubbe', 'kaset', 'taban', 'nope']);
   assert.deepEqual(items, copy);
   assert.deepEqual(byLatestRelease([{ s: 'kaset' }, { s: 'kubbe' }], (x) => x.s).map((x) => x.s), ['kaset', 'kubbe'], 'equal dates keep the given order');
   assert.equal(latestRelease('elek'), '2026-10-22', 'an update counts as the release');
-  assert.equal(latestRelease('adalet'), '');
+  assert.equal(latestRelease('nope'), '');
 });
 
 await test('every date is ISO YYYY-MM-DD and released <= updated', () => {
@@ -57,15 +58,16 @@ await test('every listed product has a date (plug-ins, sample packs, preset pack
   assert.deepEqual([...new Set(missing)], [], 'add these to src/data/productDates.js');
   const known = new Set([...ent.OWNABLE_SLUGS, ...ent.MEMBER_PACK_SLUGS, ...pl.ROOM_PLUGINS.map((p) => p.slug), ...SAMPLE_PACK_LIST.map((p) => p.slug), ...PRESET_PACK_LIST.map((p) => p.id)]);
   assert.deepEqual(Object.keys(PRODUCT_DATES).filter((id) => !known.has(id)), [], 'dated ids that no list knows');
-  assert.ok(!('adalet' in PRODUCT_DATES), 'ADALET is not on sale: no date, it stays last');
+  assert.equal('adalet' in PRODUCT_DATES, pl.ADALET_ON_SALE, 'ADALET has a date exactly when its checkout is set (owner 8 Nov: on sale at $15)');
 });
 
-await test('/plugins data (STORE_PLUGINS) is newest first, every store product once, ADALET last', () => {
+await test('/plugins data (STORE_PLUGINS) is newest first, every store product once; a product without checkout last', () => {
   const ids = pl.STORE_PLUGINS.map((p) => p.slug);
   assertNewestFirst(ids, 'STORE_PLUGINS');
   const all = [...pl.FAMILY_PLUGINS, ...pl.SOLO_PLUGINS, ...pl.LINE2_PLUGINS, ...pl.FREE_PLUGINS].map((p) => p.slug);
   assert.deepEqual([...ids].sort(), [...all].sort());
-  assert.equal(ids.at(-1), 'adalet');
+  if (!pl.ADALET_ON_SALE) assert.equal(ids.at(-1), 'adalet');
+  else assert.ok(pl.SOLO_PLUGINS.some((p) => p.slug === 'adalet') && pl.LINE2_PLUGINS.length === 0, 'ADALET on sale: a solo product, the second line empty');
   // Each filter group of the /plugins page is a subsequence of the dated list, so it is newest first too.
   for (const group of [pl.FREE_PLUGINS, pl.SOLO_PLUGINS, [...pl.FAMILY_PLUGINS, ...pl.SOLO_PLUGINS]]) {
     assertNewestFirst(byLatestRelease(group, (p) => p.slug).map((p) => p.slug), 'group');

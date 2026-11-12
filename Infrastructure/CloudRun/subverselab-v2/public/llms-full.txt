@@ -2,13 +2,200 @@
 
 > Every plug-in and app as its page describes it, then the full text of every published browser-tool guide. Index: https://subverselab.com/llms.txt
 
+# ADALET — Dynamic EQ
+Source: https://subverselab.com/plugins/adalet
+
+ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows.
+ADALET is a dynamic EQ with six bands and zero latency, with helpers that find the problem for you. Any bell or shelf can be made dynamic, so it cuts or lifts only while the sound needs it. TARGET cuts a named part of a sound, such as a boxy vocal or a kick’s sub; COLLIDE clears room for this track where another one is loud; SELF finds the resonances of the track it sits on. They do the finding, so you can do the deciding.
+Price: $15.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Six bands, any of them dynamic
+Bell, low shelf, high shelf, notch, low cut and high cut. The cuts run at 12, 24, 36, 48 or 72 dB per octave and have a resonance control. Any bell or shelf can be dynamic: RANGE up to ±12 dB, with THRESHOLD, ATTACK and RELEASE, triggered by the band itself or by the sidechain KEY.
+
+## TARGET: name the part
+Tell ADALET the instrument and the part, and it learns where that part sits in the material from the hits and cuts it by AMOUNT. It is static and needs no sidechain. KICK: SUB, BODY, MUD, BOX, CLICK. SNARE: BODY, BOX, CRACK, SNAP/AIR, REVERB-READY. HATS: CHICK, BITE, SHIMMER. BASS: SUB, BODY, MUD, TOP. VOCAL: BOX, NASAL, HARSH, S, REVERB-READY. DRUMS: KICK BODY, SNARE BODY, HATS SHIMMER.
+
+## COLLIDE: two sounds stop masking each other
+Route a KEY track to the sidechain and COLLIDE cuts this track only where the KEY track is loud, so the two stop fighting for the same space and both come through. For kick and bass, put ADALET on the bass with the kick on KEY and FOCUS LOW at 40 Hz: only the kick itself tells where its low end sits, and the bass makes room only while it plays.
+
+## SELF: resonances in this track
+SELF finds the resonances in the track it sits on and cuts them, so a ring you can hear but cannot place stops standing out.
+
+## It tells you what it heard
+While TARGET learns, the display says where it is: listening, how many hits it has heard, how many of three it has learned, then learned and cutting. When a hit cannot be used it says why, so you know to play the part of the song where the instrument is clearest. The bands sit ready at six different frequencies, and the control row under the display holds only the selected band.
+
+## Hear what it does
+Hold DELTA to hear only what is being cut. BYPASS is level-matched, so a comparison is not decided by loudness. A live spectrum analyzer shows POST by default, or PRE, PRE+POST or nothing, and the curve on screen is the engine’s own response.
+
+## Controls
+- Bands 1 to 6: Bell, low shelf, high shelf, notch, low cut, high cut. FREQ 20 Hz to 20 kHz, GAIN ±18 dB, Q 0.1 to 18. Cuts at 12, 24, 36, 48 or 72 dB/oct; on a cut, Q above 1 adds resonance. A new slot starts at 80 Hz, 200 Hz, 500 Hz, 1.2 kHz, 3 kHz or 8 kHz.
+- RANGE · THRESHOLD: Make a bell or shelf dynamic: RANGE ±12 dB (OFF at 0) once the level passes THRESHOLD (−60 to 0 dB, default −30 dB).
+- ATTACK · RELEASE · TRIGGER: ATTACK 1 to 100 ms (10 ms), RELEASE 10 to 1000 ms (100 ms); TRIGGER SELF (this track) or KEY (the sidechain).
+- TARGET: An instrument and a part from the list; AMOUNT 0 to 60 dB, WIDTH 0.5 to 2, SLOPE 12 to 72 dB/oct. Learns from three hits; no sidechain.
+- COLLIDE: Cuts this track only where a KEY track routed to the sidechain is loud. DEPTH 0 to 12 dB (6 dB), MARGIN 0 to 12 dB (3 dB), SPEED FAST, MEDIUM or SLOW, KEY LISTEN.
+- SELF: Finds resonances in this track and cuts them. DEPTH 0 to 12 dB, SENS 0 to 12 dB.
+- ADVANCED: FOCUS LOW and HIGH 40 Hz to 16 kHz (120 Hz and 8 kHz), MIX 0 to 100 %, SWEET, TILING, LEVEL MATCH, and BAKE: ARM, RESET, APPLY.
+- DELTA · BYPASS: DELTA: hold to hear only what is being cut. BYPASS: level-matched while LEVEL MATCH is on (the default).
+- PRE · POST · KEY: The analyzer: the input, the output (the default) or both, and the sidechain key as a thin line.
+- OUTPUT: −12 to +12 dB, after everything.
+Zero latency. VST3 and AU on macOS, VST3 on Windows. Every control with its range and default is in the manual.
+
+---
+
+# AHENK — Piano instrument
+Source: https://subverselab.com/plugins/ahenk
+
+Sampled piano instrument: four pianos, microphone positions around them, measured halls, and a score page that plays and writes MusicXML and MIDI. Free 30-day trial.
+AHENK is a sampled piano that you place on a stage. Choose the piano, put the microphones where they really stood when it was recorded, pick the hall, and play it from a MIDI keyboard, by clicking the keys on the panel, or with the computer keys in the macOS app. Or let it play: open a MusicXML or MIDI score and the piano on stage plays it through your microphones and your hall. You can write your own notes on the same page and save them as MusicXML or MIDI.
+Price: $29.99 (regular $49), launch price until 1 January 2027.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Pianos from real recordings
+Every piano in AHENK comes from real recordings, note by note and at many strengths: a 274 cm concert grand with its lid fully open, a 200 cm studio grand, a felt-damped upright and a short baby grand. Each piano is a separate choice in the installer, so you install only the ones you want. Through the factory setup Stage the pianos are matched in loudness, so switching pianos does not jump in level.
+
+## Microphones where they really stood
+Around the piano stand nine microphone positions, from over the strings to a dummy head in the hall. On each piano one or two of them are the microphones it was recorded with; the others are computed from those recordings, so every position can be heard on every piano. One click sends a microphone to its place and switches it on. Each has its own level, a choice of microphone character, more of the recorded room on the LID and HOUSE stands, and its own reverb, delay and echo.
+
+## The hall around it
+Recorded is the room each piano was recorded in, nothing added. Recital room, Chamber theatre and Concert hall are measured rooms; Stone church and Live room are built. Every microphone gets the hall according to its distance from the piano, the close ones a little and the house positions more, and the change fades over in about a tenth of a second.
+
+## Stage setups
+A stage setup is everything on the stage: the microphones, their settings, OUT and the hall, and it can bring a piano. The factory setups run from close and intimate through church, live room and wide pairs to microphone colour, echo and delay, and headphones; SAVE keeps your own. When a setup loads, the knobs glide to their new values while the sound changes at once; double-click returns a knob to the value of the setup that is loaded now.
+
+## A score page that plays
+Open a MusicXML (.musicxml, .xml, .mxl) or MIDI (.mid, .midi) file, or drop it on the panel, and the piano on stage plays it. Loop the piece or whole bars, set the tempo from 50 to 150 %, count in one or two bars, and mute or solo each hand, each voice, the other parts and the pedal.
+
+## Write notes, keep them as MusicXML or MIDI
+NEW starts a blank score in any major or minor key. In WRITE the computer keys, the mouse or a MIDI keyboard write the notes: lengths from a sixty-fourth to a double whole, dots, triplets, ties and chords, both hands with up to four voices each, with undo and redo. SAVE AS writes MusicXML, which other notation programs open; MIDI writes a .mid file for your DAW, and the grip beside it drags the score straight onto a track in your DAW.
+
+## In your DAW
+AHENK is an instrument that answers the sustain, sostenuto and soft pedals of your MIDI keyboard. The DAW project keeps the piano, the stage, every microphone setting, OUT and the hall, and the microphones (under their own names), the hall and OUT are parameters your DAW can automate. AHENK adds no latency. The piano data is stored losslessly compressed (2.44 GB for all four pianos) and read from disk while it plays.
+
+## Controls
+- Hall selector: Recorded, Recital room, Chamber theatre, Concert hall, Stone church, Live room; the arrows step, a click on the name opens the list.
+- OUT: The level of the whole stage, −12 to +12 dB.
+- PIANO RACK: The pianos you can play; click one to put it on stage.
+- MIC RACK: The microphones that are off; click one to send it to its place on stage.
+- Microphone settings: ON, LEVEL (−24 to 0 dB), ROOM on the LID and HOUSE stands, TYPE, and the REVERB, DELAY and ECHO sends.
+- Setup · SAVE · LIST: Step through the factory setups and yours, save your own, open the list.
+- SCORE... · STAGE · SCORE: Open a score; swap the stage for the SCORE page and back.
+- PLAY · STOP · LOOP · TEMPO: Play the score, loop it or a range of bars, 50 to 150 % tempo, count-in of one or two bars.
+- NEW · WRITE · SAVE AS · MIDI: Start a score, write notes, save as MusicXML, export as MIDI; drag the grips beside SAVE AS and MIDI into your DAW or onto the desktop.
+- The keyboard: All 88 keys, A0 to C8; lower on a key is louder.
+Drag a knob up or down, Shift for finer steps; double-click returns it to the value of the setup that is loaded now. “?” opens help over the panel and never changes the window size.
+
+---
+
+# JING FANG — Microtonal synthesizer
+Source: https://subverselab.com/plugins/jingfang
+
+Microtonal synthesizer plugin: a 3-row keyboard on a 53-step grid (or any equal grid), a Tuning Lab that learns a tuning from a recording, Scala in and out.
+JING FANG plays between the keys. Out of the box it is a normal synthesizer: every key plays its usual note, from any MIDI keyboard, your DAW or the computer keyboard. Press MICRO and the keyboard opens into three rows: the usual notes in the middle, each note one step higher above and one step lower below, on a 53-step grid (22.64 cents a step) by default or any grid from 5 to 96 steps. Now the notes of a maqam melody sit exactly where they belong. Around it is a complete instrument: three oscillators, a filter, FM, a drum mode, drive, echo and reverb, a patch bay, an arpeggiator, a step sequencer and a drum machine, with GENERATE to write their patterns for the sound you have loaded.
+Price: $60 (regular $150), launch price until 1 December 2026.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## A normal synthesizer until you ask for more
+Every key is its usual note until you press MICRO, so any MIDI keyboard, pad controller, DAW piano roll or the computer keyboard works with no setup. In MICRO each note name sits on its low, usual or high row: click the strip above the keyboard, right- or Alt-click a key, or send keyswitches from your controller while you play. A4 sets the reference pitch (415 to 466 Hz), and the rows are part of the preset, so SAVE and your DAW project keep them. An MPE controller plays with per-note pitch bend, pressure (level) and slide (brightness).
+
+## Learn a tuning from a recording
+Give the Tuning Lab a WAV, AIFF or FLAC of a solo line and it measures the steps the player really used; a step that sounds lower on the way down than on the way up keeps both values, and DIRECTION plays the falling one when the melody comes down. Load Scala .scl / .kbm files or the built-in tunings in 53 commas, maqam tunings among them; MORPH moves every key from one tuning to another with one knob, WHAT SOUNDS shows each interval you hold with its nearest simple ratio and beat rate, adaptive just intonation settles chords on pure ratios, and EXPORT writes your tuning back out as Scala files.
+
+## A full instrument around it
+Three oscillators (saw, square with pulse width, triangle, sine, white or pink noise and a plucked string, each with unison up to 8, detune and spread), a LP / BP / HP / notch filter with drive, amp and filter envelopes with curves, FM from oscillator 2, and a drum mode with a pitch envelope, a click layer and choke groups. Every sound carries its own effects rack: EQ, a compressor, drive, chorus, flanger or phaser, a tempo-synced echo (ping-pong, stereo, mono or tape) and a reverb; and the patch bay lays cables from three LFOs, the envelopes, velocity, key, mod wheel, aftertouch and random to pitch, levels, pulse width, cutoff, resonance, drive, FM, pan and more. Every part of the panel has its own preset slot, so a sound can take its oscillators from one preset and its filter from another.
+
+## Patterns inside, made for the DAW
+An arpeggiator with chord shapes, a 16-step sequencer whose steps can sit on their high or low row and carry their own velocity, probability and ratchet, and an 8-track drum machine live inside the presets, as on a hardware synthesizer. GENERATE writes a melody, bass line, chords or arp rhythm for the loaded sound, and a beat for the drum machine; roll again for another, or step back through the last 16. Started one after the other, the sequencer and the drum machine join the same grid. In a DAW JING FANG follows the host tempo, starts and stops with it and stays locked to its bar; switch SEQ or DRUM to MIDI to play them from your own notes, or drag a sequence or a beat onto a track as a MIDI clip.
+
+## Controls
+- OSC 1 · 2 · 3: Each with its own type, level, octave, semi, fine, pan, unison, detune and spread.
+- FILTER: LP, BP, HP or notch, with cutoff, resonance, drive, key, envelope and velocity amounts.
+- AMP ENV · FILTER ENV: Attack, decay, sustain and release, with curves.
+- FM: Oscillator 2 modulates 1, 3 or both.
+- PITCH · CLICK · DRUM: Drum mode: a pitch envelope and a click layer for kicks, snares and percussion.
+- DRIVE · ECHO · REVERB: On every sound; the echo follows the tempo.
+- FX RACK: Behind the key in the reverb title bar: EQ, compressor, chorus / flanger / phaser and the echo type.
+- TUNING: GRID (5 to 96 steps, 53 by default), A4 (415 to 466 Hz), HIGH ROW and LOW ROW (0 to 12 steps), KEYSWITCH and its start key.
+- PLAY: NORMAL · MICRO · LAB: Usual notes; every note name on its low, usual or high row; or the Tuning Lab deciding every pitch.
+- PATCH · SEQ · DRUM: The patch bay, the step sequencer and the drum machine, each on its own page.
+- GENERATE: On SEQ: ROLL, RHYTHM and NOTES write a pattern for the loaded sound; DENSITY, COMPLEX, MUTATE, RANGE, MICRO and a scale shape it. On DRUM: ROLL writes a beat, with DENSITY, COMPLEX and MUTATE. < > steps through the last 16 rolls.
+- Preset slots: Every panel takes its settings from a preset of your choice.
+Drag a knob up or down; double-click returns it to the value of the preset that is loaded now. “?” opens help over the panel.
+
+---
+
+# RU-8 — Drum machine
+Source: https://subverselab.com/plugins/ru8
+
+Drum machine plugin and app: synth kits and recorded sample kits, your own WAV or AIFF samples on any pad, an EDIT screen for every pad, a drummer’s groove, A/B rhythms with fill and auto, and MIDI drag-out.
+Open RU-8, press play, and the groove is already running. Pick a kit and the whole machine changes its sound; pick a set and only the rhythm changes, so a trap rhythm on a lo-fi kit is one click away. Every pad carries its own steps, so you shape the beat pad by pad, by hand, and drag it into your DAW as MIDI when it feels right. Synth kits, recorded sample kits, or your own samples dropped on any pad. Strong without being pushed, clean by default.
+Price: $25.
+Formats: macOS 11 or later (Apple Silicon and Intel) · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+
+## Play first, program later
+Press play and RU-8 runs a full rhythm from the start. A and B switch on the next bar, FILL drops a fill on the next bar, and AUTO plays A, a fill, B and a fill by itself, so you can jam over it before you touch a single step.
+
+## Pads that carry their own steps
+Each pad holds its own pattern of steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads at the same time as the sequencer, with velocity.
+
+## Kits bring the character, sets bring the rhythm
+Pick a kit and the whole machine changes its sound: the drums, and the settings of SPACE, ECHO and GLUE that go with them. Pick a set and only the rhythm changes. Any set plays on any kit, so a trap rhythm on a lo-fi kit is a valid sound. Loading either one makes the knobs glide to their new values.
+
+## New in 1.1
+Sample kits: recorded drum kits beside the synth kits. The synth kits redesigned: a softer hit also sounds darker, and recordings sit under the synthesis on the hats, claps, shakers, tambourines, rides, the kick’s beater and the snare’s wires. The EDIT screen for every pad. Your own WAV and AIFF samples on any pad, and user kits you save. HUMAN is now a drummer’s groove.
+
+## Synth kits and sample kits
+The synth kits are drums synthesized inside RU-8, so tune, decay and level reshape the drum itself; a softer hit sounds darker as well as quieter, and LAYER mixes in the recording under the synth voice. The sample kits play recorded drums: Uptown, Basement, Sweatbox, Hallway, Cellar, Parlor, Drill, Warehouse and Hardware, from close-miked real kits to slide 808s and sampler drums. SPACE is an algorithmic reverb with ROOM, PLATE and HALL; ECHO is a tempo-synced ping-pong delay. Every pad has its own send to each, so the snare can sit in the room while the kick stays dry.
+
+## The EDIT screen
+Press EDIT and the readout shows the selected pad: its sound, the sample or the last hit, with the envelope of the next hit drawn over it. The knobs take their second names in gold: START, END, ATTACK, FINE, FILTER, RESO, DRIVE, VEL>TONE, LAYER, CHOKE and WEIGHT (SWEEP and NOISE in place of START and END on synth pads). The knob you turn shows its own picture at once: the filter curve with its resonance, the drive curve, the pan, the space tail, the echo repeats, and fades when you let go. One page, no menus; the window never changes size.
+
+## Your own samples, your own kits
+Drop WAV or AIFF files on any pad of any kit, any sample rate or bit depth, mono or stereo. Put up to 8 on one pad and they play by chance, each with its own WEIGHT, and RU-8 avoids the same one twice in a row; REVERSE plays backwards and CLEAR brings the kit’s sound back. Files longer than 20 seconds are cut at 20 seconds. RU-8 keeps a copy in its user library, so a project still opens after the originals move. The User kit starts empty; SAVE stores it as a user kit that steps after the factory kits, and you can save as many as you like.
+
+## A drummer’s groove
+HUMAN no longer just shakes the timing. At 100 % the kick stays on the grid, the snare, clap and rim lie back by up to 12, 10 and 8 ms, the off-16th hats come lazy (8 ms late) and softer, the off-8th hats a little softer, and the whole kit’s time breathes by up to ±4 ms. It is fixed by bar and step, so a bounce repeats exactly.
+
+## Clean by default
+A gentle glue on the bus and a safety limiter at −1 dBFS, nothing more. Character that needs tape saturation, dust or bit reduction comes from a kit’s COLOR on the rear panel, and most kits leave it off.
+
+## An interface you can read
+One panel, no hidden pages: the pad bed, the channel strip of the selected pad and the effects all in view. The panel scales up for large screens, “?” opens help as notes over the panel, and the moods change only the colours.
+
+## Kits from analog to Anatolia
+The synth kits run from a sine-sub Analog and a clicky Punch to Trap with a long 808, Brush with a jazz ride, FM-bell Glass, dusty Lo-fi, an acoustic Breaks kit and Anatolia with darbuka, bendir, def and zil; the sample kits follow, then the User kit for your own samples. The sets cover House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro and Shuffle, plus four empty USER sets saved with your project.
+
+## The rear panel and the MIDI map
+Turn the machine round for COLOR (tape, dust and crush), the note map and the output. The pads answer General MIDI drum notes by default (C1 is the kick), or notes 36 to 51 from pad 1 up; C-1, D-1, E-1 and F-1 switch to A, B, a bar of fill and off at their exact sample, so a DAW lane or a controller can arrange RU-8.
+
+## Take the rhythm with you
+Drag the selected pad’s pattern, or the whole drum, from the panel onto a track in your DAW as a MIDI clip: standard MIDI, channel 10, with the swing written into the timing. Inside a host the steps follow the host’s timeline, so the same project plays and bounces the same way every time.
+
+## Controls
+- KIT: Large readout with arrows. Loading a kit moves its channel, SPACE, ECHO and GLUE values; the knobs glide.
+- SET: Small readout with arrows. Loads both sections, the tempo, the swing and the echo time, and lands on the next bar while playing.
+- A · B · FILL · AUTO: Switch section, play a fill, or let RU-8 arrange them.
+- TEMPO · SWING · HUMAN: Tempo (standalone; the plug-in follows the host), swing, and HUMAN: a drummer’s groove, the snare laid back, lazy 16th hats, the time breathing.
+- GLUE · VOLUME: Bus compressor and master volume, before the −1 dBFS limiter.
+- Channel strip: For the selected pad: level, tune, decay, pan, and its sends to SPACE and ECHO, plus mute and solo.
+- EDIT: The selected pad up close: its sound and envelope in the readout, START, END, ATTACK, FINE, FILTER, RESO, DRIVE, VEL>TONE, LAYER, CHOKE and WEIGHT on the knobs; REVERSE, OPEN, CLEAR and SAVE.
+- Your samples: Drop WAV or AIFF on any pad, up to 8 per pad played by chance; save the User kit as your own kit.
+- SPACE: ROOM, PLATE or HALL, with size, damping, pre-delay and return.
+- ECHO: Tempo-synced ping-pong: note value, feedback, tone and return.
+- COLOR (rear): TAPE, DUST and CRUSH, set per kit.
+- MIDI: Host notes and controllers play the pads; patterns drag out as MIDI clips.
+- Moods: Cream, Night, Powder and Pink. Colour only.
+Drag a knob up or down; double-click returns it to the value of the kit or set that is loaded now. “?” opens help over the panel.
+
+---
+
 # TORNA — Graphic equalizer
 Source: https://subverselab.com/plugins/torna
 
 Graphic equalizer plugin: twelve bands from 16 Hz to 32 kHz, ±12 dB, a LEFT and a RIGHT bank, and a spectrum analyzer, modelled part by part from a 1983 service schematic. For the mix bus and the master. Mac and Windows.
 Some mixes do not need surgery; they need a balance move. TORNA is a graphic equalizer modelled part by part from a 1983 service schematic: the input stage, the twelve resonators of each channel, the slide pots and the way they are wired, the output stage and its supply rails, and the analyzer’s filters and display. Its bands are broad and overlapping, as on the original, so a few sliders move the whole mix: a smile on the master, weight under the drums, a vocal brought forward. Twelve bands from 16 Hz to 32 kHz, ±12 dB, one bank for the left channel and one for the right, and a spectrum analyzer in the middle. Built for the mix bus and the master bus.
 Price: $12.
-Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Broad bands that work on each other
 The twelve bands sit at 16, 32, 63, 125, 250 and 500 Hz and 1, 2, 4, 8, 16 and 32 kHz, ±12 dB at the slider ends. They are broad and overlapping, as on the circuit they come from, so a few sliders move the whole balance of a mix. LEFT and RIGHT are separate banks; LINK moves them together, COPY L ▸ R and R ▸ L copy one bank to the other, and FLAT returns every slider to 0 dB.
@@ -40,50 +227,13 @@ Latency 64 samples at every sample rate from 44.1 to 192 kHz, reported to the ho
 
 ---
 
-# JING FANG — Microtonal synthesizer
-Source: https://subverselab.com/plugins/jingfang
-
-Microtonal synthesizer plugin: a 3-row keyboard on a 53-step grid (or any equal grid), a Tuning Lab that learns a tuning from a recording, Scala in and out.
-JING FANG plays between the keys. Out of the box it is a normal synthesizer: every key plays its usual note, from any MIDI keyboard, your DAW or the computer keyboard. Press MICRO and the keyboard opens into three rows: the usual notes in the middle, each note one step higher above and one step lower below, on a 53-step grid (22.64 cents a step) by default or any grid from 5 to 96 steps. Now the notes of a maqam melody sit exactly where they belong. Around it is a complete instrument: three oscillators, a filter, FM, a drum mode, drive, echo and reverb, a patch bay, an arpeggiator, a step sequencer and a drum machine, with GENERATE to write their patterns for the sound you have loaded.
-Price: $60 (regular $150), launch price until 1 December 2026.
-Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
-
-## A normal synthesizer until you ask for more
-Every key is its usual note until you press MICRO, so any MIDI keyboard, pad controller, DAW piano roll or the computer keyboard works with no setup. In MICRO each note name sits on its low, usual or high row: click the strip above the keyboard, right- or Alt-click a key, or send keyswitches from your controller while you play. A4 sets the reference pitch (415 to 466 Hz), and the rows are part of the preset, so SAVE and your DAW project keep them. An MPE controller plays with per-note pitch bend, pressure (level) and slide (brightness).
-
-## Learn a tuning from a recording
-Give the Tuning Lab a WAV, AIFF or FLAC of a solo line and it measures the steps the player really used; a step that sounds lower on the way down than on the way up keeps both values, and DIRECTION plays the falling one when the melody comes down. Load Scala .scl / .kbm files or the built-in tunings in 53 commas, maqam tunings among them; MORPH moves every key from one tuning to another with one knob, WHAT SOUNDS shows each interval you hold with its nearest simple ratio and beat rate, adaptive just intonation settles chords on pure ratios, and EXPORT writes your tuning back out as Scala files.
-
-## A full instrument around it
-Three oscillators (saw, square with pulse width, triangle, sine, white or pink noise and a plucked string, each with unison up to 8, detune and spread), a LP / BP / HP / notch filter with drive, amp and filter envelopes with curves, FM from oscillator 2, and a drum mode with a pitch envelope, a click layer and choke groups. Every sound carries its own effects rack: EQ, a compressor, drive, chorus, flanger or phaser, a tempo-synced echo (ping-pong, stereo, mono or tape) and a reverb; and the patch bay lays cables from three LFOs, the envelopes, velocity, key, mod wheel, aftertouch and random to pitch, levels, pulse width, cutoff, resonance, drive, FM, pan and more. Every part of the panel has its own preset slot, so a sound can take its oscillators from one preset and its filter from another.
-
-## Patterns inside, made for the DAW
-An arpeggiator with chord shapes, a 16-step sequencer whose steps can sit on their high or low row and carry their own velocity, probability and ratchet, and an 8-track drum machine live inside the presets, as on a hardware synthesizer. GENERATE writes a melody, bass line, chords or arp rhythm for the loaded sound, and a beat for the drum machine; roll again for another, or step back through the last 16. Started one after the other, the sequencer and the drum machine join the same grid. In a DAW JING FANG follows the host tempo, starts and stops with it and stays locked to its bar; switch SEQ or DRUM to MIDI to play them from your own notes, or drag a sequence or a beat onto a track as a MIDI clip.
-
-## Controls
-- OSC 1 · 2 · 3: Each with its own type, level, octave, semi, fine, pan, unison, detune and spread.
-- FILTER: LP, BP, HP or notch, with cutoff, resonance, drive, key, envelope and velocity amounts.
-- AMP ENV · FILTER ENV: Attack, decay, sustain and release, with curves.
-- FM: Oscillator 2 modulates 1, 3 or both.
-- PITCH · CLICK · DRUM: Drum mode: a pitch envelope and a click layer for kicks, snares and percussion.
-- DRIVE · ECHO · REVERB: On every sound; the echo follows the tempo.
-- FX RACK: Behind the key in the reverb title bar: EQ, compressor, chorus / flanger / phaser and the echo type.
-- TUNING: GRID (5 to 96 steps, 53 by default), A4 (415 to 466 Hz), HIGH ROW and LOW ROW (0 to 12 steps), KEYSWITCH and its start key.
-- PLAY: NORMAL · MICRO · LAB: Usual notes; every note name on its low, usual or high row; or the Tuning Lab deciding every pitch.
-- PATCH · SEQ · DRUM: The patch bay, the step sequencer and the drum machine, each on its own page.
-- GENERATE: On SEQ: ROLL, RHYTHM and NOTES write a pattern for the loaded sound; DENSITY, COMPLEX, MUTATE, RANGE, MICRO and a scale shape it. On DRUM: ROLL writes a beat, with DENSITY, COMPLEX and MUTATE. < > steps through the last 16 rolls.
-- Preset slots: Every panel takes its settings from a preset of your choice.
-Drag a knob up or down; double-click returns it to the value of the preset that is loaded now. “?” opens help over the panel.
-
----
-
 # ELEK — Stem separation app
 Source: https://subverselab.com/plugins/elek
 
 Stem separation app: split a track into vocals, drums, bass and other, remove the vocal, or read tempo and key. It runs on your computer; nothing is uploaded.
 Need the acapella for a remix, the drums to study, or an instrumental to sing over? Drop a track into ELEK and choose: four stems (vocals, drums, bass and other), vocal removal, or just the tempo and key. It all runs on your computer, so your music never leaves it. Every result is saved in its own folder, named so you can find it, and kept in a list you can reopen.
 Price: $7 (regular $25), launch price until 1 December 2026.
-Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Three operations, one choice
 Stem separation writes vocals, drums, bass and other. Vocal removal writes the vocal and the instrumental. Key & BPM reads the tempo, the musical key, its Camelot code and how sure the reading is, without separating anything. Nothing starts when you drop a file: you pick the operation first.
@@ -125,7 +275,7 @@ Source: https://subverselab.com/plugins/seda
 Bucket-brigade (BBD) analog delay plugin, 20 to 1200 ms, zero latency. LISTEN ducks the echo while you play and throws it at the end of the phrase. Mac and Windows.
 An echo that waits for you. SEDA is a bucket-brigade analog delay: 8192 stages, companded, from 20 to 1200 ms, with feedback up to 110 % and zero latency. Switch on LISTEN and it hears the phrase: the echo ducks while you sing or play, then throws at the end of the line, in the gap where an echo belongs. The duck-and-throw you would otherwise draw by hand, done by the delay itself.
 Price: $15.
-Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## A real bucket brigade
 The delay line is a BBD with 8192 stages, companded, and it runs from 20 to 1200 ms. Feedback goes up to 110 %. AGE switches between NEW and OLD.
@@ -149,57 +299,6 @@ RUNAWAY raises the loop gain past 100 %: the repeats grow into a steady drone th
 - LISTEN · DUCK · THROW: Ducks the echo while you play or sing and throws it at the end of the phrase; programs on an LED display.
 - VU meter: The analog meter shows the wet level; a red needle shows the duck depth.
 Zero latency. Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows.
-
----
-
-# RU-8 — Drum machine
-Source: https://subverselab.com/plugins/ru8
-
-Drum machine plugin and app: synthesized pads that carry their own steps, kits that change the whole sound, A/B rhythms with fill and auto, and MIDI drag-out.
-Open RU-8, press play, and the groove is already running. Pick a kit and the whole machine changes its sound; pick a set and only the rhythm changes, so a trap rhythm on a lo-fi kit is one click away. Every pad is a drum synthesized inside RU-8 with its own steps, so you shape the beat pad by pad, by hand, and drag it into your DAW as MIDI when it feels right. Strong without being pushed, clean by default.
-Price: $25.
-Formats: macOS 11 or later (Apple Silicon and Intel) · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
-
-## Play first, program later
-Press play and RU-8 runs a full rhythm from the start. A and B switch on the next bar, FILL drops a fill on the next bar, and AUTO plays A, a fill, B and a fill by itself, so you can jam over it before you touch a single step.
-
-## Pads that carry their own steps
-Each pad holds its own pattern of steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads at the same time as the sequencer, with velocity.
-
-## Kits bring the character, sets bring the rhythm
-Pick a kit and the whole machine changes its sound: the drums, and the settings of SPACE, ECHO and GLUE that go with them. Pick a set and only the rhythm changes. Any set plays on any kit, so a trap rhythm on a lo-fi kit is a valid sound. Loading either one makes the knobs glide to their new values.
-
-## Drums made inside, not played back
-Every sound is synthesized by RU-8 itself, so tune, decay and level reshape the drum rather than stretch a recording. SPACE is an algorithmic reverb with ROOM, PLATE and HALL; ECHO is a tempo-synced ping-pong delay. Every pad has its own send to each, so the snare can sit in the room while the kick stays dry.
-
-## Clean by default
-A gentle glue on the bus and a safety limiter at −1 dBFS, nothing more. Character that needs tape saturation, dust or bit reduction comes from a kit’s COLOR on the rear panel, and most kits leave it off.
-
-## An interface you can read
-One panel, no hidden pages: the pad bed, the channel strip of the selected pad and the effects all in view. The panel scales up for large screens, “?” opens help as notes over the panel, and the moods change only the colours.
-
-## Kits from analog to Anatolia
-The kits run from a sine-sub Analog and a clicky Punch to Trap with a long 808, Brush with a jazz ride, FM-bell Glass, dusty Lo-fi, an acoustic Breaks kit and Anatolia with darbuka, bendir, def and zil. The sets cover House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro and Shuffle, plus four empty USER sets saved with your project.
-
-## The rear panel and the MIDI map
-Turn the machine round for COLOR (tape, dust and crush), the note map and the output. The pads answer General MIDI drum notes by default (C1 is the kick), or notes 36 to 51 from pad 1 up; C-1, D-1, E-1 and F-1 switch to A, B, a bar of fill and off at their exact sample, so a DAW lane or a controller can arrange RU-8.
-
-## Take the rhythm with you
-Drag the selected pad’s pattern, or the whole drum, from the panel onto a track in your DAW as a MIDI clip: standard MIDI, channel 10, with the swing written into the timing. Inside a host the steps follow the host’s timeline, so the same project plays and bounces the same way every time.
-
-## Controls
-- KIT: Large readout with arrows. Loading a kit moves its channel, SPACE, ECHO and GLUE values; the knobs glide.
-- SET: Small readout with arrows. Loads both sections, the tempo, the swing and the echo time, and lands on the next bar while playing.
-- A · B · FILL · AUTO: Switch section, play a fill, or let RU-8 arrange them.
-- TEMPO · SWING · HUMAN: Tempo (standalone; the plug-in follows the host), swing, and a little human timing and level.
-- GLUE · VOLUME: Bus compressor and master volume, before the −1 dBFS limiter.
-- Channel strip: For the selected pad: level, tune, decay, pan, and its sends to SPACE and ECHO, plus mute and solo.
-- SPACE: ROOM, PLATE or HALL, with size, damping, pre-delay and return.
-- ECHO: Tempo-synced ping-pong: note value, feedback, tone and return.
-- COLOR (rear): TAPE, DUST and CRUSH, set per kit.
-- MIDI: Host notes and controllers play the pads; patterns drag out as MIDI clips.
-- Moods: Cream, Night, Powder and Pink. Colour only.
-Drag a knob up or down; double-click returns it to the value of the kit or set that is loaded now. “?” opens help over the panel.
 
 ---
 
@@ -235,7 +334,7 @@ Source: https://subverselab.com/plugins/kubbe
 Algorithmic reverb plugin with three modes (Hammam, Cistern, Valley) and a decay display that is measured, not nominal. VST3 and AU for Mac, VST3 for Windows. $9.
 Most reverbs hand you a list of algorithms and leave you scrolling. KUBBE gives you three rooms, and you hear the difference the moment you switch: a bright marble dome, a long dark cistern, an open valley whose echoes can land on your beat grid. Pick the one your track is asking for, set the decay, and get back to the song. It wears the face of a 1979 rack unit as it looked the day it left the factory, and every tail is made by the engine itself: no impulse responses, nothing recorded from a real place.
 Price: $9.
-Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Measured, not nominal
 The decay display runs the engine on an impulse every time a setting changes. It draws the energy per 20 ms and the Schroeder curve, and prints the T60 it measures — at the default settings about 2.4 s in Hammam and about 6.6 s in Cistern. The Decay knob is scaled from that measurement.
@@ -266,7 +365,7 @@ Source: https://subverselab.com/plugins/kaset
 Cassette tape colour plugin: pick a generation from Master to 4th Dub and a tape type; every copy loses top end and gains hiss and saturation. VST3/AU, Windows VST3. $9.
 Every time a cassette was copied, it came back a little darker, a little hissier, a little more saturated. KASET puts that on a dial. Its face is a high-speed dubbing deck, and the Generation dial says how many copies away from the master you are: stay on Master for a light tape colour on the mix bus, or go down to the 4th Dub for a worn copy with the top end fallen to about 4.4 kHz. Auto Gain keeps the loudness level as you go, so you judge the colour, not the volume.
 Price: $9.
-Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Generations
 The Generation selector runs Master, 1st, 2nd, 3rd and 4th Dub. Each dub is another pass through the tape model: the top end falls from about 10 kHz on the master to about 4.4 kHz on the 4th dub, and hiss and saturation build with every copy. Speed error does not build up: it is highest on the master and falls with each dub. Auto Gain keeps the loudness level as you move between generations, so a darker copy does not simply sound quieter.
@@ -300,7 +399,7 @@ Source: https://subverselab.com/plugins/koro
 Vocal doubler and harmonizer plugin. It detects the key live while the singer sings, keeps to safe intervals until it is sure, and never plays a wrong note.
 Backing vocals without picking a scale. Drop KORO on the lead and it listens while the singer sings, reading the key and scale as it goes. Until it is sure, it plays safe: a plain unison double, or the fifth. Thirds come in only on notes where every likely key agrees, so the harmony never lands on a wrong note. A tight double, a stack or a whole choir behind the voice, and you never open a scale menu.
 Price: $15.
-Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Three steps
 Drop it on a vocal. Let the key read-out settle while the singer sings, or press LOCK once you like the key. Pick a mood. That is the whole workflow.
@@ -334,7 +433,7 @@ Source: https://subverselab.com/plugins/yanki
 Tempo-synced tape echo plugin. It opens as a plain 1/8 echo at the host tempo; moods such as Dub Spiral and Worn Loop swell the repeats into a loop.
 Drop YANKI on a vocal or a bus and it is already in time: a 1/8 echo at your host tempo, a few repeats that fade the way tape does. When the song wants more, pick a mood. Push FEEDBACK past HOLD in Dub Spiral, Worn Loop and the others, and the loop swells up to the CAP you set, so a dub throw can grow big without running away from you.
 Price: $9.
-Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Moods
 From a clean repeat to a loop that keeps growing: Echo, Slapback, Three Heads, Dub Spiral, Worn Loop, Yesilcam and Ters. Each one is a starting point; every knob is still yours.
@@ -367,7 +466,7 @@ Source: https://subverselab.com/plugins/hava
 Exciter plugin for a bus or the master: a top-end air lift and a short spring sheen. A colour box with a short sheen tail (T60 0.63 s), not a reverb.
 When a mix sounds right but closed, reach for air, not more reverb. Drop HAVA on the bus, turn AIR, and the top end opens with a smooth lift above 9 kHz. Add SHEEN for a short spring sparkle (a chirp, a twang, a glint on the transients) that dies away fast: a measured tail of T60 0.63 s. It brightens and glues, and it never puts your track in a room: there is no decay or size control anywhere.
 Price: $12.
-Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Moods
 Air Light and Air Full for a clean top-end lift, Air + Sheen and Sheen Only when you want the spring sparkle, and Master Air, with MASTER SAFE on, for the last insert on the master.
@@ -395,7 +494,7 @@ Source: https://subverselab.com/plugins/mihenk
 Transparent mastering plugin and app. It measures peaks, loudness, spectrum and phase, lists findings with a measured reason, and masters to the loudness target you pick.
 Mastering you can trust, because it shows you why. Load your track and MIHENK measures it first: peaks, loudness, spectrum and phase. Then it lists what it found, every finding with the measurement behind it, and masters to the loudness target you pick. Leave CHARACTER on OFF and it sets only level and ceiling; choose GENTLE or FULL when you want it to do more. One product: the same engine runs as a standalone app and inside your DAW.
 Price: $49.
-Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Diagnosis and character
 On load MIHENK lists findings with a severity and a measured reason, for example an input that arrives hotter than a mastering-ready level. CHARACTER decides what is done about them: OFF (the default) sets level and ceiling only, GENTLE adds a little glue and air, FULL applies EQ and compression from the diagnosis.
@@ -421,7 +520,7 @@ Source: https://subverselab.com/plugins/tutkal
 Bus compressor plugin with three voicings: GLUE for the drum or mix bus, LA for vocals, PUMP for sidechain ducking in time with a kick.
 Three compressors you reach for in every session, behind one switch. GLUE holds a drum or mix bus together so it hits as one. LA levels a vocal smoothly, without grabbing it. PUMP ducks a pad or a bass in time with the kick, in note values at your tempo. The panel shows only the controls that work in the voicing you chose, so you set it, hear it and move on.
 Price: $12.
-Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
+Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Three voicings, one switch
 GLUE, LA and PUMP share one measured engine. Only the controls that work in the chosen voicing are shown on the panel.
@@ -494,46 +593,6 @@ Latency is 0 samples. Undo and redo with Cmd+Z on macOS, Ctrl+Z on Windows.
 
 ---
 
-# ADALET — Dynamic EQ
-Source: https://subverselab.com/plugins/adalet
-
-ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows.
-ADALET is a dynamic EQ with six bands and zero latency, with helpers that find the problem for you. Any bell or shelf can be made dynamic, so it cuts or lifts only while the sound needs it. TARGET cuts a named part of a sound, such as a boxy vocal or a kick’s sub; COLLIDE clears room for this track where another one is loud; SELF finds the resonances of the track it sits on. They do the finding, so you can do the deciding.
-Price: Coming soon.
-Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · 2 years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
-
-## Six bands, any of them dynamic
-Bell, low shelf, high shelf, notch, low cut and high cut. The cuts run at 12, 24, 36, 48 or 72 dB per octave and have a resonance control. Any bell or shelf can be dynamic: RANGE up to ±12 dB, with THRESHOLD, ATTACK and RELEASE, triggered by the band itself or by the sidechain KEY.
-
-## TARGET: name the part
-Tell ADALET the instrument and the part, and it learns where that part sits in the material from the hits and cuts it by AMOUNT. It is static and needs no sidechain. VOCAL: BOX, NASAL, HARSH, S, REVERB-READY. BASS: SUB, BODY, TOP. DRUMS: KICK BODY, SNARE BODY, HATS SHIMMER. KICK: SUB, BODY, CLICK. SNARE: BODY, CRACK, SNAP/AIR, REVERB-READY. HATS: CHICK, SHIMMER.
-
-## COLLIDE: two sounds stop masking each other
-Route a KEY track to the sidechain and COLLIDE cuts this track only where the KEY track is loud, so the two stop fighting for the same space and both come through.
-
-## SELF: resonances in this track
-SELF finds the resonances in the track it sits on and cuts them, so a ring you can hear but cannot place stops standing out.
-
-## It tells you what it heard
-While TARGET learns, the display says where it is: listening, how many hits it has heard, how many of three it has learned, then learned and cutting. When a hit cannot be used it says why, so you know to play the part of the song where the instrument is clearest. The bands sit ready at six different frequencies, and the control row under the display holds only the selected band.
-
-## Hear what it does
-Hold DELTA to hear only what is being cut. BYPASS is level-matched, so a comparison is not decided by loudness. A live spectrum analyzer shows POST by default, or PRE, PRE+POST or nothing, and the curve on screen is the engine’s own response.
-
-## Controls
-- Bands: Six: bell, low shelf, high shelf, notch, low cut, high cut. Cuts: 12, 24, 36, 48 or 72 dB/oct, with a resonance control.
-- RANGE · THRESHOLD · ATTACK · RELEASE: Make a bell or shelf dynamic. RANGE is up to ±12 dB. Triggered by the band itself or by the sidechain KEY.
-- TARGET · AMOUNT: Name the instrument and the part; AMOUNT sets how much of it is cut. Static, no sidechain.
-- COLLIDE: Cuts this track only where a KEY track routed to the sidechain is loud.
-- SELF: Finds resonances in this track and cuts them.
-- DELTA: Hold to hear only what is being cut.
-- BYPASS: Level-matched.
-- Analyzer: Live spectrum: OFF, PRE, POST (default) or PRE+POST.
-- LAB · ORBIT: Two faces, one set of settings.
-Zero latency. VST3 and AU on macOS, VST3 on Windows.
-
----
-
 # Purchases and Refunds
 Source: https://subverselab.com/refunds (last updated 19 October 2026)
 
@@ -549,7 +608,7 @@ This page applies to every paid SubverseLab product: plugins, apps, sample packs
 - Every paid product is sold through Lemon Squeezy (lemonsqueezy.com). The price on the product page is in US dollars; tax is added at checkout where it applies, and Lemon Squeezy sends the receipt or invoice by e-mail. We never see your card details.
 - A launch price is shown with its end date on the product page, and the checkout charges the price it shows.
 - After you pay, sign in to subverselab.com with the e-mail address you paid with: the product appears on your Account page with its download. If you paid with another address, the order number lets you claim it on the Account page.
-- Every paid licence includes 2 years of updates from the purchase date. The version you have keeps working after that.
+- Updates we release for a paid product appear on your Account page. The version you have keeps working forever.
 
 ## How to ask for a refund
 - Ask within 18 days of the purchase date. E-mail info@subverselab.com from any address, with the order number (it is on the Lemon Squeezy receipt) and the e-mail address used at checkout, and say why.

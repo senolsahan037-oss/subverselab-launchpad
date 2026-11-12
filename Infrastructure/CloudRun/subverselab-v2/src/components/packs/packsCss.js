@@ -45,6 +45,10 @@ a.sp-key { text-decoration: none; }
 .pk-wave { position: relative; flex: 1; min-width: 0; height: 64px; cursor: pointer; touch-action: manipulation; }
 .pk-wave svg { display: block; width: 100%; height: 100%; }
 .pk-needle { position: absolute; top: 0; bottom: 0; width: 2px; background: #C5A059; box-shadow: 0 0 6px rgba(197,160,89,.7); pointer-events: none; }
+.pk-drag { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; font-size: .76rem; font-weight: 700; color: var(--color-text); background: var(--color-surface); box-shadow: var(--shadow-card); text-decoration: none; cursor: grab; user-select: none; -webkit-user-drag: element; }
+.pk-drag:hover { box-shadow: var(--shadow-card-hover); color: var(--color-gold); }
+.pk-drag:active { cursor: grabbing; }
+.pk-drag svg { width: 14px; height: 14px; }
 .pk-time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--color-text-muted); min-width: 82px; text-align: right; }
 @media (max-width: 560px) { .pk-strip-row { flex-wrap: wrap; } .pk-wave { flex: 1 0 100%; order: 3; } .pk-time { min-width: 0; text-align: left; } }
 .pk-scenes { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }

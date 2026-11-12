@@ -49,7 +49,9 @@ function fakeFirestore() {
         return { docs: paths.map((p) => ({ ...snap(p), id: p.split('/').pop(), ref: ref(p) })) };
       },
     });
-    return { doc: (id) => ref(`${name}/${id}`), ...query(null, null) };
+    // where(field, '==', value).get(): equality only (trialGrant.js looks device codes up by user_code).
+    const where = (field, op, value) => ({ get: async () => ({ docs: [...docs.keys()].filter((p) => p.startsWith(`${name}/`) && !p.slice(name.length + 1).includes('/') && docs.get(p)?.[field] === value).map((p) => ({ ...snap(p), id: p.split('/').pop(), ref: ref(p) })) }) });
+    return { doc: (id) => ref(`${name}/${id}`), where, ...query(null, null) };
   };
   let queue = Promise.resolve();
   return {
@@ -94,6 +96,8 @@ function fakeStorage() {
     ['plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg', { name: 'Kiyma-1.0.0-macOS.pkg', body: 'KIYMA-MAC' }],
     ['plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip', { name: 'Kiyma-1.0.0-Windows-VST3.zip', body: 'KIYMA-WIN' }],
     ['plugins/elek/1.0.0/Elek-1.0.0-macOS.zip', { name: 'Elek-1.0.0-macOS.zip', body: 'ELEK-MAC' }],
+    ['plugins/ahenk/1.0.0/AHENK-1.0.0-macOS.pkg', { name: 'AHENK-1.0.0-macOS.pkg', body: 'AHENK-MAC' }],
+    ['plugins/ahenk/1.0.0/AHENK-1.0.0-Windows.zip', { name: 'AHENK-1.0.0-Windows.zip', body: 'AHENK-WIN' }],
     ['plugins/elek/1.0.0/Elek-1.0.0-big.pkg', { name: 'plugins/elek/1.0.0/Elek-1.0.0-macOS.pkg', body: 'ELEK-BIG', size: 680334241 }],
   ]);
   return {
@@ -130,6 +134,11 @@ function fakeStorage() {
         kiyma: { version: '1.0.0', files: {
           mac: { name: 'Kiyma-1.0.0-macOS.pkg', size: 9, object: 'plugins/kiyma/1.0.0/Kiyma-1.0.0-macOS.pkg' },
           win: { name: 'Kiyma-1.0.0-Windows-VST3.zip', size: 9, object: 'plugins/kiyma/1.0.0/Kiyma-1.0.0-Windows-VST3.zip' },
+        } },
+        // AHENK (7 Nov 2026): a trial product (trialGrant.js TRIAL_PRODUCTS); its installer is free for any signed-in account.
+        ahenk: { version: '1.0.0', files: {
+          mac: { name: 'AHENK-1.0.0-macOS.pkg', size: 9, object: 'plugins/ahenk/1.0.0/AHENK-1.0.0-macOS.pkg' },
+          win: { name: 'AHENK-1.0.0-Windows.zip', size: 9, object: 'plugins/ahenk/1.0.0/AHENK-1.0.0-Windows.zip' },
         } },
         elek: { version: '1.0.0', files: { mac: { name: 'Elek-1.0.0-macOS.zip', size: 8, object: 'plugins/elek/1.0.0/Elek-1.0.0-macOS.zip' } } },
         // RU-8 (16 Oct): macOS and Windows at launch. Packs: one zip each (platform 'zip').
@@ -186,6 +195,8 @@ const transformed = serverSource
   .replace("from './catalog.js';", `from '${pathToFileURL(resolve(root, 'api/catalog.js')).href}';`)
   .replace("from './catalogSchema.js';", `from '${pathToFileURL(resolve(root, 'api/catalogSchema.js')).href}';`)
   .replace("from './agents.js';", `from '${pathToFileURL(resolve(root, 'api/agents.js')).href}';`)
+  .replace("from './trialGrant.js';", `from '${pathToFileURL(resolve(root, 'api/trialGrant.js')).href}';`)
+  .replace("from './partners.js';", `from '${pathToFileURL(resolve(root, 'api/partners.js')).href}';`)
   .replace('const app = express();', 'export const app = express();')
   .replace("await import('firebase-admin/app')", 'await Promise.resolve(globalThis.__downloadTestAdminApp)')
   .replace("await import('firebase-admin/firestore')", 'await Promise.resolve(globalThis.__downloadTestAdminFirestore)')
@@ -775,7 +786,7 @@ await test('TUTKAL (seventh family product): family order opens it; no order 402
   assert.equal((await ticketReq('tk-test', '10.0.9.5', 'koro', 'launch2')).response.status, 200);
   assert.equal((await ticketReq('tk-test', '10.0.9.6', 'tutkal', 'launch2')).response.status, 200);
   const ts = await call('/api/purchases/status', { headers: { ...headersFor('10.0.9.8'), authorization: 'Bearer valid-tk-test' } });
-  assert.deepEqual(ts.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
+  assert.deepEqual(ts.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'adalet', 'ahenk', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
   assert.equal(ts.body.standing, 'tester');
   assert.deepEqual(ts.body.updatesUntil, {});
   // TUTKAL does not exist on launch 1.
@@ -990,7 +1001,10 @@ await test('sweep: one paid sweep opens every sample pack listed when it was bou
   }
   assert.equal((await ticketReq('sw1', '10.0.42.9', 'ru8-drum-pack', 'pack', 'zip')).response.status, 402, 'the sample-pack sweep does not include preset packs');
   const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.42.10'), authorization: 'Bearer valid-sw1' } });
-  assert.deepEqual(st.body.packs, SAMPLE_PACK_SLUGS, 'every listed sample pack'); assert.deepEqual(st.body.owned, []);
+  // The order is dated 17 Oct (paidOrder): it opens the packs listed by then; the six listed on 1 Nov are not in it.
+  const listedBy = (iso) => SAMPLE_PACK_SLUGS.filter((s) => Date.parse(SAMPLE_PACK_LISTED[s]) <= Date.parse(iso));
+  assert.deepEqual(st.body.packs, listedBy('2026-10-17T02:00:00Z'), 'every sample pack listed when it was bought'); assert.deepEqual(st.body.owned, []);
+  assert.ok(!st.body.packs.includes('mirage') && SAMPLE_PACK_SLUGS.includes('mirage'), 'a pack listed on 1 Nov is not in a 17 Oct sweep');
   // A pack listed after the order is not part of it; a sweep bought after the listing is.
   SAMPLE_PACK_LISTED.laterpack = '2026-12-01T00:00:00Z';
   try {
@@ -1026,6 +1040,39 @@ await test('free rack packs (owner 17 Oct, launchId member): any signed-in deliv
   assert.equal((await ticketReq('mem2', '10.0.44.7', 'racks-drums', 'member', 'zip')).response.status, 403, 'an address that cannot receive mail gets nothing');
   assert.ok(!entitlements.PACK_SLUGS.includes('racks-drums'), 'free packs are not sold packs');
 });
+await test('trial installer (owner 7 Nov, launchId trial): any signed-in deliverable account gets AHENK without owning it; no other product', async () => {
+  resetDb({ claimed: 1000 });
+  const mac = await ticketReq('tr1', '10.0.45.1', 'ahenk', 'trial', 'mac');
+  assert.equal(mac.response.status, 200); assert.equal(mac.body.name, 'AHENK-1.0.0-macOS.pkg'); assert.equal(mac.body.version, '1.0.0');
+  assert.equal((await call(mac.body.url, { headers: { 'x-forwarded-for': '10.0.45.1' } })).body, 'AHENK-MAC');
+  const win = await ticketReq('tr1', '10.0.45.2', 'ahenk', 'trial', 'win');
+  assert.equal(win.response.status, 200); assert.equal(win.body.name, 'AHENK-1.0.0-Windows.zip');
+  assert.equal(decodeTicket(win.body.url).object, 'plugins/ahenk/1.0.0/AHENK-1.0.0-Windows.zip');
+  assert.equal(state.db.docs.get('trial/counter').downloads, 2, 'counted like every other download');
+  assert.equal(state.db.docs.get('downloads/tr1').ahenk.mac.count, 1);
+  assert.equal((await ticketReq('unv-tr2', '10.0.45.3', 'ahenk', 'trial', 'mac')).response.status, 200, 'an unverified password account whose address receives mail');
+  assert.equal((await ticketReq('tr1', '10.0.45.4', 'ahenk', 'trial', 'zip')).response.status, 400, 'mac / win only');
+  for (const [slug, ip] of [['jingfang', '10.0.45.5'], ['elek', '10.0.45.6'], ['ru8', '10.0.45.7'], ['koro', '10.0.45.8'], ['taban', '10.0.45.9'], ['racks-drums', '10.0.45.10']]) {
+    assert.equal((await ticketReq('tr1', ip, slug, 'trial', 'mac')).response.status, 400, `${slug} has no trial`);
+  }
+  assert.equal((await ticketReq('tr1', '10.0.45.11', 'jingfang', 'solo')).response.status, 402, 'JING FANG stays owned-only');
+  assert.equal((await ticketReq('tr1', '10.0.45.12', 'elek', 'solo')).response.status, 402, 'ELEK stays owned-only');
+  assert.ok([400, 402].includes((await ticketReq('tr1', '10.0.45.13', 'ahenk', 'solo')).response.status), 'the owned route still needs an order');
+  const anon = await call('/api/download/ticket', { method: 'POST', headers: headersFor('10.0.45.14'), body: JSON.stringify({ slug: 'ahenk', platform: 'mac', launchId: 'trial' }) });
+  assert.equal(anon.response.status, 401, 'sign in first'); assert.equal(anon.body.url, undefined);
+  const expired = await call('/api/download/ticket', { method: 'POST', headers: { ...headersFor('10.0.45.15'), authorization: 'Bearer invalid' }, body: JSON.stringify({ slug: 'ahenk', platform: 'mac', launchId: 'trial' }) });
+  assert.equal(expired.response.status, 401);
+  state.db.docs.set('bounced_emails/tr3@example.com', { at: '2026-11-07T00:00:00Z' });
+  assert.equal((await ticketReq('tr3', '10.0.45.16', 'ahenk', 'trial', 'mac')).response.status, 403, 'an address that cannot receive mail gets nothing');
+  assert.equal((await ticketReq('tr4-nomx', '10.0.45.17', 'ahenk', 'trial', 'mac')).response.status, 403, 'a domain without a mail server gets nothing');
+  const codes = [];
+  for (let i = 0; i < 31; i += 1) codes.push((await ticketReq('tr5', '10.0.45.99', 'ahenk', 'trial', 'mac')).response.status);
+  assert.deepEqual(codes.slice(0, 30), Array(30).fill(200), '30 a minute per IP, like every ticket');
+  assert.equal(codes[30], 429);
+  assert.equal((await ticketReq('tr5', '10.0.45.98', 'ahenk', 'trial', 'mac')).response.status, 200, 'another IP is not limited');
+  const manifest = await call('/api/download/manifest');
+  assert.equal('ahenk' in manifest.body, entitlements.PLUGIN_SLUGS.includes('ahenk'), 'the public manifest lists AHENK only once it is on sale');
+});
 await test('inbox: pack, sweep and RU-8 order messages point to Account -> Packs / RU-8, with no licence-key or plug-in install line for packs', async () => {
   const { orderMessage } = await import(pathToFileURL(resolve(root, 'api/inbox.js')).href);
   const pack = orderMessage('kerbstone', { orderNumber: 7 });
@@ -1046,7 +1093,7 @@ await test('testers: active opens the family, free and ELEK tickets without a se
   assert.equal(state.db.docs.get('launch2/counter').claimed, claimedBefore, 'no paid seat');
   assert.equal(state.db.docs.get('launch/counter').claimed, 1000, 'no launch-1 seat either');
   const st = await call('/api/purchases/status', { headers: { ...headersFor('10.0.30.5'), authorization: 'Bearer valid-tt1' } });
-  assert.deepEqual(st.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
+  assert.deepEqual(st.body.owned, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'adalet', 'ahenk', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'taban', 'alev', 'kiyma']);
   assert.equal(st.body.standing, 'tester');
   // Ended: only what the owned map lists.
   state.db.docs.set('launch2_testers/tt1@example.com', { ...state.db.docs.get('launch2_testers/tt1@example.com'), status: 'ended', owned: { elek: '2026-10-14' } });
@@ -1936,6 +1983,82 @@ await test('firestore.rules: orders_by_uid is closed to every client; Dockerfile
   for (const m of src.matchAll(/from '\.\/([A-Za-z0-9_-]+\.js)'/g)) assert.ok(copied.has(m[1]), `${m[1]} missing from the Dockerfile COPY line`);
   for (const f of copied) for (const m of (await readFile(resolve(root, 'api', f), 'utf8')).matchAll(/from '\.\/([A-Za-z0-9_-]+\.js)'/g)) assert.ok(copied.has(m[1]), `${m[1]} (imported by ${f}) missing from the Dockerfile COPY line`);
 });
+
+// ---- Plug-in trial + browser sign-in routes (api/trialGrant.js; logic cases in scripts/test-trial.js) -------------------
+{
+  const { generateKeyPairSync } = await import('crypto');
+  const tg = await import(pathToFileURL(resolve(root, 'api/trialGrant.js')).href);
+  const MACH = 'svl-machine:0123456789abcdef0123456789abcdef';
+  const post = (path, ip, body, token) => call(path, { method: 'POST', headers: { ...headersFor(ip), ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
+  await test('trial routes: no GRANT_SIGNING_KEY -> 503 plain text on every route', async () => {
+    resetDb();
+    delete process.env.GRANT_SIGNING_KEY;
+    for (const [i, path] of ['/api/trial/start', '/api/device/start', '/api/device/poll', '/api/device/approve', '/api/device/lookup', '/api/grant/refresh'].entries()) {
+      const r = await post(path, `10.9.0.${i + 1}`, { product: 'ahenk', machine: MACH }, 'valid-bob');
+      assert.equal(r.response.status, 503, path);
+      assert.equal(r.body, 'Service not configured', path);
+    }
+    assert.equal(state.db.docs.size, 2, 'nothing written');
+  });
+  const pem = generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const KEY = tg.loadSigningKey(pem);
+  await test('trial routes: trial/start signs a 30-day trial grant; unknown product 400', async () => {
+    resetDb();
+    process.env.GRANT_SIGNING_KEY = pem.replace(/\n/g, '\\n'); // the one-line form an env var may carry
+    const r = await post('/api/trial/start', '10.9.1.1', { product: 'ahenk', machine: MACH, name: 'Studio' });
+    assert.equal(r.response.status, 200);
+    assert.equal(r.response.headers['cache-control'], 'no-store');
+    const p = tg.verifyGrant(r.body.grant, KEY);
+    assert.equal(p.kind, 'trial');
+    assert.equal(p.ends - p.starts, tg.TRIAL_MS);
+    assert.ok(state.db.docs.has(`trials/ahenk__${MACH.slice(12)}`));
+    const again = await post('/api/trial/start', '10.9.1.1', { product: 'ahenk', machine: MACH });
+    assert.equal(tg.verifyGrant(again.body.grant, KEY).starts, p.starts);
+    const u = await post('/api/trial/start', '10.9.1.1', { product: 'kubbe', machine: MACH });
+    assert.deepEqual([u.response.status, u.body], [400, { ok: false, error: 'unknown product' }]);
+  });
+  await test('trial routes: device start -> approve (401 / not owned / owned) -> poll once -> refresh owned / refunded / bad', async () => {
+    resetDb();
+    const s = await post('/api/device/start', '10.9.2.1', { product: 'ahenk', machine: MACH, name: 'Studio' });
+    assert.equal(s.response.status, 200);
+    const { device_code: dc, user_code: uc } = s.body;
+    assert.equal((await post('/api/device/approve', '10.9.2.2', { user_code: uc })).response.status, 401);
+    assert.equal((await post('/api/device/approve', '10.9.2.2', { user_code: uc }, 'invalid')).response.status, 401);
+    const look = await post('/api/device/lookup', '10.9.2.2', { user_code: uc }, 'valid-bob');
+    assert.deepEqual(look.body, { ok: true, product: 'ahenk', name: 'Studio', user_code: uc, approved: false });
+    const no = await post('/api/device/approve', '10.9.2.2', { user_code: uc }, 'valid-bob');
+    assert.deepEqual([no.response.status, no.body], [200, { ok: false, error: 'not owned', buy_url: tg.BUY_URLS.ahenk }]);
+    assert.deepEqual((await post('/api/device/poll', '10.9.2.1', { device_code: dc })).body, { status: 'pending' });
+    // bob buys AHENK (the order the webhook would bind to his uid)
+    state.db.docs.set('orders_by_uid/bob', { orders: { 'ls-1': { product: 'ahenk', status: 'paid', refunded: false, created: '2026-11-07T10:00:00Z', email: 'bob@example.com' } } });
+    const ok = await post('/api/device/approve', '10.9.2.2', { user_code: uc }, 'valid-bob');
+    assert.deepEqual([ok.response.status, ok.body], [200, { ok: true, product: 'ahenk', name: 'Studio' }]);
+    const poll = await post('/api/device/poll', '10.9.2.1', { device_code: dc });
+    const g = tg.verifyGrant(poll.body.grant, KEY);
+    assert.deepEqual([poll.body.status, g.kind, g.uid, g.ends - g.issued], ['approved', 'owned', 'bob', tg.OWNED_GRACE_MS]);
+    assert.deepEqual((await post('/api/device/poll', '10.9.2.1', { device_code: dc })).body, { status: 'expired' });
+    const hadGetUser = 'getUser' in state.auth;
+    state.auth.getUser = async (uid) => { if (uid !== 'bob') throw Object.assign(new Error('no user'), { code: 'auth/user-not-found' }); return { uid, email: 'bob@example.com', emailVerified: true, providerData: [] }; };
+    try {
+      const rf = await post('/api/grant/refresh', '10.9.2.3', { grant: poll.body.grant });
+      assert.equal(rf.body.ok, true);
+      assert.equal(tg.verifyGrant(rf.body.grant, KEY).uid, 'bob');
+      state.db.docs.set('orders_by_uid/bob', { orders: { 'ls-1': { product: 'ahenk', status: 'refunded', refunded: true, created: '2026-11-07T10:00:00Z' } } });
+      assert.deepEqual((await post('/api/grant/refresh', '10.9.2.3', { grant: poll.body.grant })).body, { ok: false, error: 'not owned' });
+      const bad = await post('/api/grant/refresh', '10.9.2.3', { grant: { ...poll.body.grant, sig: poll.body.grant.sig.replace(/.$/, (c) => (c === '0' ? '1' : '0')) } });
+      assert.deepEqual([bad.response.status, bad.body], [400, { ok: false, error: 'bad grant' }]);
+    } finally { if (!hadGetUser) delete state.auth.getUser; }
+  });
+  await test('trial routes: 30 a minute per IP, then 429 plain text', async () => {
+    resetDb();
+    const codes = [];
+    for (let i = 0; i < 31; i += 1) codes.push((await post('/api/device/poll', '10.9.3.1', { device_code: 'x' })).response.status);
+    assert.deepEqual(codes.slice(0, 30), Array(30).fill(200));
+    const last = await post('/api/device/poll', '10.9.3.1', { device_code: 'x' });
+    assert.deepEqual([last.response.status, last.body], [429, 'Too many requests']);
+  });
+  delete process.env.GRANT_SIGNING_KEY;
+}
 
 const failed = results.filter((result) => !result.ok);
 console.log(`SUMMARY ${results.length} cases, ${failed.length} fail`);

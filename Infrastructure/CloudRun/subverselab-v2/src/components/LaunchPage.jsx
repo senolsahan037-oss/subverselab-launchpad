@@ -6,7 +6,7 @@ import BuyButton, { checkoutStarted } from './BuyButton';
 import DownloadRoomReport from './DownloadRoomReport';
 import DownloadButtons from './DownloadButtons';
 import {
-  LAUNCH, LAUNCH2, PLUGINS, DOWNLOAD_ROOM_PLUGINS, PRICES, FORMATS, currentPrice,
+  LAUNCH, LAUNCH2, PLUGINS, DOWNLOAD_ROOM_PLUGINS, PRICES, FORMATS, currentPrice, priceWord,
   UPDATES_LINE, CARD_BG, ACTIVATION_LINE, TRUST_LINE, LAUNCH2_NAME,
 } from '../data/plugins';
 import { auth } from '../firebase';
@@ -174,7 +174,7 @@ export default function LaunchPage({ user, onLoginClick, launchId = 'launch' }) 
               <div key={p.slug} className="launch-price">
                 {CARD_BG[p.slug] && <img className="launch-price-bg" src={CARD_BG[p.slug]} alt="" width="800" height="320" loading="lazy" decoding="async" />}
                 <strong>{p.displayName}</strong>
-                <span className="launch-price-num">{p.free ? 'Free' : `$${second ? currentPrice(p.slug) : PRICES[p.slug]}`}</span>
+                <span className="launch-price-num">{p.free ? 'Free' : priceWord(second ? currentPrice(p.slug) : PRICES[p.slug])}</span>
                 <span>{p.kind}</span>
                 <BuyButton place="launch" slug={p.slug} email={buyEmail} uid={buyUid} full={second ? undefined : full} label={p.free ? `Get ${p.displayName} free` : undefined} className="btn btn-outline plugin-buy-single" />
               </div>

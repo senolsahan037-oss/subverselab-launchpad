@@ -23,15 +23,18 @@
 // name; price floors and public-copy rules (root CLAUDE.md) are yours to keep. docs/CATALOG.md and docs/PACK_DELIVERY.md say what a
 // new product needs before it is on sale.
 import { readFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, join } from 'node:path';
+import { homedir } from 'node:os';
 
 const API = (process.env.SVL_API || 'https://subverselab.com').replace(/\/$/, '');
-const KEY = process.env.SVL_AGENT_KEY || '';
+// The key comes from SVL_AGENT_KEY, else from ~/.config/subverselab/agent_key (one line, chmod 600), so a desktop session needs no export.
+const keyFromFile = () => { try { return readFileSync(join(homedir(), '.config', 'subverselab', 'agent_key'), 'utf8').trim(); } catch { return ''; } };
+const KEY = process.env.SVL_AGENT_KEY || keyFromFile();
 const [, , cmd, ...args] = process.argv;
 
 function die(msg, code = 1) { console.error(msg); process.exit(code); }
 if (!cmd || cmd === 'help' || cmd === '--help') { console.log(readFileSync(new URL(import.meta.url)).toString().split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n')); process.exit(0); }
-if (!KEY && cmd !== 'schema') die('Set SVL_AGENT_KEY (an agent key from /admin → Catalogue → Agents; "dev-preview" against a local API started with SVL_DEV_ADMIN=1).');
+if (!KEY && cmd !== 'schema') die('Set SVL_AGENT_KEY or put the key in ~/.config/subverselab/agent_key (an agent key from /admin → Catalogue → Agents; "dev-preview" against a local API started with SVL_DEV_ADMIN=1).');
 
 async function call(method, path, body, raw) {
   const headers = { Authorization: `Bearer ${KEY}` };
@@ -86,7 +89,7 @@ const run = {
   async unfile([slug, platform]) { show(await call('POST', '/api/admin/catalog/file/remove', { slug, platform })); },
   async manifest() { show((await all()).manifest); },
   async testers([sub, ...rest]) {
-    if (sub === 'list') { const t = await call('GET', '/api/admin/testers'); show({ approved: t.approved, total: t.total, applications: t.applications.map((a) => ({ email: a.email, os: a.os, status: a.tester ? a.tester.status : a.status, at: a.at })) }); return; }
+    if (sub === 'list') { const t = await call('GET', '/api/admin/testers'); show({ approved: t.approved, total: t.total, applications: t.applications.map((a) => ({ email: a.email, os: a.os, musehubEmail: a.musehubEmail || '', status: a.tester ? a.tester.status : a.status, at: a.at })) }); return; }
     if (sub === 'invite') {
       const [email, os, agreementVersion, acceptedAt, ...kv] = rest;
       if (!acceptedAt) die('testers invite <email> <os> <agreementVersion> <acceptedAtISO> [daws=a,b] [production=…]');

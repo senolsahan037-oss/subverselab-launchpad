@@ -1,8 +1,8 @@
 // The live catalogue in the browser (owner 2026-10-31: new products, news and packs are added from /admin and show on the
 // site without a deploy). GET /api/catalog is fetched once per page load and laid over the hand-written data:
 //   - news: a live item with a static frame's key edits or hides that frame; new keys are new frames; `order` sorts them;
-//   - sample packs, preset packs, plug-ins: a live item with a known slug edits its price, checkout and dates; a new slug is
-//     a new product, drawn by the same pages from the fields the panel filled in (src/catalog/shapes.js);
+//   - sample packs, preset packs, plug-ins: a live item with a known slug edits its price, checkout and dates (and, for a
+//     plug-in, the room's texts, pictures and videos it fills in: livePlugin); a new slug is a new product, drawn by the same pages from the fields the panel filled in (src/catalog/shapes.js);
 //   - prices, checkouts, launch prices and release dates of live items are written into the data objects the buttons and
 //     the store order read (src/catalog/data.js), so every button sees them.
 // The prerendered HTML carries the static baseline only; a crawler sees the live items once the page's script runs.
@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 import { apiUrl } from '../utils/endpoints.js';
 import { applyCatalogData } from './data.js';
 
-export { mergeNews, mergeSamplePacks, mergePresetPacks, catalogPlugins } from './merge.js';
+export { mergeNews, mergeSamplePacks, mergePresetPacks, catalogPlugins, livePlugin } from './merge.js';
 export { applyCatalogData };
 
 export const EMPTY_CATALOG = Object.freeze({ news: [], plugins: [], samplePacks: [], presetPacks: [], publishers: [], loaded: false });

@@ -21,7 +21,7 @@
 //   api/entitlements.js SAMPLE_PACK_LISTED / PRESET_PACK_LISTED carry 16 Oct 00:00Z for six packs and the Drum Pack: that is the
 //   sweep cut-off set before the store went live, not the day it was on sale; the store opened with all nine packs on 17 Oct.
 // - Going out with the 1 Nov release, not live yet: TORNA, SVL Mirage, SVL Kotoflux (SAMPLE_PACK_LISTED 2026-11-01).
-// - ADALET is not on sale ("Coming soon", plugins.js LINE2_PLUGINS): no entry, so it sorts after everything dated.
+// - ADALET goes on sale with the next deploy (owner 8 Nov 2026, $15): 1.0.0, dated the day it was signed; set both to the deploy day.
 //
 // How to update:
 // - A new version: set `updated` to the day it is published (subverselab-plugin-common/tools/publish_download.sh). The product
@@ -29,6 +29,7 @@
 // - A new product or pack: add it here the day it goes on sale (scripts/test-order.js fails while a listed product has no date).
 export const PRODUCT_DATES = {
   // Plug-ins and apps
+  adalet: { released: '2026-11-08', updated: '2026-11-08' },     // 1.0.0, owner 8 Nov "15 dolar yazalım"; set to the deploy day
   kubbe: { released: '2026-10-01', updated: '2026-10-12' },      // 1.0.2 up 30 Sep, on sale 1 Oct; 1.1.0 up 12 Oct 23:20 TR
   kaset: { released: '2026-10-01', updated: '2026-10-12' },      // 1.0.2 up 30 Sep, on sale 1 Oct; 1.1.0 up 12 Oct 23:20 TR
   koro: { released: '2026-10-05', updated: '2026-10-12' },       // 1.0.0 up 5 Oct 04:55 TR; 1.0.1 up 12 Oct 23:07 TR
@@ -40,10 +41,13 @@ export const PRODUCT_DATES = {
   alev: { released: '2026-10-08', updated: '2026-10-12' },       // 1.0.0 8 Oct; 1.0.1 12 Oct 23:10 TR
   elek: { released: '2026-10-12', updated: '2026-10-22' },       // 1.0.0 12 Oct (site 00208); 1.0.3 up 22 Oct 20:40 TR
   kiyma: { released: '2026-10-14', updated: '2026-10-14' },      // 1.0.0 up 14 Oct 15:01 TR (site 00212)
-  ru8: { released: '2026-10-17', updated: '2026-10-17' },        // 1.0.0 up 17 Oct 02:49 TR (site 00218-qul)
-  jingfang: { released: '2026-10-19', updated: '2026-10-27' },   // 1.0.0 19 Oct (site 00223-jax); 1.2.0 up 27 Oct 22:55 TR
+  ru8: { released: '2026-10-17', updated: '2026-11-08' },        // 1.0.0 17 Oct; 1.1.0 with the next deploy: SET updated TO THE DEPLOY DAY
+  jingfang: { released: '2026-10-19', updated: '2026-11-08' },   // 1.0.0 19 Oct; 1.2.0 27 Oct; 1.4.0 with the next deploy: SET updated TO THE DEPLOY DAY
   seda: { released: '2026-10-19', updated: '2026-10-19' },       // 1.0.0 up 19 Oct 18:42 TR (site 00223-jax)
   torna: { released: '2026-11-01', updated: '2026-11-01' },      // 1 Nov release (not live yet)
+  // AHENK: switched on locally 8 Nov 2026 (lead). The date is the day it goes on sale (Istanbul): if the deploy is on another day,
+  // change both to the deploy day before building (RELEASE_QUEUE "AHENK product room").
+  ahenk: { released: '2026-11-08', updated: '2026-11-08' },
   // Sample packs (all 1.0.0, uploaded 17 Oct 06:16-06:30 TR, store live 17 Oct)
   brickyard: { released: '2026-10-17', updated: '2026-10-17' },
   kerbstone: { released: '2026-10-17', updated: '2026-10-17' },

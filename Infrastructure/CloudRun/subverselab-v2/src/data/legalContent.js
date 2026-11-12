@@ -6,7 +6,7 @@
 // does; the source of each fact is noted beside it. If the code changes (a new
 // form, a new third party, a new collection), change the text in the same
 // commit. A block is either a paragraph (string) or a list (array of strings).
-export const LEGAL_UPDATED = '24 October 2026';
+export const LEGAL_UPDATED = '12 November 2026';
 export const LEGAL_EMAIL = 'info@subverselab.com';
 
 export const PRIVACY = {
@@ -38,7 +38,7 @@ export const PRIVACY = {
           'Problem reports. The report forms on the Download Room and on the storefront store the affected product, your operating system, the e-mail address you type (or "Anonymous" if you leave it empty), and your description. The Download Room form also stores your account ID if you are signed in, your browser\'s user-agent string (the first 300 characters), the page you were on, the step, the DAW you name and the last download message shown to you. You can send these without signing in.',
           'Forum. If you post a topic or a reply we store the text, your account ID and a display name. The display name is your profile name or, if you have none, the part of your e-mail address before the @ sign. Topics and replies are public.',
           'Server logs. Our web server runs on Google Cloud Run in Belgium (europe-west1). Google Cloud Logging records each request with the time, the URL, your IP address and your browser\'s user-agent string. Cloud Logging keeps these for 30 days by default.',
-          'Page counts, without cookies. We count page views on our own server without cookies: only the page address, the name of the referring website and, when you press a Buy button, which product and which part of the page it was are counted, with no IP address and no identifier, so they cannot be traced back to you. To tell a first visit from the next pages, the browser tab keeps one flag in its session storage (svl-landed = 1), and a second one once the homepage opening has been shown (svl-intro-seen = 1); they hold no identifier and are gone when you close the tab.',
+          'Page counts, without cookies. We count page views on our own server without cookies: only the page address, the name of the referring website and, when you press a Buy button, which product and which part of the page it was, and when you play a sample pack preview, which pack and where it was played (the cover, the pack page or the SoundCloud playlist), and when you click one of our social icons, which one, are counted; a Buy click also carries the name of the social channel or kind of site the visit came from, with no IP address and no identifier, so they cannot be traced back to you. To tell a first visit from the next pages, the browser tab keeps one flag in its session storage (svl-landed = 1), a second one once the homepage opening has been shown (svl-intro-seen = 1), and a third with the address of the site that sent you and the source tag of the link (svl-via), so a Buy click can say which channel it came from; they hold no identifier and are gone when you close the tab.',
           'Usage statistics, only if you accept. Google Analytics 4 (through Firebase) is switched off until you press "Accept analytics" in the banner at the bottom of the page; before that nothing from it is loaded or stored. If you accept, it measures visits and pages using identifiers stored in your browser, and reports to us in aggregate. It records your approximate location (country, region and city, worked out from your IP address; Google Analytics does not store the IP address itself) and device data (device type, operating system, browser and screen size). Google signals is off, so there are no advertising features, no ad personalisation and no cross-device tracking. We use it to see which pages are read. You can decline, or change your mind at any time with "Cookie settings" in the footer; declining stops collection and removes the Google Analytics cookies.',
         ],
       ],
@@ -53,6 +53,7 @@ export const PRIVACY = {
           'Your light or dark theme choice, if you made one (local storage).',
           'An unsent forum topic draft, so you do not lose it (local storage; removed once the topic is published).',
           'A flag in session storage that a checkout was opened in this tab, so the Download Room knows to wait for your order.',
+          'If you came to the site through a partner\'s link (one that ends in ?aff=…), that partner\'s public code (svl-aff), so the checkout can credit the partner for a purchase and, where the partner offers one, apply its reader discount. If you have accepted cookies, it is kept in local storage for 30 days and then removed; otherwise it is kept in session storage for this tab only and is gone when you close the tab. Declining cookies later removes the 30-day copy. It holds only the partner\'s public code, nothing about you. The checkout link passes the same code to Lemon Squeezy, our checkout, which records the referral on its own side, and back to us with the order, so the partner can see which sales were credited to it (without your name or e-mail address).',
           'Your cookie choice, "granted" or "denied" (local storage), so the banner does not ask again.',
           'Google Analytics identifiers (cookies or local storage, set by Google), only after you accept analytics.',
         ],
@@ -69,6 +70,7 @@ export const PRIVACY = {
           'Gmail SMTP, which Firebase Authentication uses to send the password-reset e-mails.',
           'Lemon Squeezy, the merchant of record for paid products. It collects your payment details and billing information under its own privacy policy, handles payment, tax, invoices and refunds, and tells us about your order.',
           'YouTube. Some plugin pages embed demo videos from youtube-nocookie.com, and the storefront embeds a YouTube playlist from youtube.com. YouTube may set cookies and receives your IP address when the player loads.',
+          'SoundCloud. The sample packs page embeds a SoundCloud player with the pack previews from w.soundcloud.com. SoundCloud may set cookies and receives your IP address when the player loads.',
         ],
         'These providers are based in or operate from countries outside Türkiye and the European Economic Area, including the United States, so your data may be transferred abroad. We rely on the safeguards those providers offer for such transfers. We also disclose data where the law or a competent authority requires it.',
       ],
@@ -183,7 +185,7 @@ export const TERMS = {
       blocks: [
         'Paid plugins are sold through Lemon Squeezy, which is the merchant of record. Lemon Squeezy takes your payment, charges and handles tax, issues the invoice or receipt, and processes refunds, under its own checkout terms and refund policy, which apply to your purchase. We never see your card details. Prices are shown in US dollars on the product pages. How to ask for a refund and what a refund changes: the Purchases and Refunds page (subverselab.com/refunds).',
         'A paid licence is for one person, to use on that person\'s own computers, for personal and commercial music production, and the restrictions on redistribution and reverse engineering in the section above apply to it as well. If an order is refunded, the licence ends.',
-        'Every paid licence includes 2 years of updates, counted from the purchase date. The version you have keeps working forever, also after the 2 years; later updates are included only within them. Each plugin is sold on its own.',
+        'Updates we release for a product appear on your Account page. We do not promise a number of updates or a period of time; the version you have keeps working forever. Each plugin is sold on its own.',
         'Formats and systems differ by product and are listed on each product page (for example, some products are also standalone apps, and some run on Apple Silicon Macs only). Check your DAW and system on that page before buying.',
       ],
     },
@@ -266,7 +268,7 @@ export const REFUNDS = {
         'Every paid product is sold through Lemon Squeezy (lemonsqueezy.com). The price on the product page is in US dollars; tax is added at checkout where it applies, and Lemon Squeezy sends the receipt or invoice by e-mail. We never see your card details.',
         'A launch price is shown with its end date on the product page, and the checkout charges the price it shows.',
         'After you pay, sign in to subverselab.com with the e-mail address you paid with: the product appears on your Account page with its download. If you paid with another address, the order number lets you claim it on the Account page.',
-        'Every paid licence includes 2 years of updates from the purchase date. The version you have keeps working after that.',
+        'Updates we release for a paid product appear on your Account page. The version you have keeps working forever.',
       ],
     },
     {

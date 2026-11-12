@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+import { captureAffiliate, connectAffiliateConsent } from './affiliate.js'
+import { getConsentSnapshot, subscribeConsent } from './consent.js'
 
 // scripts/prerender.js bakes real <title>/<meta>/<link rel=canonical> into
 // every route's HTML so crawlers that never run JavaScript still get correct
@@ -20,6 +22,11 @@ import './index.css'
 for (const el of document.head.querySelectorAll('[data-rh="true"]')) {
   el.remove();
 }
+
+// A partner's ?aff= code, kept for this tab (and for 30 days once cookies are accepted) and passed on to the checkout links
+// (src/affiliate.js).
+connectAffiliateConsent(getConsentSnapshot, subscribeConsent);
+captureAffiliate();
 
 // Local preview as the owner, dev server only (src/devPreview.js); the production build drops this branch.
 const start = () => ReactDOM.createRoot(document.getElementById('root')).render(

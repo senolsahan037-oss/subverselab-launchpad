@@ -7,7 +7,8 @@ import { useDownloads, formatSize } from '../hooks/useDownloads';
 import { apiUrl } from '../utils/endpoints';
 
 let pendingDownload = null;
-export default function DownloadButtons({ slug, launchId = 'launch', paid = false, className = 'plugin-downloads', btnExtra = '', onLoginClick }) {
+// verb (optional): the words before "for macOS" (AHENK's trial buttons: "Download free trial"); outline: secondary buttons next to Buy.
+export default function DownloadButtons({ slug, launchId = 'launch', paid = false, className = 'plugin-downloads', btnExtra = '', onLoginClick, verb = '', outline = false }) {
   const files = useDownloads(slug); const [message, setMsg] = useState('');
   // The report form (DownloadRoomReport) attaches the last message shown here.
   const setMessage = (m) => { if (m && m !== 'Preparing download…') window.__svlLastDownloadError = m; setMsg(m); };
@@ -20,5 +21,5 @@ export default function DownloadButtons({ slug, launchId = 'launch', paid = fals
     try { const token = await u.getIdToken(true); const r = await fetch(apiUrl('/api/download/ticket'), { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ slug, platform, launchId }) }); const body = await r.json().catch(() => ({})); if (r.status === 402) setMessage(body.error || 'Purchase required.'); else if (!r.ok) setMessage(body.error || 'Download unavailable.'); else window.location.assign(apiUrl(body.url)); } catch { setMessage('Download unavailable. Check your connection and try again.'); }
   };
   useEffect(() => onAuthStateChanged(auth, (u) => { if (u && pendingDownload?.slug === slug && pendingDownload?.launchId === launchId) { const p = pendingDownload; pendingDownload = null; request(p.platform); } }), [slug, launchId]);
-  return <div className={className}>{DOWNLOAD_PLATFORMS.map(([key, label]) => { const f = files[key]; const size = f && formatSize(f.size); const text = f ? `${FREE_PLUGINS.some((p) => p.slug === slug) ? 'Download free' : 'Download'} for ${label}${f.version ? ` · v${f.version}` : ''}${size ? ` · ${size}` : ''}` : `${label}: download available shortly`; return <button key={key} type="button" className={`btn ${f ? 'btn-primary' : 'btn-outline'}${btnExtra ? ` ${btnExtra}` : ''}`} disabled={!f} onClick={() => request(key)}><Icon name="download" /> {text}</button>; })}{message && <p role="status">{message}</p>}</div>;
+  return <div className={className}>{DOWNLOAD_PLATFORMS.map(([key, label]) => { const f = files[key]; const size = f && formatSize(f.size); const text = f ? `${verb || (FREE_PLUGINS.some((p) => p.slug === slug) ? 'Download free' : 'Download')} for ${label}${f.version ? ` · v${f.version}` : ''}${size ? ` · ${size}` : ''}` : `${label}: download available shortly`; return <button key={key} type="button" className={`btn ${f && !outline ? 'btn-primary' : 'btn-outline'}${btnExtra ? ` ${btnExtra}` : ''}`} disabled={!f} onClick={() => request(key)}><Icon name="download" /> {text}</button>; })}{message && <p role="status">{message}</p>}</div>;
 }

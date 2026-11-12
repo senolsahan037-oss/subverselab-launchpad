@@ -33,6 +33,24 @@ item is on the site within a minute. The prerendered HTML and the sitemap learn 
 - **Files**: the installer or zip that is sold. It goes into the private downloads bucket under `plugins/<slug>/<version>/`
   and into `plugins/manifest.json`, exactly as `publish_download.sh` writes it. The Download button turns on within a minute.
   Pictures, audio and PDFs upload from the forms into the Firebase bucket (`catalog/<kind>/<slug>/…`, public URL).
+  When an item is saved with a new picture, preview or PDF, or deleted, the file it no longer uses is deleted from the bucket,
+  unless another item still points at it (owner 5 Nov 2026). Uploads that were never saved into an item stay.
+- **Without a deploy, for crawlers and link previews** (5 Nov 2026): a catalogue-only pack or plug-in page gets its own title,
+  description, canonical, picture and Product JSON-LD from the site server, and `/sitemap.xml` lists it; a prerendered pack or
+  plug-in page shows the panel's picture in its link preview. The page body still paints in the browser.
+- **SoundCloud track** (sample packs): the demo's soundcloud.com link; the /sample-packs playlist plays these in the store
+  order and the pack page links to it (`docs/PACK_DELIVERY.md` §3.4).
+
+## Videos and edits of a room already in the code (2 Nov 2026, live with the 1 Dec deploy)
+- **Videos:** every plug-in item has a *Videos* list: a YouTube link (watch, youtu.be or shorts) and a caption per row. They
+  show first under "Hear it" in the room; a /shorts/ link plays upright.
+- **Editing a plug-in that is in the site code** (TORNA, KUBBE …): *New plug-in*, the same slug, *Edits a product already on
+  the site* = Yes, then fill in only what changes (a video, a new intro, a picture). Empty fields keep the room's own text;
+  Name, Kind and Tagline are not required. Turning *Published* off takes the edit away again.
+
+- **Changing only the cover / words of a pack already in the code** (owner 4 Nov 2026, 15 packs): *New sample pack* with the same
+  slug, its own name and kind line, the new cover, *On sale from* = its original listing date, and **Released / Updated emptied**:
+  the form pre-fills today, and a date here re-sorts the store (newest first) as if the pack were released today.
 
 ## What a new product needs (checklist)
 1. Lemon Squeezy: create and publish the product; copy the **checkout URL** and the **product id** into the item. The id
@@ -78,3 +96,8 @@ problems; the rules below and `docs/PACK_DELIVERY.md` are the agent's to keep. N
 - Agent keys: `api/agents.js`; CLI `scripts/catalog-cli.js`; waveform `scripts/pack-peaks.js`.
 - Tests: `node scripts/test-catalog.js` (schema, registration, service with a fake Firestore and bucket, merges, publishers,
   agent keys) and the invite / agent-key cases in `scripts/test-testers.js`.
+
+## A local copy of the panel: `scripts/catalog-pull.js` (12 Nov 2026)
+`node scripts/catalog-pull.js` writes the live items and their media to `catalog-snapshot/` (never built, never deployed); `--check`
+only reports. Run it after a panel change so the tree and git hold what the panel holds. To put an item back:
+`node scripts/catalog-cli.js save <kind> catalog-snapshot/<kind>/<id>.json` (media: `catalog-cli.js media …`).

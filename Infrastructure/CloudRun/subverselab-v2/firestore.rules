@@ -129,6 +129,14 @@ service cloud.firestore {
     match /apple_by_uid/{document=**} {
       allow read, write: if false;
     }
+    // Store codes redeemed on /redeem (api/redeem.js, Admin SDK only): code hash -> {uses, by: {uid: {at, email}}} and its uid
+    // index. They carry e-mail addresses and decide ownership; no client may read or write either.
+    match /redemptions/{document=**} {
+      allow read, write: if false;
+    }
+    match /redeemed_by_uid/{document=**} {
+      allow read, write: if false;
+    }
     // What an account deletion leaves behind: hashed-e-mail markers (accountDeletion.js).
     // Server only; spelled out so a broad rule can never open them.
     match /erased_emails/{document=**} {
@@ -224,6 +232,22 @@ service cloud.firestore {
     }
     // Admin agent keys (api/agents.js): hashes only, Admin SDK only.
     match /catalog_agents/{document=**} {
+      allow read, write: if false;
+    }
+    // Plug-in trials and browser sign-in codes (api/trialGrant.js, 7 Nov 2026): Admin SDK only. The catch-all below already
+    // closes them; spelled out so a broad rule can never open them.
+    match /trials/{document=**} {
+      allow read, write: if false;
+    }
+    match /device_codes/{document=**} {
+      allow read, write: if false;
+    }
+    // Affiliate partners and their sales ledger (api/partners.js, 12 Nov 2026): Admin SDK only. Partners read their sales
+    // through GET /api/partner-report with their report token, never from Firestore.
+    match /partners/{document=**} {
+      allow read, write: if false;
+    }
+    match /partner_sales/{document=**} {
       allow read, write: if false;
     }
     match /{document=**} {

@@ -1,7 +1,8 @@
 // RU-8 owner's manual as a web page: /plugins/ru8/manual.
-// Source: 01_AI_Tools/subverselab-ru8/docs/manual/RU8_Manual.html (20 Oct 2026, RU-8 1.0.0, the version the site sells; same
-// text as public/plugins/ru8/RU8_Manual.pdf). subverselab-ru8/STATUS.md lists no later desktop release (1.0.0 shipped 17 Oct).
-// Left out: "two per kit" in the presets row (no preset counts), the licence row and "no licence key" sentence (gettingIt()),
+// Source: 01_AI_Tools/subverselab-ru8/docs/manual/RU8_Manual.html (8 Nov 2026, RU-8 1.1.0; same text as
+// public/plugins/ru8/RU8_Manual.pdf). 1.1 adds sample kits, the synth kit redesign, the EDIT screen, your samples / user kits and
+// the HUMAN groove (RU-8 STATUS.md 7-8 Nov). Ship with the 1.1.0 installers, not before (RELEASE_QUEUE).
+// Left out: "two per synth kit" in the presets row (no preset counts), the licence row and "no licence key" sentence (gettingIt()),
 // the support / trademark footer. The Windows file names are not named: STATUS says the zip's contents were not checked
 // when the manual was written.
 
@@ -11,7 +12,7 @@ import { installation, gettingIt, manualBase } from './common.js';
 export const RU8_MANUAL = {
   ...manualBase(RU8, {
     subtitle: 'Rhythm Unit · Drum machine',
-    description: 'The RU-8 owner’s manual: quick start, the readout, pads and steps, kits and sets, the channel and master strips, SPACE and ECHO, the rear panel and MIDI map, RU-8 in your DAW, shortcuts, installation and specifications.',
+    description: 'The RU-8 owner’s manual: quick start, the readout, pads and steps, synth and sample kits, sets, the channel and master strips, the HUMAN groove, SPACE and ECHO, the EDIT screen, your own samples and user kits, the rear panel and MIDI map, RU-8 in your DAW, shortcuts, installation and specifications.',
   }),
   sections: [
     {
@@ -19,7 +20,8 @@ export const RU8_MANUAL = {
       heading: 'Welcome',
       blocks: [
         { p: 'Open RU-8, press play, and you have a groove. RU-8 is a drum machine you play, not program.' },
-        { p: 'Pick a **kit** and the whole machine changes its sound: the drums, and the space, echo and glue settings they were voiced with. Pick a **set** and only the rhythm changes. Any set plays on any kit. Every pad is a drum synthesized inside RU-8 with its own pattern of steps, so you shape a beat pad by pad, by hand, and drag it into your DAW as MIDI when it is right.' },
+        { p: 'Pick a **kit** and the whole machine changes its sound: the drums, and the space, echo and glue settings they were voiced with. Pick a **set** and only the rhythm changes. Any set plays on any kit. Every pad has its own pattern of steps, so you shape a beat pad by pad, by hand, and drag it into your DAW as MIDI when it is right.' },
+        { p: 'The **synth kits** are drums synthesized inside RU-8; the **sample kits** play recorded drum kits. Drop your own WAV or AIFF files on any pad, and the **EDIT** key opens the selected pad: its sound in the readout, and a second set of knobs to shape it.' },
         { p: 'The sound promise: strong without being pushed, clean by default. A gentle glue on the bus and a safety limiter at −1 dBFS, nothing more. Character that needs tape, dust or bit reduction comes from a kit’s COLOR on the rear panel.' },
       ],
     },
@@ -56,6 +58,7 @@ export const RU8_MANUAL = {
             '**Make it yours:** point at a pad to open its 16 steps and click them. When it is right, drag the MIDI key onto a track in your DAW.',
           ],
         },
+        { note: '**New in 1.1:** sample kits; the synth kits redesigned (velocity moves the tone, recorded layers under hats, claps, shakers, rides and more); the EDIT screen; your own samples on any pad and your own user kits; HUMAN is now a drummer’s groove.' },
         { note: '**Lost?** Press **?**: notes appear over the panel, one per part. Arrow keys step through them, Esc closes. Double-click any knob to return it to the value of the kit or set that is loaded now.' },
       ],
     },
@@ -99,6 +102,8 @@ export const RU8_MANUAL = {
         { h3: 'Steps' },
         { p: 'Point at a pad to open its 16 steps; each row of four is one beat. Click a step: off → on (ink) → accent (gold) → ghost (dot). While playing, the current step has a gold ring. Every pad holds its own steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads on top of the sequencer, with velocity.' },
         { h3: 'Kits' },
+        { p: 'The kit arrows step through the synth kits, then the sample kits, then the User kit and your saved user kits. Click the name for the list.' },
+        { p: '**Synth kits.** Synthesized inside RU-8. In 1.1 they were redesigned: a softer hit also sounds darker (less click, less noise, as on a real drum), and recordings sit under the synthesis where it needs them: closed and open hats, claps, shakers, tambourines, rides, the kick’s beater and the snare’s wires. Anatolia stays synthesis only. LAYER in the EDIT screen sets the mix of synth voice and recording per pad.' },
         {
           table: {
             head: ['Kit', 'Character'],
@@ -120,6 +125,24 @@ export const RU8_MANUAL = {
             ],
           },
         },
+        { p: '**Sample kits.** Recorded drum kits. Where the recordings have them, a pad plays different takes for soft and hard hits and alternates takes, so repeated hits do not sound the same. A sample kit names every pad by what it plays.' },
+        {
+          table: {
+            head: ['Kit', 'Character'],
+            rows: [
+              ['Uptown', 'Real kit, close mics and room, tambourine'],
+              ['Basement', '24-inch kick, big snare, ride, small room'],
+              ['Sweatbox', 'Tight 20-inch kit, overheads, cowbell'],
+              ['Hallway', 'Open kick, wet hats, bongos and congas'],
+              ['Cellar', 'Dirty kick, 12-bit, claps and tambourine'],
+              ['Parlor', 'Rimshot snare, shaker, congas, 12-bit'],
+              ['Drill', 'Slide 808s, sharp hats, hard claps'],
+              ['Warehouse', 'Rumble kick, steel snare, metal'],
+              ['Hardware', 'Sampler kicks and snares, folded 808s'],
+              ['User', 'Empty: your own samples (see Your samples)'],
+            ],
+          },
+        },
         { h3: 'Sets' },
         { p: 'House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro, Shuffle, and USER 1–4. Each brings two sections (A and B), a fill, its tempo, swing and echo time.' },
       ],
@@ -133,19 +156,96 @@ export const RU8_MANUAL = {
             head: ['Strip', 'Controls', 'Range'],
             rows: [
               ['Channel (the pad you played last)', 'Level, tune, decay, pan, SPACE send, ECHO send; mute, solo (several can be soloed), reset to the kit', 'Level −40 to +6 dB · tune ±12 semitones · decay ×0.3 to ×2 · pan L100 to R100 · sends 0 to 100 %'],
-              ['Master', 'Output meter (dBFS), GR (how much the glue presses), swing, human, glue, volume', 'Swing 0 to 80 % · human 0 to 100 % (small random timing and level) · glue 0 to 100 % · volume −40 to +3 dB, before the −1 dBFS limiter'],
+              ['Master', 'Output meter (dBFS), GR (how much the glue presses), swing, human, glue, volume', 'Swing 0 to 80 % · human 0 to 100 % (a drummer’s groove: the snare up to 12 ms behind, lazy 16th hats, softer off-beat hats, the time breathing by up to 4 ms) · glue 0 to 100 % · volume −40 to +3 dB, before the −1 dBFS limiter'],
               ['SPACE', 'Algorithmic reverb: ROOM, PLATE or HALL; size, damping, pre-delay, return', 'Size 30 to 96 % · damping 1 to 12 kHz (how fast the highs fade) · pre-delay 0 to 60 ms'],
               ['ECHO', 'Tempo-synced ping-pong delay: time, feedback, tone, return', 'Time 1/16 D, 1/8, 1/8 D, 1/4 (D = dotted) · feedback 0 to 78 % · tone 0.8 to 12 kHz'],
             ],
           },
         },
-        { p: 'Every pad has its own send to SPACE and ECHO, so the snare can sit in the room while the kick stays dry. Every sound is synthesized by RU-8 itself, so tune, decay and level reshape the drum rather than stretch a recording.' },
+        { p: 'Every pad has its own send to SPACE and ECHO, so the snare can sit in the room while the kick stays dry. On a synth kit, tune, decay and level reshape the drum itself rather than stretch a recording.' },
+        { h3: 'Human: the groove' },
+        { p: 'HUMAN plays the steps the way a drummer would, not at random. At 100 %:' },
+        {
+          table: {
+            head: ['Part', 'At 100 %'],
+            rows: [
+              ['Kick', 'On the grid.'],
+              ['Snare · clap · rim', 'Laid back: up to 12, 10 and 8 ms behind the grid. Toms 5 ms.'],
+              ['Hats and the upper pads', 'On the quarter: on time. The off 8th: 3 ms late and a little softer. The off 16ths: 8 ms late and softer still (lazy 16ths).'],
+              ['The kit’s time', 'Breathes together by up to ±4 ms, smoothly from beat to beat; each hit adds ±1.5 ms of its own and up to 12 % less level.'],
+            ],
+          },
+        },
+        { p: 'Lower values scale all of it down; the default is 12 %. The groove is fixed by bar and step, so the same project plays and bounces exactly the same every time. MIDI clips you drag out carry the swing, not the groove. A project saved with 1.0 sounds slightly different with 1.1 at the same HUMAN value.' },
         { h3: 'Knobs' },
         { p: 'Drag up or down; Shift for fine steps; the wheel works too. Double-click returns a knob to the kit’s value. When a kit or set is chosen, the knobs glide to their new places; the sound changes at once.' },
         { h3: 'The water' },
         { p: 'The body of the machine is a water tank behind the pads and knobs. Each pad has its shape in it; a shape rises when the pad plays, as high as it was hit, and sinks back. While playing, every finished bar drops a ring on its post (A, B or fill), so you can see where the arrangement is. REDUCED MOTION on the rear panel stills the water; RU-8 also follows the system’s Reduce motion setting.' },
         { h3: 'Moods' },
         { p: 'The drop at the base steps through the panel colours: Cream, Night, Powder and Pink (M in the standalone). Only the look changes; the sound, the layout and your project stay the same.' },
+      ],
+    },
+    {
+      id: 'edit',
+      heading: 'The EDIT screen',
+      blocks: [
+        { p: 'Press EDIT (beside TAP) and the readout shows the selected pad. Play a pad to choose it. Press EDIT again to go back to the kit, set and arranger view.' },
+        { h3: 'The readout in EDIT' },
+        {
+          table: {
+            head: ['Part', 'What it shows'],
+            rows: [
+              ['Head', 'EDIT, the pad number and name, and where its sound comes from: synth voice, synth + recording, recorded sample, your sample, several samples by chance, file missing, or empty.'],
+              ['Waveform', 'The pad’s sound: the sample, or the last hit of a synth voice. Over it, the envelope the next hit will have with the values set now: the ATTACK ramp, the DECAY fade and, on samples, START and END with the part outside dimmed.'],
+              ['Knob picture', 'The knob you turn shows its own picture and value at once, and the picture fades after you let go: level, pitch, the filter curve with its resonance, the drive curve, pan, the SPACE tail, the ECHO repeats, the pitch sweep, the noise share, the synth / recording layer.'],
+              ['VEL', 'Dots for the velocity layers; the lit one played last.'],
+              ['Samples row', 'The pad’s samples with their weights; click one to select it. Drop files here to add them to the pad.'],
+              ['Keys', 'REVERSE plays the sample backwards. OPEN adds files from a list. CLEAR removes the pad’s samples: the kit’s sound comes back. SAVE stores the User kit.'],
+            ],
+          },
+        },
+        { h3: 'The knobs in EDIT' },
+        { p: 'The knobs of MASTER, SPACE and ECHO keep their places and take their second names, in gold. The CHANNEL strip keeps level, tune, decay, pan and the sends. A function that does not apply to the pad is faint and takes no clicks; the SPACE type and ECHO time keys rest while EDIT is on.' },
+        {
+          table: {
+            head: ['Knob', 'What it does'],
+            rows: [
+              ['START · END', 'Where a sample starts and stops playing (it stops with a short fade, no click).'],
+              ['SWEEP · NOISE', 'On synth pads in place of START and END: how far the voice’s pitch falls at the hit; the noise part (the kick’s click, the snare’s wires, the hats’ noise, a hand drum’s slap).'],
+              ['ATTACK', 'Fades each hit in, from 0 to 200 ms.'],
+              ['FINE', 'Fine tuning in cents, on top of the pad’s tune.'],
+              ['FILTER · RESO', 'One knob: to the left a low-pass (darker), to the right a high-pass (thinner), off in the middle. RESO is its resonance.'],
+              ['DRIVE', 'A soft clip after the filter: more weight and grit.'],
+              ['VEL>TONE', 'How much a soft hit also sounds darker, with less click. At 0, velocity changes only the level.'],
+              ['LAYER', 'Synth kit pads with a recorded layer: the synth voice to the left, the recording to the right, both in the middle.'],
+              ['CHOKE', 'Pads in the same group silence each other, like an open and a closed hat. Off, or group 1 to 4.'],
+              ['WEIGHT', 'With several samples on a pad: how often the selected one plays.'],
+            ],
+          },
+        },
+        { p: 'The EDIT values are saved with your project. Loading a kit sets them to the kit’s values (pads holding your samples keep theirs); double-click returns a knob to the loaded kit’s value, or the dropped sample’s. RESET on the CHANNEL strip also resets the pad’s EDIT values. EDIT values are not automation lanes, and Undo does not cover them, drops or CLEAR.' },
+      ],
+    },
+    {
+      id: 'samples',
+      heading: 'Your samples',
+      blocks: [
+        { p: 'Drop WAV or AIFF files on any pad of any kit, or press OPEN in the EDIT screen. The pad plays your sound from then on.' },
+        {
+          table: {
+            head: ['Topic', 'How it works'],
+            rows: [
+              ['Files', 'WAV or AIFF, any sample rate and bit depth, mono or stereo. A file longer than 20 seconds is cut at 20 seconds.'],
+              ['Several per pad', 'Up to 8 samples on one pad, played by chance; RU-8 avoids the same one twice in a row. Each has a WEIGHT: how often it plays. A drop on the pad replaces its sound; a drop on the EDIT samples row adds to it.'],
+              ['Per kit', 'Samples belong to the kit you dropped them on, in this project. Another kit has its own pads; step back and your samples are there again.'],
+              ['Library copy', 'RU-8 keeps a copy of every file in its user library, so a project still opens after the original moves or is deleted. macOS: `~/Library/Application Support/SubverseLab/RU-8/User Library`. Windows: `%APPDATA%\\SubverseLab\\RU-8\\User Library`.'],
+              ['Missing', 'If neither the library copy nor the original can be found, the pad shows Missing and stays silent.'],
+              ['CLEAR · REVERSE', 'CLEAR removes the pad’s samples and the kit’s sound comes back. REVERSE plays the sample backwards.'],
+            ],
+          },
+        },
+        { h3: 'User kits' },
+        { p: 'The **User** kit, after the sample kits, starts empty: silent pads waiting for your files. When it is right, press **SAVE** in the EDIT screen: RU-8 stores it as a user kit file (with the samples, the EDIT values and the channel values) in the `User Kits` folder next to the user library. Saved kits step after the User kit with the kit arrows, like the factory kits, and are listed under User kits in the kit list. There is no limit on how many you save. They are named User kit 1, 2 and so on; rename or delete the files in the folder.' },
       ],
     },
     {
@@ -228,7 +328,9 @@ export const RU8_MANUAL = {
             rows: [
               ['Formats', 'macOS: standalone app, VST3, AU instrument (Apple Silicon and Intel). Windows (64-bit): standalone app and VST3.'],
               ['Systems', 'macOS 11 or later; Windows, 64-bit.'],
-              ['Pads', '16 synthesized drums, each with level, tune, decay, pan, two sends, mute and solo'],
+              ['Pads', '16 pads, each with level, tune, decay, pan, two sends, mute and solo, and the EDIT functions (start / end or sweep / noise, attack, fine, filter, resonance, drive, velocity to tone, layer, choke, weight)'],
+              ['Kits', 'Synth kits, sample kits, the User kit and your saved user kits'],
+              ['Your samples', 'WAV or AIFF, any rate and bit depth, mono or stereo, up to 20 s; up to 8 per pad, played by weighted chance'],
               ['Sequencer', '16 steps per pad (off, on, accent, ghost), sections A and B, fill, auto arrangement'],
               ['Tempo', '50 to 200 BPM (standalone), host tempo in a DAW; swing 0 to 80 %'],
               ['Effects', 'SPACE (room, plate, hall), ECHO (tempo-synced ping-pong), GLUE bus compressor, COLOR (tape, dust, crush), −1 dBFS safety limiter'],

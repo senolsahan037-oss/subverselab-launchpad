@@ -47,6 +47,22 @@ export const JINGFANG_CHECKOUT = 'https://subverselab.lemonsqueezy.com/checkout/
 const JINGFANG_DEV_PREVIEW = typeof import.meta !== 'undefined' && Boolean(import.meta.env) && import.meta.env.DEV === true;
 export const JINGFANG_ON_SALE = Boolean(JINGFANG_CHECKOUT) || JINGFANG_DEV_PREVIEW;
 
+// AHENK (piano instrument; prepared 7 Nov 2026, switched off). The same ONE switch as JING FANG: '' = AHENK is not on the site at
+// all (no page, no showcase line, no list entry, not in the sitemap or llms.txt; scripts/prerender.js skips it and removes
+// dist/plugins/ahenk/, so its images do not ship). Under `npm run dev` only it shows as on sale with a disabled "Available shortly"
+// button (the JING FANG dev preview). At launch, in order (RELEASE_QUEUE "AHENK product room (switched off)"): create the Lemon
+// Squeezy product (no licence keys, no discount code in the link), paste its checkout URL here, "<id>:ahenk" in LS_PRODUCT_SLUGS and
+// ahenk from UNLISTED_SLUGS to SOLO_SLUGS (api/entitlements.js), publish the installers, add its date to productDates.js.
+// AHENK has its own look (root CLAUDE.md, owner 6 Nov): its own app pictures only (public/plugins/ahenk/), no family visuals.
+export const AHENK_CHECKOUT = 'https://subverselab.lemonsqueezy.com/checkout/buy/c37f6acf-46d9-4032-94a4-32eb1ecaad83';   // LS product 1508843, $29.99 launch price (8 Nov 2026, lead; deploy on the owner's go)
+export const AHENK_ON_SALE = Boolean(AHENK_CHECKOUT) || JINGFANG_DEV_PREVIEW;
+
+// ADALET (owner 8 Nov 2026: "15 dolar yazalım"): sold on its own like SEDA, no licence key. Lemon Squeezy product 1509139, $15,
+// licence keys off, "Display on storefront" off (only this link sells it). '' = back to "Coming soon" (no price, no checkout).
+// Deploy day (RELEASE_QUEUE "ADALET ON SALE"): "1509139:adalet" in LS_PRODUCT_SLUGS first, then publish_download.sh adalet mac|win.
+export const ADALET_CHECKOUT = 'https://subverselab.lemonsqueezy.com/checkout/buy/53315f7c-95f5-4dcc-a2b0-2fa21131400d';
+export const ADALET_ON_SALE = Boolean(ADALET_CHECKOUT);
+
 // Lemon Squeezy checkout links. Empty until the products are created in Lemon
 // Squeezy; while a link is empty its buy button renders disabled and says
 // "Available shortly". Paste the checkout URL here — nothing else changes.
@@ -73,10 +89,7 @@ export const CHECKOUT = {
   taban: 'https://subverselab.lemonsqueezy.com/checkout/buy/f86f586c-6c3e-42dc-a541-fe6ac3d6b1b3',
   alev: 'https://subverselab.lemonsqueezy.com/checkout/buy/69c7387d-e316-498b-ab55-dcd23d0456a0',
   kiyma: 'https://subverselab.lemonsqueezy.com/checkout/buy/91bf8ac6-11b7-4129-b564-557e64df765a',
-  // TODO(owner): ADALET ($29) and SEDA ($15): no sale date (owner 11 Oct: 12 October dropped, "coming soon"). Create the two Lemon Squeezy products
-  // (licence keys on, 2-year updates in the description), then paste the checkout URLs here as `adalet:` and
-  // `seda:` and add "<productId>:adalet" / "<productId>:seda" to LS_PRODUCT_SLUGS. Until then the keys stay absent:
-  // the pages in PluginRoom.jsx shows "Coming soon" and no page links to a checkout.
+  // ADALET: ADALET_CHECKOUT above (8 Nov 2026, $15, no licence keys); SEDA below (on sale since 19 Oct).
   // ELEK: Lemon Squeezy product 1433515 ($25, licence keys on, published 12 Oct with "Display on storefront" OFF, so only this link sells it)
   // and discount ELEKLAUNCH ($18 off ELEK only, ends 30 Nov 2026 21:00 UTC = 1 Dec 00:00 Istanbul, the same moment as LAUNCH_ENDS.elek).
   // The link carries the code, so the checkout opens at $7 until then and at $25 after. Server: "1433515:elek" in LS_PRODUCT_SLUGS.
@@ -88,6 +101,8 @@ export const CHECKOUT = {
   torna: 'https://subverselab.lemonsqueezy.com/checkout/buy/68739459-39f2-46d3-adff-bf5b2fcb6814',
   ...(RU8_CHECKOUT ? { ru8: RU8_CHECKOUT } : {}),
   ...(JINGFANG_CHECKOUT ? { jingfang: JINGFANG_CHECKOUT } : {}),
+  ...(AHENK_CHECKOUT ? { ahenk: AHENK_CHECKOUT } : {}),
+  ...(ADALET_CHECKOUT ? { adalet: ADALET_CHECKOUT } : {}),
   // 2-year updates in the description), a discount for the $7 launch price that expires 1 Dec 2026, then paste the checkout URL
   // (with the discount applied) here as `elek:` and add "<productId>:elek" to LS_PRODUCT_SLUGS. Until then the key stays absent and the
   // buy button renders disabled as "Available shortly".
@@ -113,19 +128,41 @@ export const DOWNLOAD_PLATFORMS = [
 
 // US dollars. Every plugin can be bought on its own at its price here, or as
 // the family (owner decision 2026-10-05). The old $15 KUBBE + KASET bundle is gone.
-export const PRICES = { kubbe: 9, kaset: 9, yanki: 9, hava: 12, koro: 15, mihenk: 49, tutkal: 12, family: 19.99, adalet: 29, seda: 15, torna: 12, elek: 25, ru8: 25, jingfang: 150 };
+export const PRICES = { kubbe: 9, kaset: 9, yanki: 9, hava: 12, koro: 15, mihenk: 49, tutkal: 12, family: 39.99, adalet: 15, seda: 15, torna: 12, elek: 25, ru8: 25, jingfang: 150, ahenk: 49 };
 // The family stays the seven products it was sold as (owner 2026-10-27: SEDA's move into it reverted; SEDA and the later products
 // are sold on their own).
 export const SOLD_SINGLY = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal'];
 // PRICES is the REGULAR price. A product with a launch price has an entry in LAUNCH_PRICES and an end date in LAUNCH_ENDS
 // ('YYYY-MM-DD', 00:00 Istanbul time, UTC+3). ELEK: $25 regular, $7 until 1 December 2026. The server never reads these
 // (the price is whatever the Lemon Squeezy product and its discount say); the pages only display them.
-export const LAUNCH_PRICES = { elek: 7, jingfang: 60 };   // JING FANG: owner 19 Oct "150 dolardan 60 düşür lansmana özel 1 aralığa kadar"
-export const LAUNCH_ENDS = { elek: '2026-12-01', jingfang: '2026-12-01' };
-// Every purchase includes this many years of updates; the version the buyer has keeps working forever.
-// No enforcement on downloads yet (RELEASE_QUEUE.md). server.js / entitlements.js use the same number.
-export const UPDATE_YEARS = 2;
-export const UPDATES_LINE = `Includes ${UPDATE_YEARS} years of updates; the version you have keeps working forever.`;
+// AHENK (7 Nov 2026): $49 regular, $29.99 until 1 January 2027 00:00 Istanbul (= 31 Dec 2026 21:00 UTC). Price floor: AHENK has
+// never been sold (no Lemon Squeezy product yet; the MuseHub beta had no price), so $29.99 is the first price any buyer pays and
+// becomes the floor for every later AHENK promotion, discount code, bundle or gift.
+export const LAUNCH_PRICES = { elek: 7, jingfang: 60, ahenk: 29.99 };   // JING FANG: owner 19 Oct "150 dolardan 60 düşür lansmana özel 1 aralığa kadar"
+export const LAUNCH_ENDS = { elek: '2026-12-01', jingfang: '2026-12-01', ahenk: '2027-01-01' };
+// Standing sale prices with a start and NO end (owner 7 Nov 2026: "jing fang 150 dolar üstü çizik 99 … ikinci bir duruma kadar
+// kalıcı indirim", the same on Loot Audio). From `from` (00:00 Istanbul) the struck regular price and this price show until the
+// entry is removed. Like LAUNCH_*, the server never reads it: the Lemon Squeezy price is set to it by hand on that day.
+// Price floor: $99 is above every earlier JING FANG price ($60 launch, free Black Friday).
+export const SALE_PRICES = { jingfang: { price: 99, from: '2026-12-01' } };
+// Time-boxed store offers (owner 6 Nov 2026: "black friday kampanyası ... jing fang ile katılalım. süre boyunca jing fangi beleş
+// verelim", the current release only). starts / ends: 'YYYY-MM-DD', 00:00 Istanbul (UTC+3); on from `starts`, off at `ends`.
+// While an offer is on it replaces the launch price wherever a price is shown (struck regular price, "Free", the buy key).
+// Like LAUNCH_*, the server never reads it: the Lemon Squeezy price is switched by hand at both moments (RELEASE_QUEUE).
+// Price floor: no buyer has paid for JING FANG (admin Stats, all time on 6 Nov: 0 paid orders), so free undercuts nobody.
+export const OFFERS = { jingfang: { price: 0, label: 'Black Friday', starts: '2026-11-27', ends: '2026-12-01' } };
+const istanbulMidnight = (day) => Date.parse(`${day}T00:00:00+03:00`);
+export const offerActive = (slug, now = Date.now()) => {
+  const o = OFFERS[slug];
+  if (!o) return false;
+  const from = istanbulMidnight(o.starts); const to = istanbulMidnight(o.ends);
+  return Number.isFinite(from) && Number.isFinite(to) && now >= from && now < to;
+};
+// "$7", or "Free" for a price of 0.
+export const priceWord = (price) => (Number(price) === 0 ? 'Free' : `$${price}`);
+// Updates: no term is promised (owner 7 Nov 2026: a plugin reaches its last version; a buyer must not wait out a period for
+// updates that will not come). Updates appear on the Account page; the version the buyer has keeps working forever.
+export const UPDATES_LINE = 'Updates appear on your Account page; the version you have keeps working forever.';
 
 // What a buyer is told about the licence key, in ONE place. Today's builds ship with the licence check OFF; the
 // 1.1 gate may turn it on. This sentence is true now and still true then; when the gate ships the only edit is
@@ -142,26 +179,29 @@ export const ACTIVATION_LINE_FREE = 'Install and open it in your DAW. Nothing to
 // The trust line under every Buy button. Only facts verifiable in the repo (decisions file 2026-10-10):
 // macOS 11 (CMAKE_OSX_DEPLOYMENT_TARGET in every plugin build; the manuals say "macOS 11 or later"),
 // Windows 64-bit (all manuals; only MIHENK/ALEV/TABAN name Windows 10, so no version is claimed), formats (FORMATS), licence scope and refunds (legalContent.js: Lemon Squeezy
-// is merchant of record and refunds under its own policy), 2 years of updates (UPDATES_LINE).
+// is merchant of record and refunds under its own policy), updates (UPDATES_LINE, no term promised).
 // No refund window in days and no DAW list: neither exists in the repo.
 const TRUST_OS = 'macOS 11 or later · Windows, 64-bit';
-export const TRUST_LINE = `${TRUST_OS} · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
-export const TRUST_LINE_MIHENK = `${TRUST_OS} · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE = `${TRUST_OS} · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE_MIHENK = `${TRUST_OS} · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
 // KORO, YANKI, HAVA: their macOS installers also install the standalone app (make_mac_installer.sh STANDALONE=1); the Windows zip
 // holds the VST3 only (subverselab-plugins CI: no standalone_exe for them).
 export const FORMATS_MAC_STANDALONE = 'Standalone app, VST3 and AU on macOS (Apple Silicon and Intel); VST3 on Windows (64-bit)';
-export const TRUST_LINE_MAC_STANDALONE = `${TRUST_OS} · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE_MAC_STANDALONE = `${TRUST_OS} · Standalone app, VST3 and AU on macOS; VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
 export const TRUST_LINE_FREE = `${TRUST_OS} · VST3 and AU on macOS, VST3 on Windows · Free, no card; the download appears on your Account page`;
 // ELEK: universal macOS build since 1.0.3 (Apple Silicon and Intel, published 22 Oct; 1.0.0-1.0.2 were Apple Silicon only)
 // and Windows 64-bit (standalone app, VST3; Windows package since 2026-10-12).
-export const TRUST_LINE_ELEK = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE_ELEK = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
 // RU-8: universal macOS build (Apple Silicon and Intel, macOS 11, RU-8 STATUS 16 Oct) and Windows 64-bit, shipped together (owner 16 Oct).
-export const TRUST_LINE_RU8 = `macOS 11 or later (Apple Silicon and Intel) · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE_RU8 = `macOS 11 or later (Apple Silicon and Intel) · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
 // JING FANG 1.0.0: macOS universal (Apple Silicon and Intel; signed, notarised 19 Oct) and Windows 64-bit (CI build published 19 Oct).
-export const TRUST_LINE_SEDA = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const TRUST_LINE_SEDA = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
 export const TRUST_LINE_TORNA = TRUST_LINE_SEDA;   // the same formats (standalone app, VST3, AU on macOS; standalone app, VST3 on Windows)
-export const TRUST_LINE_JINGFANG = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · ${UPDATE_YEARS} years of free updates · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
-export const trustLineFor = (slug) => (CATALOG_PLUGIN_INDEX[slug]?.trust ? CATALOG_PLUGIN_INDEX[slug].trust : slug === 'mihenk' ? TRUST_LINE_MIHENK : ['kubbe', 'koro', 'yanki', 'hava'].includes(slug) ? TRUST_LINE_MAC_STANDALONE : slug === 'elek' ? TRUST_LINE_ELEK : slug === 'ru8' ? RU8.trust : slug === 'jingfang' ? TRUST_LINE_JINGFANG : slug === 'seda' ? TRUST_LINE_SEDA : slug === 'torna' ? TRUST_LINE_TORNA : TRUST_LINE);
+export const TRUST_LINE_JINGFANG = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+// AHENK: universal since 1.0.0 (lead 8 Nov: `lipo -archs` on the release build's app, VST3 and AU = x86_64 arm64; the notarised
+// pkg build-release/pkg/AHENK-1.0.0-macOS.pkg). Windows: standalone app and VST3 instrument, 64-bit (AHENK manual, Install).
+export const TRUST_LINE_AHENK = `macOS 11 or later, Apple Silicon and Intel · Windows, 64-bit · Standalone app, VST3 and AU instrument on macOS; standalone app and VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds`;
+export const trustLineFor = (slug) => (CATALOG_PLUGIN_INDEX[slug]?.trust ? CATALOG_PLUGIN_INDEX[slug].trust : slug === 'ahenk' ? TRUST_LINE_AHENK : slug === 'mihenk' ? TRUST_LINE_MIHENK : ['kubbe', 'koro', 'yanki', 'hava'].includes(slug) ? TRUST_LINE_MAC_STANDALONE : slug === 'elek' ? TRUST_LINE_ELEK : slug === 'ru8' ? RU8.trust : slug === 'jingfang' ? TRUST_LINE_JINGFANG : slug === 'seda' ? TRUST_LINE_SEDA : slug === 'torna' ? TRUST_LINE_TORNA : TRUST_LINE);
 
 
 // The family offer has been live since 2026-10-05 (Istanbul): the family ($19.99, seven products) is shown next to the singles
@@ -218,14 +258,29 @@ export const isLaunchOver = (slug, now = Date.now()) => {
   const end = Date.parse(`${LAUNCH_ENDS[slug]}T00:00:00+03:00`);
   return Number.isFinite(end) && now >= end;
 };
-export const launchPriceActive = (slug, now = Date.now()) => slug in LAUNCH_PRICES && !isLaunchOver(slug, now);
-// The price a buyer pays now: the launch price while it lasts, otherwise the regular one.
-export const currentPrice = (slug, now = Date.now()) => (launchPriceActive(slug, now) ? LAUNCH_PRICES[slug] : PRICES[slug]);
-export const launchEndLabel = (slug) => formatDay(LAUNCH_ENDS[slug]);
-// "launch price until 1 December 2026" ('' when the product has none or it is over)
-export const launchNote = (slug, now = Date.now()) => (launchPriceActive(slug, now) ? `launch price until ${launchEndLabel(slug)}` : '');
+const launchOn = (slug, now) => slug in LAUNCH_PRICES && !isLaunchOver(slug, now);
+// A standing sale (SALE_PRICES) is on from its start day and has no end.
+export const saleActive = (slug, now = Date.now()) => {
+  const s = SALE_PRICES[slug];
+  if (!s) return false;
+  const from = istanbulMidnight(s.from);
+  return Number.isFinite(from) && now >= from;
+};
+// True while a reduced price is on: a time-boxed offer (OFFERS), the launch price, or a standing sale.
+export const launchPriceActive = (slug, now = Date.now()) => offerActive(slug, now) || launchOn(slug, now) || saleActive(slug, now);
+// The price a buyer pays now: the offer price, else the launch price while it lasts, else the sale price, otherwise the regular one.
+export const currentPrice = (slug, now = Date.now()) => (offerActive(slug, now) ? OFFERS[slug].price : launchOn(slug, now) ? LAUNCH_PRICES[slug] : saleActive(slug, now) ? SALE_PRICES[slug].price : PRICES[slug]);
+// The end day of the reduced price; '' for a standing sale (it has none).
+export const launchEndLabel = (slug, now = Date.now()) => (offerActive(slug, now) ? formatDay(OFFERS[slug].ends) : launchOn(slug, now) ? formatDay(LAUNCH_ENDS[slug]) : '');
+// What the reduced price is called on a card: "Black Friday", "launch price", or '' for a standing sale (struck price only).
+export const offerName = (slug, now = Date.now()) => (offerActive(slug, now) ? OFFERS[slug].label : launchOn(slug, now) ? 'launch price' : '');
+// "Black Friday: free until 1 December 2026" / "launch price until 1 December 2026" ('' when nothing is on)
+export const launchNote = (slug, now = Date.now()) => {
+  if (offerActive(slug, now)) return `${OFFERS[slug].label}: ${Number(OFFERS[slug].price) === 0 ? 'free' : `$${OFFERS[slug].price}`} until ${launchEndLabel(slug, now)}`;
+  return launchOn(slug, now) ? `launch price until ${launchEndLabel(slug, now)}` : '';
+};
 // Plain-text price for meta text and the prerendered HTML; components/LaunchPrice.jsx draws the struck price.
-export const priceText = (slug, now = Date.now()) => (launchPriceActive(slug, now) ? `$${LAUNCH_PRICES[slug]} (regular $${PRICES[slug]}), ${launchNote(slug, now)}` : `$${PRICES[slug]}`);
+export const priceText = (slug, now = Date.now()) => (launchPriceActive(slug, now) ? `${priceWord(currentPrice(slug, now))} (regular $${PRICES[slug]})${launchNote(slug, now) ? `, ${launchNote(slug, now)}` : ''}` : `$${PRICES[slug]}`);
 
 // "$19.99 until 1 November 2026"
 export const FAMILY_UNTIL = familyOfferEndLabel() ? `$${FAMILY_PRICE} until ${familyOfferEndLabel()}` : `$${FAMILY_PRICE}`;
@@ -236,6 +291,42 @@ export const FAMILY_OFFER_TERMS = FAMILY_PERSON_CAP
   ? `${FAMILY_UNTIL}, or for the first ${FAMILY_PERSON_CAP.toLocaleString('en-US')} people if that comes first`
   : FAMILY_UNTIL;
 export const FAMILY_NAME = 'SubverseLab plugin family';
+// The family is back (owner 3 Nov 2026): the same products as the MuseHub bundle, at the MuseHub price ($39.99; the launch
+// offer sold it at $19.99, which stays the price floor). No launch badge, no end date: FAMILY_RETIRED keeps the old launch
+// machinery (HomeIntro opening, /launch2, the struck "regular price") switched off; FamilyBand.jsx on /plugins is the offer.
+export const FAMILY_BUNDLE_ON = true;
+// List price and the 50 % rule (owner 5 Nov 2026): MuseHub caps a discount at 50 % and the site follows the same rule. The
+// family lists at $79.99 and sells at FAMILY_PRICE ($39.99, -50 %), the same as the MuseHub bundle (base 79.99, discount 39.99
+// from 5 Nov 2026). The site never sells it for less than MuseHub; $19.99 stays the floor.
+export const FAMILY_LIST_PRICE = 79.99;
+export const FAMILY_DISCOUNT_PCT = Math.round((1 - PRICES.family / FAMILY_LIST_PRICE) * 100);
+// The 3D box stack (subverselab-plugin-common/tools/family_card/family_stack_blender.py, round v11): [src, width, height].
+export const FAMILY_STACK_IMG = [media('/plugins/family_stack_hero.webp'), 1400, 788];
+export const FAMILY_STACK_CARD = media('/plugins/family_stack_card.webp');
+// Upgrades to the family (owner 3-4 Nov: "satın al yerine upgrade butonu görmeliydi"): only for those who bought a family product
+// on its own BEFORE the family came back (paid order dated before `before`); later single buyers get the normal Buy key.
+// Each code is a one-use Lemon Squeezy discount on the family product for what that product cost (FAMKORO15, FAMYANKI9, made
+// 4 Nov). The price never goes under the $19.99 floor: credit is capped at FAMILY_PRICE - 19.99. An account owning several gets
+// the largest credit (Lemon Squeezy takes one code per checkout).
+export const FAMILY_UPGRADES = {
+  before: '2026-11-04',
+  floor: 19.99,
+  codes: { koro: { code: 'FAMKORO15', credit: 15 }, yanki: { code: 'FAMYANKI9', credit: 9 } },
+};
+// What the signed-in account may upgrade with: {slug, code, price} or null. `purchased` is /api/purchases/status's
+// {slug: 'YYYY-MM-DD'} of paid orders; owning the family already means no upgrade.
+export function familyUpgrade(purchased, ownsFamily, price = FAMILY_PRICE) {
+  if (ownsFamily || !purchased) return null;
+  let best = null;
+  for (const [slug, offer] of Object.entries(FAMILY_UPGRADES.codes)) {
+    const day = purchased[slug];
+    if (!day || day >= FAMILY_UPGRADES.before) continue;
+    if (!best || offer.credit > best.credit) best = { slug, ...offer };
+  }
+  if (!best) return null;
+  const credit = Math.min(best.credit, Math.round((price - FAMILY_UPGRADES.floor) * 100) / 100);
+  return { slug: best.slug, code: best.code, price: Math.round((price - credit) * 100) / 100 };
+}
 // Family visual (16:9, 1920x1080): the family block's image and the og image of /launch2.
 export const FAMILY_IMAGE = '/plugins/family_7_16x9.png';
 // Large web-size (<= 1400 px wide, webp) panel images for the homepage showcase: [src, width, height].
@@ -252,21 +343,22 @@ export const HERO_IMG = {
   elek: [media('/plugins/elek/elek_ui_done.png'), 1000, 760],
   ru8: [media('/plugins/ru8/panel-cream.webp'), 1600, 1116],   // the 3D renders are for the ads, not the site (owner 17 Oct)
   jingfang: [media('/plugins/jingfang/hero.webp'), 1400, 914],   // the real panel on #033832 (store-image rule)
+  ahenk: [media('/plugins/ahenk/panel-stage.webp'), 1600, 1024],   // AHENK 1.0's own ui_snapshot (stage_default 2x, full frame, 8 Nov)
 };
 // Showcase order on the homepage: the family slide first, then the seven paid plugins, then the three free ones,
 // then the second line as "Coming soon" (no price, no buy button; owner 12 Oct).
 export const SHOWCASE_SLUGS = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'tutkal', 'mihenk'];
 export const SHOWCASE_FREE_SLUGS = ['taban', 'alev', 'kiyma'];
-export const SHOWCASE_SOON_SLUGS = ['adalet'];   // SEDA left this list on sale (19 Oct)
+export const SHOWCASE_SOON_SLUGS = ADALET_ON_SALE ? [] : ['adalet'];   // SEDA left this list on sale (19 Oct), ADALET with its checkout (8 Nov)
 // Sold on their own at a real price (ELEK): a showcase slide with the price and a buy button.
-export const SHOWCASE_SOLO_SLUGS = [...(JINGFANG_ON_SALE ? ['jingfang'] : []), ...(RU8_ON_SALE ? ['ru8'] : []), 'elek', 'seda', 'torna'];
+export const SHOWCASE_SOLO_SLUGS = [...(ADALET_ON_SALE ? ['adalet'] : []), ...(AHENK_ON_SALE ? ['ahenk'] : []), ...(JINGFANG_ON_SALE ? ['jingfang'] : []), ...(RU8_ON_SALE ? ['ru8'] : []), 'elek', 'seda', 'torna'];
 // Owner 19 Oct evening: nothing goes in front of the family sale ("aile satışının önüne geçecek ayrı bir şey istemiyorum"): JING FANG
 // rotates with the other solo products after the family's plugins; its launch price shows on its own slide and page only. Kept empty.
 export const SHOWCASE_NEW_SLUGS = [];
 // The clear product box of every plug-in and app (owner 2026-10-31: /plugins shows each product as its box on the page
 // ground, like the TORNA news frame). Rendered by subverselab-plugin-common/tools/box_renders.py from the panel without its
 // footer band (the shipped panels still carry the old hyphenated lockup there); 1200 px wide webp with alpha.
-const BOX_SLUGS = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'taban', 'alev', 'kiyma', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'adalet'];
+const BOX_SLUGS = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal', 'taban', 'alev', 'kiyma', 'elek', 'ru8', 'jingfang', 'seda', 'torna', 'adalet', 'ahenk'];
 export const BOX_IMG = Object.fromEntries(BOX_SLUGS.map((slug) => [slug, media(`/plugins/${slug}/box.webp`)]));
 // The same box in two layers, cropped to the same frame: the page lays the lid over the body and lifts it on hover, so the
 // box opens and the panel view rises from inside (owner 31 Oct: "daha iyi bir kutu açılış hissi").
@@ -290,7 +382,8 @@ export const BOX_SHELL = {
   tutkal: '#102a27',
   alev: '#022b28',
   taban: '#052624',
-  adalet: '#022421'
+  adalet: '#022421',
+  ahenk: '#1c332f'   // 8 Nov 2026: its stage panel's edge (#25423d) at 78 %
 };
 export const BOX_SHELL_DEFAULT = '#0b2522';
 // Web-size (800 px wide, webp) copies of each product's panel, used as the card background in the Price grid.
@@ -299,6 +392,7 @@ export const CARD_BG = {
   yanki: media('/plugins/yanki/card-bg.webp'), hava: media('/plugins/hava/card-bg.webp'), mihenk: media('/plugins/mihenk/card-bg.webp'),
   tutkal: media('/plugins/tutkal/card-bg.webp'), ru8: media('/plugins/ru8/card-bg.webp'), family: media('/plugins/family_7_card-bg.webp'),
   jingfang: media('/plugins/jingfang/card-bg.webp'), torna: media('/plugins/torna/card-bg.webp'),
+  ahenk: media('/plugins/ahenk/card-bg.webp'),
 };
 
 export const FORMATS = 'VST3 and AU on macOS (Apple Silicon and Intel) · VST3 on Windows';
@@ -306,7 +400,7 @@ export const FORMATS = 'VST3 and AU on macOS (Apple Silicon and Intel) · VST3 o
 export const PLUGINS_INDEX = {
   title: 'Audio Plugins | SubverseLab',
   description:
-    `SubverseLab audio plugins for your DAW, each sold on its own from $9. VST3 and AU. Includes ${UPDATE_YEARS} years of updates.`,
+    `SubverseLab audio plugins for your DAW, each sold on its own from $9. VST3 and AU.`,
   path: '/plugins',
 };
 
@@ -857,6 +951,8 @@ export const ADALET = {
   ...LINE2_COMMON,
   // Owner's manual (owner 20 Oct): subverselab-dyneq/docs/manual/Adalet_Manual.html -> tools/make_manual.sh -> this PDF.
   manual: media('/plugins/adalet/Adalet_Manual.pdf'), manualPage: '/plugins/adalet/manual',
+  // On sale (ADALET_CHECKOUT): sold on its own like SEDA, no licence key in the plug-in (1.0.0 is built with SVL_LICENSING=OFF).
+  ...(ADALET_ON_SALE ? { launchId: 'solo', releaseLabel: null, releaseAt: null, noKey: true, trust: TRUST_LINE } : {}),
   slug: 'adalet', name: 'ADALET', displayName: 'ADALET', kind: 'Dynamic EQ', path: '/plugins/adalet', model: 'DQ-82',
   tagline: 'A dynamic EQ with zero latency, and three helpers that find the problem for you.',
   title: 'ADALET — a zero-latency dynamic EQ with TARGET, COLLIDE and SELF | SubverseLab',
@@ -864,32 +960,66 @@ export const ADALET = {
   // TODO(owner): a 4:5 share card. Until one exists the og image reuses the LAB panel.
   og: '/plugins/adalet/og_lab.png', cardImage: media('/plugins/adalet/lab_dynamic.webp'), imageSize: [1600, 720],
   intro: 'ADALET is a dynamic EQ with six bands and zero latency, with helpers that find the problem for you. Any bell or shelf can be made dynamic, so it cuts or lifts only while the sound needs it. TARGET cuts a named part of a sound, such as a boxy vocal or a kick’s sub; COLLIDE clears room for this track where another one is loud; SELF finds the resonances of the track it sits on. They do the finding, so you can do the deciding.',
-  defaultMode: 'lab',
+  // Panel views (8 Nov 2026, owner: "ürün odası JING FANG gibi"): 1.0 ui_snapshot shots (subverselab-dyneq/docs/ui/1.0/p4d_*@2x.png)
+  // scaled to 1600 x 720; the tour steps are crops of the same shots (public/plugins/adalet/tour/). Every number in a caption is on its picture.
+  defaultMode: 'default',
   modes: [
-    { key: 'lab', name: 'LAB', image: media('/plugins/adalet/lab.webp'), text: 'The LAB face: a flat digital screen with numbered band chips and one control row.' },
-    { key: 'lab-dynamic', name: 'LAB, dynamic band', image: media('/plugins/adalet/lab_dynamic.webp'), text: 'Band 4, a bell, made dynamic: RANGE −6 dB, THRESHOLD −30 dB, ATTACK 10 ms, RELEASE 100 ms, triggered by the band itself (SELF) or by KEY. TARGET (KICK · SUB) and COLLIDE (KEY) are on above.' },
-    { key: 'orbit', name: 'ORBIT', image: media('/plugins/adalet/orbit.webp'), text: 'The ORBIT face: a round instrument case with rings and pushers. It edits the same settings as LAB.' },
+    { key: 'default', name: 'Panel', image: media('/plugins/adalet/panel-default.webp'), text: 'How ADALET opens: six empty band slots (each with a +) above the display, TARGET and SELF off, COLLIDE lit, here with a KEY track routed. Double-click the display to add a band where you point.' },
+    { key: 'dynamic', name: 'Dynamic band', image: media('/plugins/adalet/panel-dynamic.webp'), text: 'Band 4, a bell at 1.02 kHz and +3.0 dB, made dynamic: RANGE −6.0 dB from a THRESHOLD of −30.0 dB, with ATTACK 10 ms, RELEASE 100 ms and TRIGGER SELF. The line at the top right reads what the band and COLLIDE do to it now.' },
+    { key: 'target', name: 'TARGET', image: media('/plugins/adalet/panel-target.webp'), text: 'TARGET on KICK · SUB: learned from 8 hits and cutting, AMOUNT 9.0 dB, WIDTH 1.00, SLOPE 48 dB/oct. No sidechain needed.' },
+    { key: 'target-list', name: 'TARGET list', image: media('/plugins/adalet/panel-target-list.webp'), text: 'The instrument and part list, scrolled down: the SNARE, HATS, BASS, VOCAL and DRUMS parts, with REVERB-READY for snare and vocal. The KICK parts sit above.' },
+    { key: 'collide', name: 'COLLIDE', image: media('/plugins/adalet/panel-collide.webp'), text: 'COLLIDE with a KEY track routed to the sidechain: DEPTH 6.0 dB, MARGIN 3.0 dB, SPEED MEDIUM, and KEY LISTEN to hear the key. It cuts this track only where the key is loud.' },
+    { key: 'self', name: 'SELF', image: media('/plugins/adalet/panel-self.webp'), text: 'SELF on: DEPTH 6.0 dB and SENS 3.0 dB. It hunts the resonances in this track. COLLIDE and SELF share one engine, so lighting one darkens the other.' },
+    { key: 'delta', name: 'DELTA', image: media('/plugins/adalet/panel-delta.webp'), text: 'DELTA held: you hear only what is being cut, and the display says so.' },
+    { key: 'bake', name: 'BAKE', image: media('/plugins/adalet/panel-bake.webp'), text: 'BAKE has frozen what COLLIDE cut over 6.0 s of playing into three static bells, bands 1, 2 and 3, and switched COLLIDE off. Cmd+Z goes back to the dynamic cut.' },
   ],
   sections: [
     { heading: 'Six bands, any of them dynamic', text: 'Bell, low shelf, high shelf, notch, low cut and high cut. The cuts run at 12, 24, 36, 48 or 72 dB per octave and have a resonance control. Any bell or shelf can be dynamic: RANGE up to ±12 dB, with THRESHOLD, ATTACK and RELEASE, triggered by the band itself or by the sidechain KEY.' },
-    { heading: 'TARGET: name the part', text: 'Tell ADALET the instrument and the part, and it learns where that part sits in the material from the hits and cuts it by AMOUNT. It is static and needs no sidechain. VOCAL: BOX, NASAL, HARSH, S, REVERB-READY. BASS: SUB, BODY, TOP. DRUMS: KICK BODY, SNARE BODY, HATS SHIMMER. KICK: SUB, BODY, CLICK. SNARE: BODY, CRACK, SNAP/AIR, REVERB-READY. HATS: CHICK, SHIMMER.' },
-    { heading: 'COLLIDE: two sounds stop masking each other', text: 'Route a KEY track to the sidechain and COLLIDE cuts this track only where the KEY track is loud, so the two stop fighting for the same space and both come through.' },
+    { heading: 'TARGET: name the part', text: 'Tell ADALET the instrument and the part, and it learns where that part sits in the material from the hits and cuts it by AMOUNT. It is static and needs no sidechain. KICK: SUB, BODY, MUD, BOX, CLICK. SNARE: BODY, BOX, CRACK, SNAP/AIR, REVERB-READY. HATS: CHICK, BITE, SHIMMER. BASS: SUB, BODY, MUD, TOP. VOCAL: BOX, NASAL, HARSH, S, REVERB-READY. DRUMS: KICK BODY, SNARE BODY, HATS SHIMMER.' },
+    { heading: 'COLLIDE: two sounds stop masking each other', text: 'Route a KEY track to the sidechain and COLLIDE cuts this track only where the KEY track is loud, so the two stop fighting for the same space and both come through. For kick and bass, put ADALET on the bass with the kick on KEY and FOCUS LOW at 40 Hz: only the kick itself tells where its low end sits, and the bass makes room only while it plays.' },
     { heading: 'SELF: resonances in this track', text: 'SELF finds the resonances in the track it sits on and cuts them, so a ring you can hear but cannot place stops standing out.' },
     { heading: 'It tells you what it heard', text: 'While TARGET learns, the display says where it is: listening, how many hits it has heard, how many of three it has learned, then learned and cutting. When a hit cannot be used it says why, so you know to play the part of the song where the instrument is clearest. The bands sit ready at six different frequencies, and the control row under the display holds only the selected band.' },
     { heading: 'Hear what it does', text: 'Hold DELTA to hear only what is being cut. BYPASS is level-matched, so a comparison is not decided by loudness. A live spectrum analyzer shows POST by default, or PRE, PRE+POST or nothing, and the curve on screen is the engine’s own response.' },
   ],
+  // The walk through the panel (as JING FANG / MIHENK): crops of the 1.0 ui_snapshot shots, 2x, scaled to at most 1400 px wide.
+  tour: {
+    heading: 'How ADALET works',
+    lead: 'One screen: the helpers on top, the bands on the display, the selected band in one row underneath.',
+    steps: [
+      { key: 'row', img: media('/plugins/adalet/tour/row.webp'), w: 1400, h: 128, heading: 'One band, one row',
+        text: 'Select a band and its settings sit in one row under the display: ON, the shape, SLOPE for the cuts, FREQ, GAIN, Q, RANGE and THRESHOLD. A RANGE other than OFF makes a bell or shelf dynamic; the … key opens ATTACK, RELEASE and TRIGGER (SELF, this track, or KEY, the sidechain). Here band 4: 1.02 kHz, +3.0 dB, Q 1.20, RANGE −6.0 dB, THRESHOLD −30.0 dB.' },
+      { key: 'menu', img: media('/plugins/adalet/tour/menu.webp'), w: 436, h: 786, heading: 'Six shapes, five slopes',
+        text: 'A band’s menu holds the six shapes (bell, low shelf, low cut, high shelf, high cut, notch), the five slopes of the cuts (12, 24, 36, 48 and 72 dB/oct), SWITCH OFF and DELETE. A deleted band goes back to its defaults and its slot shows + again; Cmd+Z brings it back.' },
+      { key: 'resonance', img: media('/plugins/adalet/tour/resonance.webp'), w: 1400, h: 443, heading: 'Steep cuts with a resonance',
+        text: 'Band 1 as a LOW CUT at 140 Hz, 72 dB/oct, with Q at 6.00. On a cut, Q above 1 adds a resonant peak at the corner. Band 5 is switched off: its node stays on the display, dimmed, until you switch it on again.' },
+      { key: 'readout', img: media('/plugins/adalet/tour/readout.webp'), w: 1400, h: 443, heading: 'What every band is doing',
+        text: 'Point at a node and ADALET says what the band is set to and what the helpers take from it while you play: here band 5, a bell at 292 Hz set to +4.0 dB, reads −3.2 dB from COLLIDE with the KEY track playing, net −3.2 dB.' },
+      { key: 'target', img: media('/plugins/adalet/tour/target.webp'), w: 804, h: 576, heading: 'TARGET learns, then cuts',
+        text: 'Pick an instrument and a part, then play the track. The status line counts the hits until three are learned, then reads LEARNED FROM n HITS - CUTTING; a hit it cannot use is named with the reason. AMOUNT (0 to 60 dB), WIDTH (0.5 to 2) and SLOPE (12 to 72 dB/oct) shape the cut.' },
+      { key: 'bake', img: media('/plugins/adalet/tour/bake.webp'), w: 1400, h: 255, heading: 'ADVANCED and BAKE',
+        text: 'ADVANCED opens FOCUS LOW and FOCUS HIGH (bands outside them are never cut), MIX, SWEET, TILING, LEVEL MATCH and BAKE. BAKE ARM, play the part with the collisions, APPLY: what COLLIDE cut becomes static bells in the empty bands and COLLIDE switches off. Cmd+Z returns to the dynamic cut, Cmd+Shift+Z bakes again.' },
+    ],
+    practical: [
+      'Zero latency: the dry and the processed signal line up at any MIX.',
+      'Kick and bass: ADALET on the bass, the kick routed to its sidechain (KEY), COLLIDE on, FOCUS LOW at 40 Hz in ADVANCED.',
+      'Double-click the display to add a band where you point; drag a node for frequency and gain, Shift for fine moves, Cmd-drag for Q; Alt-click switches a band on or off; keys 1 to 6 select a band.',
+      'Hold D (or DELTA) to hear only what is being cut. Undo and redo: Cmd+Z and Cmd+Shift+Z on macOS, Ctrl on Windows.',
+      'SIZE sets the window to 75, 85 or 100 %.',
+    ],
+  },
   controls: [
-    ['Bands', 'Six: bell, low shelf, high shelf, notch, low cut, high cut. Cuts: 12, 24, 36, 48 or 72 dB/oct, with a resonance control.'],
-    ['RANGE · THRESHOLD · ATTACK · RELEASE', 'Make a bell or shelf dynamic. RANGE is up to ±12 dB. Triggered by the band itself or by the sidechain KEY.'],
-    ['TARGET · AMOUNT', 'Name the instrument and the part; AMOUNT sets how much of it is cut. Static, no sidechain.'],
-    ['COLLIDE', 'Cuts this track only where a KEY track routed to the sidechain is loud.'],
-    ['SELF', 'Finds resonances in this track and cuts them.'],
-    ['DELTA', 'Hold to hear only what is being cut.'],
-    ['BYPASS', 'Level-matched.'],
-    ['Analyzer', 'Live spectrum: OFF, PRE, POST (default) or PRE+POST.'],
-    ['LAB · ORBIT', 'Two faces, one set of settings.'],
+    ['Bands 1 to 6', 'Bell, low shelf, high shelf, notch, low cut, high cut. FREQ 20 Hz to 20 kHz, GAIN ±18 dB, Q 0.1 to 18. Cuts at 12, 24, 36, 48 or 72 dB/oct; on a cut, Q above 1 adds resonance. A new slot starts at 80 Hz, 200 Hz, 500 Hz, 1.2 kHz, 3 kHz or 8 kHz.'],
+    ['RANGE · THRESHOLD', 'Make a bell or shelf dynamic: RANGE ±12 dB (OFF at 0) once the level passes THRESHOLD (−60 to 0 dB, default −30 dB).'],
+    ['ATTACK · RELEASE · TRIGGER', 'ATTACK 1 to 100 ms (10 ms), RELEASE 10 to 1000 ms (100 ms); TRIGGER SELF (this track) or KEY (the sidechain).'],
+    ['TARGET', 'An instrument and a part from the list; AMOUNT 0 to 60 dB, WIDTH 0.5 to 2, SLOPE 12 to 72 dB/oct. Learns from three hits; no sidechain.'],
+    ['COLLIDE', 'Cuts this track only where a KEY track routed to the sidechain is loud. DEPTH 0 to 12 dB (6 dB), MARGIN 0 to 12 dB (3 dB), SPEED FAST, MEDIUM or SLOW, KEY LISTEN.'],
+    ['SELF', 'Finds resonances in this track and cuts them. DEPTH 0 to 12 dB, SENS 0 to 12 dB.'],
+    ['ADVANCED', 'FOCUS LOW and HIGH 40 Hz to 16 kHz (120 Hz and 8 kHz), MIX 0 to 100 %, SWEET, TILING, LEVEL MATCH, and BAKE: ARM, RESET, APPLY.'],
+    ['DELTA · BYPASS', 'DELTA: hold to hear only what is being cut. BYPASS: level-matched while LEVEL MATCH is on (the default).'],
+    ['PRE · POST · KEY', 'The analyzer: the input, the output (the default) or both, and the sidechain key as a thin line.'],
+    ['OUTPUT', '−12 to +12 dB, after everything.'],
   ],
-  controlsNote: 'Zero latency. VST3 and AU on macOS, VST3 on Windows.',
+  controlsNote: 'Zero latency. VST3 and AU on macOS, VST3 on Windows. Every control with its range and default is in the manual.',
 };
 
 export const SEDA = {
@@ -998,8 +1128,10 @@ export const FAMILY_PLUGINS = FAMILY_SLUGS.map((slug) => ALL_PLUGINS.find((p) =>
 
 // RU-8 Rhythm Unit (owner 15 Oct: exempt from the freeze). Facts from 01_AI_Tools/subverselab-ru8 (SPEC.md, STATUS.md,
 // media/CURRENT). Sales: RU8_CHECKOUT above (null = not listed anywhere; set = solo, like ELEK, $25).
-// Owner 16 Oct: macOS and Windows at launch, "2 years of free updates", copy without kit / set / preset / pad counts, leading
+// Owner 16 Oct: macOS and Windows at launch (the "2 years of free updates" line was dropped 7 Nov, no term is promised), copy without kit / set / preset / pad counts, leading
 // with use, the interface and the sound. Images: media/CURRENT stills (16 Oct 18:07; 3D 16:05); the old silent teasers are gone.
+// 1.1.0 copy (8 Nov): sample kits (job21), synth kit redesign + EDIT screen + user samples / user kits (job22), HUMAN groove;
+// facts from RU-8 STATUS.md (7-8 Nov), SPEC.md and Source (Help.cpp, RU8UserSamples*.h, RU8Sequencer.h groove()). Still no counts.
 export const RU8 = {
   ...LINE2_COMMON,
   launchId: 'solo', noKey: true,
@@ -1011,9 +1143,9 @@ export const RU8 = {
   modesLabel: 'On the panel',
   tagline: 'A drum machine you play, not program. Press play and the groove is there.',
   title: 'RU-8 Drum Machine Plugin (VST3, AU) for Mac and Windows | SubverseLab',
-  description: 'Drum machine plugin and app: synthesized pads that carry their own steps, kits that change the whole sound, A/B rhythms with fill and auto, and MIDI drag-out.',
+  description: 'Drum machine plugin and app: synth kits and recorded sample kits, your own WAV or AIFF samples on any pad, an EDIT screen for every pad, a drummer’s groove, A/B rhythms with fill and auto, and MIDI drag-out.',
   og: '/plugins/ru8/og.jpg', cardImage: media('/plugins/ru8/panel-cream.webp'), imageSize: [1600, 1116],
-  intro: 'Open RU-8, press play, and the groove is already running. Pick a kit and the whole machine changes its sound; pick a set and only the rhythm changes, so a trap rhythm on a lo-fi kit is one click away. Every pad is a drum synthesized inside RU-8 with its own steps, so you shape the beat pad by pad, by hand, and drag it into your DAW as MIDI when it feels right. Strong without being pushed, clean by default.',
+  intro: 'Open RU-8, press play, and the groove is already running. Pick a kit and the whole machine changes its sound; pick a set and only the rhythm changes, so a trap rhythm on a lo-fi kit is one click away. Every pad carries its own steps, so you shape the beat pad by pad, by hand, and drag it into your DAW as MIDI when it feels right. Synth kits, recorded sample kits, or your own samples dropped on any pad. Strong without being pushed, clean by default.',
   defaultMode: 'cream',
   modes: [
     { key: 'cream', name: 'Cream', image: media('/plugins/ru8/panel-cream.webp'), text: 'The default face. The pad bed in the middle, the channel strip for the selected pad on the left, SPACE and ECHO on the right, the readout on top.' },
@@ -1026,10 +1158,14 @@ export const RU8 = {
     { heading: 'Play first, program later', text: 'Press play and RU-8 runs a full rhythm from the start. A and B switch on the next bar, FILL drops a fill on the next bar, and AUTO plays A, a fill, B and a fill by itself, so you can jam over it before you touch a single step.' },
     { heading: 'Pads that carry their own steps', text: 'Each pad holds its own pattern of steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads at the same time as the sequencer, with velocity.' },
     { heading: 'Kits bring the character, sets bring the rhythm', text: 'Pick a kit and the whole machine changes its sound: the drums, and the settings of SPACE, ECHO and GLUE that go with them. Pick a set and only the rhythm changes. Any set plays on any kit, so a trap rhythm on a lo-fi kit is a valid sound. Loading either one makes the knobs glide to their new values.' },
-    { heading: 'Drums made inside, not played back', text: 'Every sound is synthesized by RU-8 itself, so tune, decay and level reshape the drum rather than stretch a recording. SPACE is an algorithmic reverb with ROOM, PLATE and HALL; ECHO is a tempo-synced ping-pong delay. Every pad has its own send to each, so the snare can sit in the room while the kick stays dry.' },
+    { heading: 'New in 1.1', text: 'Sample kits: recorded drum kits beside the synth kits. The synth kits redesigned: a softer hit also sounds darker, and recordings sit under the synthesis on the hats, claps, shakers, tambourines, rides, the kick’s beater and the snare’s wires. The EDIT screen for every pad. Your own WAV and AIFF samples on any pad, and user kits you save. HUMAN is now a drummer’s groove.' },
+    { heading: 'Synth kits and sample kits', text: 'The synth kits are drums synthesized inside RU-8, so tune, decay and level reshape the drum itself; a softer hit sounds darker as well as quieter, and LAYER mixes in the recording under the synth voice. The sample kits play recorded drums: Uptown, Basement, Sweatbox, Hallway, Cellar, Parlor, Drill, Warehouse and Hardware, from close-miked real kits to slide 808s and sampler drums. SPACE is an algorithmic reverb with ROOM, PLATE and HALL; ECHO is a tempo-synced ping-pong delay. Every pad has its own send to each, so the snare can sit in the room while the kick stays dry.' },
+    { heading: 'The EDIT screen', text: 'Press EDIT and the readout shows the selected pad: its sound, the sample or the last hit, with the envelope of the next hit drawn over it. The knobs take their second names in gold: START, END, ATTACK, FINE, FILTER, RESO, DRIVE, VEL>TONE, LAYER, CHOKE and WEIGHT (SWEEP and NOISE in place of START and END on synth pads). The knob you turn shows its own picture at once: the filter curve with its resonance, the drive curve, the pan, the space tail, the echo repeats, and fades when you let go. One page, no menus; the window never changes size.' },
+    { heading: 'Your own samples, your own kits', text: 'Drop WAV or AIFF files on any pad of any kit, any sample rate or bit depth, mono or stereo. Put up to 8 on one pad and they play by chance, each with its own WEIGHT, and RU-8 avoids the same one twice in a row; REVERSE plays backwards and CLEAR brings the kit’s sound back. Files longer than 20 seconds are cut at 20 seconds. RU-8 keeps a copy in its user library, so a project still opens after the originals move. The User kit starts empty; SAVE stores it as a user kit that steps after the factory kits, and you can save as many as you like.' },
+    { heading: 'A drummer’s groove', text: 'HUMAN no longer just shakes the timing. At 100 % the kick stays on the grid, the snare, clap and rim lie back by up to 12, 10 and 8 ms, the off-16th hats come lazy (8 ms late) and softer, the off-8th hats a little softer, and the whole kit’s time breathes by up to ±4 ms. It is fixed by bar and step, so a bounce repeats exactly.' },
     { heading: 'Clean by default', text: 'A gentle glue on the bus and a safety limiter at −1 dBFS, nothing more. Character that needs tape saturation, dust or bit reduction comes from a kit’s COLOR on the rear panel, and most kits leave it off.' },
     { heading: 'An interface you can read', text: 'One panel, no hidden pages: the pad bed, the channel strip of the selected pad and the effects all in view. The panel scales up for large screens, “?” opens help as notes over the panel, and the moods change only the colours.' },
-    { heading: 'Kits from analog to Anatolia', text: 'The kits run from a sine-sub Analog and a clicky Punch to Trap with a long 808, Brush with a jazz ride, FM-bell Glass, dusty Lo-fi, an acoustic Breaks kit and Anatolia with darbuka, bendir, def and zil. The sets cover House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro and Shuffle, plus four empty USER sets saved with your project.' },
+    { heading: 'Kits from analog to Anatolia', text: 'The synth kits run from a sine-sub Analog and a clicky Punch to Trap with a long 808, Brush with a jazz ride, FM-bell Glass, dusty Lo-fi, an acoustic Breaks kit and Anatolia with darbuka, bendir, def and zil; the sample kits follow, then the User kit for your own samples. The sets cover House, Techno, Disco, Rock, Funk, Boom bap, Trap, Lo-fi, Breakbeat, Drum & bass, Dembow, Bossa nova, Afrobeat, Ciftetelli, Jazz brush, Electro and Shuffle, plus four empty USER sets saved with your project.' },
     { heading: 'The rear panel and the MIDI map', text: 'Turn the machine round for COLOR (tape, dust and crush), the note map and the output. The pads answer General MIDI drum notes by default (C1 is the kick), or notes 36 to 51 from pad 1 up; C-1, D-1, E-1 and F-1 switch to A, B, a bar of fill and off at their exact sample, so a DAW lane or a controller can arrange RU-8.' },
     { heading: 'Take the rhythm with you', text: 'Drag the selected pad’s pattern, or the whole drum, from the panel onto a track in your DAW as a MIDI clip: standard MIDI, channel 10, with the swing written into the timing. Inside a host the steps follow the host’s timeline, so the same project plays and bounces the same way every time.' },
   ],
@@ -1037,9 +1173,11 @@ export const RU8 = {
     ['KIT', 'Large readout with arrows. Loading a kit moves its channel, SPACE, ECHO and GLUE values; the knobs glide.'],
     ['SET', 'Small readout with arrows. Loads both sections, the tempo, the swing and the echo time, and lands on the next bar while playing.'],
     ['A · B · FILL · AUTO', 'Switch section, play a fill, or let RU-8 arrange them.'],
-    ['TEMPO · SWING · HUMAN', 'Tempo (standalone; the plug-in follows the host), swing, and a little human timing and level.'],
+    ['TEMPO · SWING · HUMAN', 'Tempo (standalone; the plug-in follows the host), swing, and HUMAN: a drummer’s groove, the snare laid back, lazy 16th hats, the time breathing.'],
     ['GLUE · VOLUME', 'Bus compressor and master volume, before the −1 dBFS limiter.'],
     ['Channel strip', 'For the selected pad: level, tune, decay, pan, and its sends to SPACE and ECHO, plus mute and solo.'],
+    ['EDIT', 'The selected pad up close: its sound and envelope in the readout, START, END, ATTACK, FINE, FILTER, RESO, DRIVE, VEL>TONE, LAYER, CHOKE and WEIGHT on the knobs; REVERSE, OPEN, CLEAR and SAVE.'],
+    ['Your samples', 'Drop WAV or AIFF on any pad, up to 8 per pad played by chance; save the User kit as your own kit.'],
     ['SPACE', 'ROOM, PLATE or HALL, with size, damping, pre-delay and return.'],
     ['ECHO', 'Tempo-synced ping-pong: note value, feedback, tone and return.'],
     ['COLOR (rear)', 'TAPE, DUST and CRUSH, set per kit.'],
@@ -1055,9 +1193,14 @@ export const RU8 = {
 // #033832 from the JING FANG lead session (marketing/site/), web copies in public/plugins/jingfang/.
 // Not claimed: MTS-ESP (not in this version). MPE and GENERATE shipped (1.1.0 / 1.2.0, STATUS.md). Facts checked by the lead session 19 Oct, GENERATE and MIDI clips 28 Oct;
 // the DAW lines (host tempo / bar lock, MIDI clip drag-out) are tested against a fake host only: verify in a real DAW before release.
+// 1.4.0 (J1, 7 Nov 2026): the camera (1.3.0, tester only until now) and the sign-in (owned-only, no trial: api/trialGrant.js
+// GRANT_PRODUCTS; the plug-in plays nothing until the computer is signed in with the buying account). noKey stays true: no key is
+// shown or typed; the activation line says how the sign-in works.
+export const JINGFANG_ACTIVATION = 'After you buy, sign in with your SubverseLab account inside JING FANG (it opens your browser); there is no key to type.';
 export const JINGFANG = {
   ...LINE2_COMMON,
   launchId: 'solo', noKey: true,
+  activation: JINGFANG_ACTIVATION,
   // Owner's manual (owner 20 Oct): subverselab-studio/docs/manual/JingFang_Manual.html -> tools/make_manual.sh -> this PDF.
   manual: media('/plugins/jingfang/JingFang_Manual.pdf'), manualPage: '/plugins/jingfang/manual',
   releaseLabel: null,
@@ -1120,6 +1263,8 @@ export const JINGFANG = {
       'A sequence or drum pattern dragged into your DAW is a MIDI clip. With no step on its high or low row it is plain notes; with raised or lowered steps every note gets its own MIDI channel and pitch bend (MPE-style), so chord notes keep their cents too. The keyboard\'s MICRO rows stay in the project, not in the clip.',
       'Standalone app, VST3 and AU instrument on macOS (Apple Silicon and Intel); standalone app and VST3 on Windows (64-bit).',
       'MPE: per-note pitch bend, pressure to level and slide (CC74) to brightness; the zones come from your controller\'s MPE setup. In LAB mode MPE notes play without per-note expression.',
+      'The camera: CAMERA on the title band shows a part of the panel, closer, for a recording, a stream or a lesson. Click a module on its map, or let FOLLOW keep the open page or the module you touch in view. Only the view moves; the sound does not change.',
+      'Sign in once on each of your computers with the account that bought JING FANG: the browser opens, there is no key to type. It then plays offline, and renews the sign-in by itself every few days when the computer is online.',
       'Not in this version: MTS-ESP, and free cents offsets per single key.',
     ],
   },
@@ -1142,7 +1287,7 @@ export const JINGFANG = {
 
 // ELEK: a standalone stem separation app (plus VST3 and AU), sold on its own. Not in the family (FAMILY_SLUGS, SOLD_SINGLY),
 // not a tester plugin, not in the launch2 counter; the server opens it for a paid ELEK order only (entitlements.js SOLO_SLUGS,
-// download ticket launchId 'solo'). ELEK has no in-app licence check (noKey, like RU-8 / JING FANG / SEDA): the download is the gate.
+// download ticket launchId 'solo'). ELEK has no in-app licence check (noKey, like RU-8 / SEDA; JING FANG signs in from 1.4.0): the download is the gate.
 // $25 regular, $7 until 1 December 2026 (LAUNCH_PRICES / LAUNCH_ENDS). PluginRoom.jsx draws the page.
 export const ELEK = {
   launchId: 'solo', noKey: true,   // no licence check in the app (Elek_Manual, STATUS): no key is shown or asked for
@@ -1190,12 +1335,74 @@ export const ELEK = {
   ],
   controlsNote: 'Everything runs on your computer. No account is needed to use the app once it is installed.',
 };
+// AHENK, a piano instrument (prepared 7 Nov 2026; on the site only once AHENK_CHECKOUT is set). Every fact below is from
+// 01_AI_Tools/subverselab-fazilsay: docs/manual/AHENK_Manual.html and STATUS.md (7 Nov: 30-day trial, free mode, browser sign-in).
+// Copy rules (root CLAUDE.md): no "AI" / "beta" / "coming soon", no counts of SubverseLab products, no name meaning or origin story.
+// Not claimed (not in those files): dragging MIDI from the panel into a DAW (the MIDI button writes a .mid file), iPhone / iPad and
+// the App Store (owner: not yet). Own look (owner exception, 6 Nov): no model line, its own app pictures, no family visuals.
+// Trial: the full product for 30 days from the first open, no sign-in needed (api/trialGrant.js TRIAL_PRODUCTS, machine-bound); after it the free mode
+// (Source/Licensing/Features.h: the upright with the LIP and LID ORTF stands). Sign-in: the browser device flow (/activate), no key.
+export const AHENK_TRIAL_LINE = 'Free 30-day trial: the full AHENK for 30 days, starting the first time you open it.';
+export const AHENK_FREE_AFTER_LINE = 'After the trial AHENK keeps playing for free: the upright piano with two microphones.';
+export const AHENK_ONE_PURCHASE_LINE = 'One purchase opens it on Mac and Windows.';
+export const AHENK_ACTIVATION = 'After you buy, sign in with your SubverseLab account inside AHENK (it opens your browser); there is no key to type.';
+export const AHENK = {
+  ...LINE2_COMMON,
+  launchId: 'solo', noKey: true,
+  activation: AHENK_ACTIVATION,
+  trialLines: [AHENK_TRIAL_LINE, AHENK_FREE_AFTER_LINE, AHENK_ONE_PURCHASE_LINE],
+  // The installer is a free download for any signed-in account (download ticket launchId 'trial', api/trialGrant.js TRIAL_PRODUCTS):
+  // the room shows "Download free trial" next to Buy. Switches on with the room (AHENK_CHECKOUT).
+  trial: true,
+  releaseLabel: null,
+  releaseAt: null,
+  slug: 'ahenk', name: 'AHENK', displayName: 'AHENK', kind: 'Piano instrument', path: '/plugins/ahenk', model: '',   // no model line (owner exception)
+  formats: 'Standalone app, VST3 and AU instrument on macOS (Apple Silicon and Intel); standalone app and VST3 instrument on Windows (64-bit)',
+  trust: TRUST_LINE_AHENK,
+  manual: media('/plugins/ahenk/AHENK_Manual.pdf'), manualPage: '/plugins/ahenk/manual',   // web manual: src/data/manuals/ahenk.js; AHENK manual 1.0, 19 pages, without the iPhone / iPad chapter (fazilsay docs/manual, 7 Nov)
+  modesLabel: 'In the app',
+  tagline: 'A sampled piano on a stage: choose the piano, place the microphones, pick the hall, and play.',
+  title: 'Sampled Piano VST3 and AU with Microphones, Halls and a Score Page: AHENK | SubverseLab',
+  description: 'Sampled piano instrument: four pianos, microphone positions around them, measured halls, and a score page that plays and writes MusicXML and MIDI. Free 30-day trial.',
+  og: '/plugins/ahenk/og.jpg', cardImage: media('/plugins/ahenk/card-bg.webp'), imageSize: [1000, 640],
+  intro: 'AHENK is a sampled piano that you place on a stage. Choose the piano, put the microphones where they really stood when it was recorded, pick the hall, and play it from a MIDI keyboard, by clicking the keys on the panel, or with the computer keys in the macOS app. Or let it play: open a MusicXML or MIDI score and the piano on stage plays it through your microphones and your hall. You can write your own notes on the same page and save them as MusicXML or MIDI.',
+  defaultMode: 'stage',
+  modes: [
+    { key: 'stage', name: 'Stage', image: media('/plugins/ahenk/panel-stage.webp'), text: 'The concert grand on stage with two microphones: the PIANO RACK on the left, the MIC RACK on the right, the hall on top and all 88 keys below.' },
+    { key: 'pianos', name: 'Pianos', image: media('/plugins/ahenk/panel-pianos.webp'), text: 'Choosing a piano, with the settings of the LID ORTF microphone open over the stage: level, room, type and its reverb, delay and echo sends.' },
+    { key: 'hall', name: 'Halls', image: media('/plugins/ahenk/panel-hall.webp'), text: 'The Chamber theatre. The hall selector changes the room and the picture together, and you can change it while you play.' },
+    { key: 'score', name: 'Score', image: media('/plugins/ahenk/panel-score.webp'), text: 'A score open on the SCORE page: the hands and voices as layers, the loop, the tempo and the count-in, with the piano on stage playing it.' },
+  ],
+  sections: [
+    { heading: 'Pianos from real recordings', text: 'Every piano in AHENK comes from real recordings, note by note and at many strengths: a 274 cm concert grand with its lid fully open, a 200 cm studio grand, a felt-damped upright and a short baby grand. Each piano is a separate choice in the installer, so you install only the ones you want. Through the factory setup Stage the pianos are matched in loudness, so switching pianos does not jump in level.' },
+    { heading: 'Microphones where they really stood', text: 'Around the piano stand nine microphone positions, from over the strings to a dummy head in the hall. On each piano one or two of them are the microphones it was recorded with; the others are computed from those recordings, so every position can be heard on every piano. One click sends a microphone to its place and switches it on. Each has its own level, a choice of microphone character, more of the recorded room on the LID and HOUSE stands, and its own reverb, delay and echo.' },
+    { heading: 'The hall around it', text: 'Recorded is the room each piano was recorded in, nothing added. Recital room, Chamber theatre and Concert hall are measured rooms; Stone church and Live room are built. Every microphone gets the hall according to its distance from the piano, the close ones a little and the house positions more, and the change fades over in about a tenth of a second.' },
+    { heading: 'Stage setups', text: 'A stage setup is everything on the stage: the microphones, their settings, OUT and the hall, and it can bring a piano. The factory setups run from close and intimate through church, live room and wide pairs to microphone colour, echo and delay, and headphones; SAVE keeps your own. When a setup loads, the knobs glide to their new values while the sound changes at once; double-click returns a knob to the value of the setup that is loaded now.' },
+    { heading: 'A score page that plays', text: 'Open a MusicXML (.musicxml, .xml, .mxl) or MIDI (.mid, .midi) file, or drop it on the panel, and the piano on stage plays it. Loop the piece or whole bars, set the tempo from 50 to 150 %, count in one or two bars, and mute or solo each hand, each voice, the other parts and the pedal.' },
+    { heading: 'Write notes, keep them as MusicXML or MIDI', text: 'NEW starts a blank score in any major or minor key. In WRITE the computer keys, the mouse or a MIDI keyboard write the notes: lengths from a sixty-fourth to a double whole, dots, triplets, ties and chords, both hands with up to four voices each, with undo and redo. SAVE AS writes MusicXML, which other notation programs open; MIDI writes a .mid file for your DAW, and the grip beside it drags the score straight onto a track in your DAW.' },
+    { heading: 'In your DAW', text: 'AHENK is an instrument that answers the sustain, sostenuto and soft pedals of your MIDI keyboard. The DAW project keeps the piano, the stage, every microphone setting, OUT and the hall, and the microphones (under their own names), the hall and OUT are parameters your DAW can automate. AHENK adds no latency. The piano data is stored losslessly compressed (2.44 GB for all four pianos) and read from disk while it plays.' },
+  ],
+  controls: [
+    ['Hall selector', 'Recorded, Recital room, Chamber theatre, Concert hall, Stone church, Live room; the arrows step, a click on the name opens the list.'],
+    ['OUT', 'The level of the whole stage, −12 to +12 dB.'],
+    ['PIANO RACK', 'The pianos you can play; click one to put it on stage.'],
+    ['MIC RACK', 'The microphones that are off; click one to send it to its place on stage.'],
+    ['Microphone settings', 'ON, LEVEL (−24 to 0 dB), ROOM on the LID and HOUSE stands, TYPE, and the REVERB, DELAY and ECHO sends.'],
+    ['Setup · SAVE · LIST', 'Step through the factory setups and yours, save your own, open the list.'],
+    ['SCORE... · STAGE · SCORE', 'Open a score; swap the stage for the SCORE page and back.'],
+    ['PLAY · STOP · LOOP · TEMPO', 'Play the score, loop it or a range of bars, 50 to 150 % tempo, count-in of one or two bars.'],
+    ['NEW · WRITE · SAVE AS · MIDI', 'Start a score, write notes, save as MusicXML, export as MIDI; drag the grips beside SAVE AS and MIDI into your DAW or onto the desktop.'],
+    ['The keyboard', 'All 88 keys, A0 to C8; lower on a key is louder.'],
+  ],
+  controlsNote: 'Drag a knob up or down, Shift for finer steps; double-click returns it to the value of the setup that is loaded now. “?” opens help over the panel and never changes the window size.',
+};
+
 // Products sold on their own at a real price, outside the family, the testers and the launch counters (RU-8 joins when RU8_CHECKOUT is set).
-export const SOLO_PLUGINS = [...(JINGFANG_ON_SALE ? [JINGFANG] : []), ...(RU8_ON_SALE ? [RU8] : []), ELEK, SEDA, TORNA];
+export const SOLO_PLUGINS = [...(ADALET_ON_SALE ? [ADALET] : []), ...(AHENK_ON_SALE ? [AHENK] : []), ...(JINGFANG_ON_SALE ? [JINGFANG] : []), ...(RU8_ON_SALE ? [RU8] : []), ELEK, SEDA, TORNA];
 
 // The second line, in page order. Kept apart from ALL_PLUGINS on purpose: ALL_PLUGINS drives the account
 // downloads, the family and the testers, and none of that exists for these two yet.
-export const LINE2_PLUGINS = [ADALET];   // SEDA moved to SOLO_PLUGINS when it went on sale (19 Oct)
+export const LINE2_PLUGINS = ADALET_ON_SALE ? [] : [ADALET];   // SEDA moved to SOLO_PLUGINS when it went on sale (19 Oct), ADALET with its checkout (8 Nov)
 // Every product that has a room at /plugins/<slug> (PluginRoom.jsx), in page order.
 export const ROOM_PLUGINS = [...ALL_PLUGINS, ...SOLO_PLUGINS, ...LINE2_PLUGINS, ...FREE_PLUGINS];
 // Every product the store lists, newest release first (root CLAUDE.md "Store order", owner 2026-10-28; dates in

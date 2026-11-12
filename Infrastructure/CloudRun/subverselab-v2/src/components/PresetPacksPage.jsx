@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import { css } from './SamplePacksPage';
 import { ppCss } from './presetPacksCss';
@@ -49,6 +49,9 @@ export default function PresetPacksPage() {
   // The hand-written packs plus the live catalogue (packs added or edited from /admin), newest release first.
   const cat = useCatalog();
   const list = useMemo(() => byLatestRelease(mergePresetPacks(PRESET_PACK_LIST, cat.presetPacks), (p) => p.id), [cat]);
+  // A pack linked from the site search (#pp-<id>): bring its heading into view once the list (live packs too) is drawn.
+  const { hash } = useLocation();
+  useEffect(() => { if (hash.startsWith('#pp-')) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })); }, [hash, list]);
   return (
     <div className="st-page">
       <PageMeta title={PRESET_PACKS.title} description={PRESET_PACKS.description} path={PRESET_PACKS.path} />

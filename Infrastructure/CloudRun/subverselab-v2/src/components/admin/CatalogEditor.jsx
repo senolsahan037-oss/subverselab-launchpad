@@ -73,19 +73,19 @@ function ListEditor({ value, onChange, placeholder }) {
   return <textarea className="input-field" rows={Math.min(12, Math.max(3, text.split('\n').length + 1))} value={text} placeholder={placeholder} onChange={(e) => onChange(e.target.value.split('\n'))} />;
 }
 
-function PairsEditor({ value, onChange }) {
+function PairsEditor({ value, onChange, first = 'Control', second = 'What it does', add = 'Add a control' }) {
   const list = Array.isArray(value) ? value : [];
   const set = (i, j, v) => { const next = list.map((p) => [...p]); next[i][j] = v; onChange(next); };
   return (
     <div style={{ display: 'grid', gap: '8px' }}>
       {list.map((p, i) => (
         <div key={i} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) 2fr auto', gap: '8px' }}>
-          <input className="input-field" value={p[0] || ''} placeholder="Control" onChange={(e) => set(i, 0, e.target.value)} />
-          <input className="input-field" value={p[1] || ''} placeholder="What it does" onChange={(e) => set(i, 1, e.target.value)} />
+          <input className="input-field" value={p[0] || ''} placeholder={first} onChange={(e) => set(i, 0, e.target.value)} />
+          <input className="input-field" value={p[1] || ''} placeholder={second} onChange={(e) => set(i, 1, e.target.value)} />
           <button type="button" className="btn btn-ghost" onClick={() => onChange(list.filter((_, k) => k !== i))} aria-label="Remove">×</button>
         </div>
       ))}
-      <div><button type="button" className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.82rem' }} onClick={() => onChange([...list, ['', '']])}>Add a control</button></div>
+      <div><button type="button" className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.82rem' }} onClick={() => onChange([...list, ['', '']])}>{add}</button></div>
     </div>
   );
 }
@@ -136,7 +136,7 @@ function ModesEditor({ value, onChange, user, group, slug }) {
 
 function Field({ f, value, onChange, user, kind, slug, locked, onUploaded, note }) {
   const common = { id: `cat-${f.key}` };
-  const v = value ?? (f.type === 'bool' ? Boolean(f.default) : f.type === 'lines' || f.type === 'pairs' || f.type === 'sections' || f.type === 'modes' ? [] : '');
+  const v = value ?? (f.type === 'bool' ? Boolean(f.default) : f.type === 'lines' || f.type === 'pairs' || f.type === 'videos' || f.type === 'sections' || f.type === 'modes' ? [] : '');
   let input;
   switch (f.type) {
     case 'slug': input = <input {...common} className="input-field" value={v} disabled={locked} placeholder="e.g. torna" onChange={(e) => onChange(e.target.value.toLowerCase())} />; break;
@@ -165,7 +165,8 @@ function Field({ f, value, onChange, user, kind, slug, locked, onUploaded, note 
     ); break;
     case 'size': input = <input {...common} className="input-field" style={{ maxWidth: '220px' }} value={Array.isArray(v) ? v.join(',') : v} placeholder="1600,602" onChange={(e) => onChange(e.target.value)} />; break;
     case 'lines': input = <ListEditor value={v} onChange={onChange} placeholder="One per line" />; break;
-    case 'pairs': input = <PairsEditor value={v} onChange={onChange} />; break;
+    case 'pairs': input = <PairsEditor value={v} onChange={onChange} {...(f.first ? { first: f.first, second: f.second, add: f.add } : {})} />; break;
+    case 'videos': input = <PairsEditor value={v} onChange={onChange} first="https://youtu.be/…" second="Caption" add="Add a video" />; break;
     case 'sections': input = <SectionsEditor value={v} onChange={onChange} />; break;
     case 'modes': input = <ModesEditor value={v} onChange={onChange} user={user} group={kind} slug={slug} />; break;
     default: input = null;

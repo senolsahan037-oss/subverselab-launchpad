@@ -21,7 +21,7 @@ export const PRODUCT_KINDS = ['plugins', 'samplePacks', 'presetPacks'];
 
 // Field types: text (one line), para (multi-line), url (https URL or a site path starting with /), path (site path or URL),
 // money (USD, >= 0), int, bool, date (YYYY-MM-DD), datetime (ISO), enum, lines (list of one-line strings),
-// pairs (list of [label, text]), sections (list of {heading, text}), size ([w, h]).
+// pairs (list of [label, text]), videos (list of [YouTube link, caption]), sections (list of {heading, text}), size ([w, h]).
 const id = (label, help) => ({ key: 'id', type: 'slug', label, help, required: true, max: 60 });
 const published = { key: 'published', type: 'bool', label: 'Published', help: 'Off: hidden from the site (a static item with the same id is hidden too).', default: true };
 const dates = [
@@ -39,7 +39,7 @@ const ls = [
 
 export const FIELDS = {
   news: [
-    id('Key', 'Lowercase letters, digits and dashes. Using an existing key (boeb, torna, jingfang, testers, elek, free-plugins, manuals, tool-credits, family-thanks) edits that frame.'),
+    id('Key', 'Lowercase letters, digits and dashes. Using an existing key (boeb, torna, jingfang, testers, elek, free-plugins, manuals, tool-credits, family) edits that frame.'),
     { key: 'kicker', type: 'text', label: 'Kicker', help: 'The small line above the title, e.g. "TORNA · graphic equalizer · out now".', max: 120 },
     { key: 'dateLabel', type: 'text', label: 'Date label', help: 'Optional, e.g. "19 November".', max: 60 },
     { key: 'title', type: 'text', label: 'Title', max: 300, required: true },
@@ -56,6 +56,7 @@ export const FIELDS = {
   ],
   plugins: [
     id('Slug', 'URL and order key: /plugins/<slug>. Lowercase letters and digits.'),
+    { key: 'edits', type: 'bool', label: 'Edits a product already on the site', help: 'Yes: this item changes a plug-in that is already in the site code (TORNA, KUBBE …) under the same slug. Only the fields you fill in change; empty fields keep the site\'s own text, so Name, Kind and Tagline are not required.' },
     { key: 'displayName', type: 'text', label: 'Name', help: 'As shown: TORNA. ASCII only; no brand prefix.', max: 60, required: true },
     { key: 'kind', type: 'text', label: 'Kind', help: 'e.g. Graphic equalizer', max: 80, required: true },
     { key: 'model', type: 'text', label: 'Model', help: 'e.g. TR-83', max: 40 },
@@ -71,6 +72,7 @@ export const FIELDS = {
     { key: 'sections', type: 'sections', label: 'Sections', help: 'Heading + paragraph, in order.' },
     { key: 'controls', type: 'pairs', label: 'Controls', help: 'Control name + what it does.' },
     { key: 'controlsNote', type: 'para', label: 'Controls note', max: 600 },
+    { key: 'videos', type: 'videos', label: 'Videos', help: 'A YouTube link (watch, youtu.be or shorts) + a caption, one per row. They show first under "Hear it" in the room; a /shorts/ link plays upright.' },
     { key: 'formats', type: 'text', label: 'Formats line', help: 'e.g. Standalone app, VST3 and AU on macOS (Apple Silicon and Intel); standalone app and VST3 on Windows (64-bit)', max: 300 },
     { key: 'trust', type: 'para', label: 'Trust line', help: 'Under the price. Leave empty for the standard line.', max: 600 },
     { key: 'manual', type: 'url', label: 'Manual PDF', max: 500, upload: 'pdf' },
@@ -92,9 +94,21 @@ export const FIELDS = {
     { key: 'madeLine', type: 'para', label: 'Made line', help: 'One honest sentence on how it was made.', max: 600 },
     { key: 'summary', type: 'para', label: 'Summary', max: 1500 },
     { key: 'inside', type: 'lines', label: "What's inside", help: 'One item per line, read from the pack (counts, format, size).' },
+    // The folded sections under the preview, the same as the importer's packs show (owner 3 Nov: a pack added later must get
+    // its technical details from the panel). Every value is read from the pack's own measurements.csv / zip.
+    { key: 'technical', type: 'pairs', label: 'Technical details', first: 'Label, e.g. Audio format', second: 'Measured value, e.g. 24-bit / 44.1 kHz WAV, stereo, all 282 WAV files', add: 'Add a row',
+      help: 'One row per fact, as on the importer packs: Files in the zip, Audio format, Sample peak, True peak, Loudness, Tempos, Loop keys, MIDI, Download. Values from the pack\'s measurements.csv, never estimated.' },
+    { key: 'folders', type: 'pairs', label: 'Inside the folder', first: 'Folder, e.g. Breaks/Uptown', second: 'What is in it, e.g. 18 files: Full, Kick, Snare, Hats, Perc + MIDI', add: 'Add a folder',
+      help: 'One row per folder of the zip, in the zip\'s order. The documents (README, licence, measurements, SHA256SUMS) go in one row named Documents.' },
+    { key: 'licence', type: 'enum', label: 'Licence summary', options: [['standard', 'The SubverseLab pack licence (same as every SVL pack)'], ['none', 'Not shown']], default: 'standard',
+      help: 'The licence clauses every SVL pack ships with, shown folded under the details. A publisher\'s pack with its own licence: Not shown, and the licence goes in the zip.' },
     { key: 'cover', type: 'url', label: 'Cover', help: 'Square, 1200x1200 or more. Upload or site path.', max: 500, upload: 'image', required: true },
     { key: 'snippet', type: 'url', label: 'Preview audio', help: 'MP3 made only from the pack’s own files.', max: 500, upload: 'audio' },
     { key: 'peaks', type: 'url', label: 'Preview waveform (peaks JSON)', help: 'Written by the panel when the preview is uploaded (the store card and the pack page draw the waveform from it); from a terminal: node scripts/pack-peaks.js <mp3>.', max: 500 },
+    // The pack's demo on SoundCloud (owner 5 Nov 2026): /sample-packs builds its playlist from these links in the store order,
+    // and the pack page links to its own track. Upload the demo + cover at soundcloud.com/upload first.
+    { key: 'soundcloud', type: 'url', label: 'SoundCloud track', help: 'The demo on soundcloud.com/subverselab, e.g. https://soundcloud.com/subverselab/svl-mirage-demo. The /sample-packs playlist plays these newest first; empty = the pack is left out of it.', max: 300,
+      pattern: '^https://soundcloud\\.com/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+/?$', patternHelp: 'a soundcloud.com track link: https://soundcloud.com/<account>/<track>' },
     { key: 'scenes', type: 'lines', label: 'Preview scenes', help: 'One per line: seconds and a name, e.g. "0 Intro" or "12.5 Hook". Shown as markers under the waveform.' },
     publisher,
     ...ls,
@@ -144,6 +158,16 @@ export const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,59}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const isHttps = (s) => /^https:\/\/[^\s]+$/.test(s);
 const isSitePath = (s) => /^\/[^\s]*$/.test(s);
+// The video id in a YouTube link (watch?v=, youtu.be/, /shorts/, /embed/) or a bare 11-character id; '' when there is none.
+export function youtubeId(link) {
+  const v = String(link || '').trim();
+  if (/^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+  const m = v.match(/^https:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[?&#/].*)?$/);
+  return m ? m[1] : '';
+}
+// A panel videos list ([[link, caption], …]) as the rooms draw demos: { youtube, caption, vertical }.
+export const videosToDemos = (list) => (Array.isArray(list) ? list : []).map(([link, caption]) => ({ youtube: youtubeId(link), caption: caption || '', vertical: /\/shorts\//.test(String(link || '')) })).filter((d) => d.youtube);
+
 const str = (v) => (typeof v === 'string' ? v.trim() : v == null ? '' : String(v).trim());
 
 // Validates and normalises one document. Returns { doc, errors }. Unknown keys are dropped; an empty optional field is
@@ -154,11 +178,14 @@ export function cleanDoc(kind, input, { partial = false } = {}) {
   const doc = {};
   if (!fields) return { doc, errors: [`unknown kind ${kind}`] };
   const src = input && typeof input === 'object' ? input : {};
+  // An item that edits a plug-in already in the site code only carries the fields it changes.
+  const edits = kind === 'plugins' && (src.edits === true || src.edits === 'true');
   for (const f of fields) {
     const has = Object.prototype.hasOwnProperty.call(src, f.key);
     if (!has && partial) continue;
     const raw = src[f.key];
     const bad = (why) => errors.push(`${f.label}: ${why}`);
+    const required = f.required && !(edits && f.key !== 'id');
     switch (f.type) {
       case 'slug': {
         const v = str(raw).toLowerCase();
@@ -168,7 +195,7 @@ export function cleanDoc(kind, input, { partial = false } = {}) {
       }
       case 'text': case 'para': {
         const v = f.type === 'text' ? str(raw).replace(/\s+/g, ' ') : str(raw).replace(/\r\n?/g, '\n');
-        if (f.required && !v) bad('required');
+        if (required && !v) bad('required');
         if (f.max && v.length > f.max) bad(`at most ${f.max} characters`);
         if (f.pattern && v && !new RegExp(f.pattern).test(v)) bad(f.patternHelp || 'not in the right form');
         doc[f.key] = v;
@@ -176,8 +203,9 @@ export function cleanDoc(kind, input, { partial = false } = {}) {
       }
       case 'url': case 'path': {
         const v = str(raw);
-        if (f.required && !v) bad('required');
+        if (required && !v) bad('required');
         if (v && !(isHttps(v) || isSitePath(v))) bad('an https URL or a site path starting with /');
+        if (f.pattern && v && !new RegExp(f.pattern).test(v)) bad(f.patternHelp || 'not in the right form');
         if (v.length > (f.max || 500)) bad(`at most ${f.max || 500} characters`);
         doc[f.key] = v;
         break;
@@ -203,14 +231,14 @@ export function cleanDoc(kind, input, { partial = false } = {}) {
       case 'date': {
         const v = str(raw);
         if (v && (!DATE_RE.test(v) || Number.isNaN(Date.parse(`${v}T00:00:00Z`)))) bad('YYYY-MM-DD');
-        if (f.required && !v) bad('required');
+        if (required && !v) bad('required');
         doc[f.key] = v;
         break;
       }
       case 'datetime': {
         const v = str(raw);
         if (v && Number.isNaN(Date.parse(v))) bad('an ISO date and time, e.g. 2026-11-01T00:00:00+03:00');
-        if (f.required && !v) bad('required');
+        if (required && !v) bad('required');
         doc[f.key] = v ? new Date(Date.parse(v)).toISOString() : '';
         break;
       }
@@ -230,8 +258,17 @@ export function cleanDoc(kind, input, { partial = false } = {}) {
       case 'pairs': {
         const list = Array.isArray(raw) ? raw : [];
         const v = list.map((p) => (Array.isArray(p) ? [str(p[0]), str(p[1])] : [str(p?.label ?? p?.[0]), str(p?.text ?? p?.[1])])).filter(([a, b]) => a || b).slice(0, 40);
-        if (v.some(([a, b]) => !a || !b)) bad('every control needs a name and a text');
+        if (v.some(([a, b]) => !a || !b)) bad('every row needs both columns filled in');
         if (v.some(([a, b]) => a.length > 120 || b.length > 600)) bad('name at most 120, text at most 600 characters');
+        doc[f.key] = v;
+        break;
+      }
+      case 'videos': {
+        const list = Array.isArray(raw) ? raw : [];
+        const v = list.map((p) => (Array.isArray(p) ? [str(p[0]), str(p[1])] : [str(p?.link ?? p?.[0]), str(p?.caption ?? p?.[1])])).filter(([a, b]) => a || b).slice(0, 12);
+        if (v.some(([a]) => !youtubeId(a))) bad('every row needs a YouTube link (watch, youtu.be or shorts)');
+        if (v.some(([, b]) => !b)) bad('every video needs a caption');
+        if (v.some(([a, b]) => a.length > 200 || b.length > 200)) bad('link and caption at most 200 characters each');
         doc[f.key] = v;
         break;
       }

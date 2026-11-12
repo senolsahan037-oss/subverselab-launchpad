@@ -1,4 +1,6 @@
 // JING FANG owner's manual as a web page: /plugins/jingfang/manual.
+// 1.4.0 (7 Nov 2026, J1): the Sign in section and the camera (top-bar row + 'The camera'), from the 1.4 PDF manual
+// (subverselab-studio/docs/manual/JingFang_Manual.html) and the 1.4.0 code (Source/plugin/SignIn.cpp, Camera.cpp).
 // Source: 01_AI_Tools/subverselab-studio/docs/manual/JingFang_Manual.html (22 Oct 2026, written for JING FANG 1.1.0; updated 28 Oct to
 // the 1.2 text below, with new SEQ / DRUM pictures, and public/plugins/jingfang/JingFang_Manual.pdf rebuilt from it). The site
 // sells 1.2.0 (released 27 Oct, subverselab-studio/STATUS.md), which adds GENERATE and changes the SEQ page and the MIDI clips;
@@ -52,6 +54,27 @@ export const JINGFANG_MANUAL = {
       }),
     },
     {
+      id: 'sign-in',
+      heading: 'Sign in',
+      blocks: [
+        { p: 'The first time JING FANG opens on a computer, it asks you to sign in. There is no licence key to type.' },
+        {
+          steps: [
+            'Press **SIGN IN WITH SUBVERSELAB**. Your browser opens subverselab.com and the panel shows a short code.',
+            'Sign in there with the account that bought JING FANG and check that the code on the page is the one on the panel.',
+            'Press **Activate this computer**. A few seconds later the panel opens by itself.',
+          ],
+        },
+        {
+          list: [
+            '**One purchase, one account.** JING FANG belongs to the subverselab.com account that bought it. Sign in each of your own computers with that account.',
+            '**Offline.** After the sign-in JING FANG needs no connection to play. When the computer is online it renews the sign-in by itself every few days; without a connection it keeps playing for 45 days after the last renewal.',
+            '**Until it is signed in** the window shows only the sign-in and JING FANG makes no sound. A project keeps every setting meanwhile; nothing in it is lost.',
+          ],
+        },
+      ],
+    },
+    {
       id: 'quick-start',
       heading: 'Quick start',
       blocks: [
@@ -90,9 +113,13 @@ export const JINGFANG_MANUAL = {
               ['BPM', 'The tempo. In the standalone app drag or use the wheel; double-click returns to 120. In a DAW it shows the host’s tempo with HOST and a lock, and cannot be changed here.'],
               ['< preset >', 'Loads whole presets. The preset family and name show in the middle.'],
               ['PATCH · SEQ · DRUM', 'Open the patch bay, the arpeggiator and sequencer, and the drum machine, each on its own page. CLOSE returns to the panel.'],
+              ['CAMERA', 'On the title band, right of the name. Opens the camera controls (Cmd / Ctrl + K in the standalone app); see below.'],
             ],
           },
         },
+        { h3: 'The camera' },
+        { p: 'For a recording, a stream or a lesson the window can show a part of the device, closer, instead of all of it. **CAMERA** opens a small set of controls that floats over the panel: a map of the device with a gold frame for what the window shows, **WHOLE**, **FOLLOW**, - and + and the zoom.' },
+        { p: 'On the map, click a module to go there, drag the frame to move the view, use the wheel to zoom (up to 4 x). **FOLLOW** moves the camera on its own: to the page that is open (PATCH, SEQ, DRUM, LAB, FX RACK), else to the module you touch. The view glides like the knobs. Drag the title of the controls to put them anywhere; x hides them and the view stays where it is. Only the view moves: every control keeps working where it is, and the sound does not change.' },
         { h3: 'The preset synthesizer' },
         { p: 'Under the top bar is a strip of slots, one for each part of the synth: OSC 1, OSC 2, OSC 3, FILTER, AMP ENV, FLT ENV, PITCH, DRIFT, VOICE, FM, TUNING, FX, SEQ and DRUMS. Loading a whole preset fills every slot with its name. Give one slot another preset and **only that part** takes that preset’s settings: the oscillators from a lead, the envelope from a pad, the filter from a bass. Click the left or right of a slot to step, the middle for the list, or use the mouse wheel. A mixed sound shows as Preset synth / Mix; SAVE keeps it as your own preset, with where each part came from.' },
         { p: 'The factory presets come in families: Bass, Bass - 808, Keys - E-Piano, Piano, Organ, Pad, Strings, Choir, Winds, Brass, Guitar, Pluck, Mallet, Bell, Lead, FX, the Drums families (Kick, Snare, Clap, Hat, Perc), Drum Machine, the Arp families (Classic, Chord, Rhythmic, Wide), the Sequence families (Acid, Bass, Drums, Melodic, Pulse, Micro, Lab), and Init.' },

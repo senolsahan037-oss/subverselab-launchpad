@@ -4,6 +4,7 @@ import PageMeta from './PageMeta';
 import { packsCss } from './packs/packsCss';
 import { CoverPlay } from './packs/Snippet';
 import { SweepBlock } from './packs/PackKey';
+import SoundCloudPlaylist from './packs/SoundCloudPlaylist';
 import { visiblePacks, packPath } from '../data/packFacts';
 import { packOffer, priceLabel } from '../data/samplePackPrices';
 import { SAMPLE_PACKS } from '../data/plugins';
@@ -60,6 +61,21 @@ export const css = `
 .sp-checks label { display: inline-flex; gap: 6px; align-items: center; text-transform: none; letter-spacing: 0; font-size: .9rem; font-weight: 400; margin: 0; }
 .sp-rights { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; line-height: 1.5; }
 .sp-error { color: var(--color-danger); margin: 0 0 12px; }
+.st-listen { margin: 40px 0 8px; }
+.st-listen h2 { margin: 0 0 6px; font-size: 1.3rem; }
+.st-listen p { margin: 0 0 14px; color: var(--color-text-muted); }
+.st-listen-box { border-radius: 12px; box-shadow: var(--shadow-card); background: var(--color-surface); overflow: hidden; }
+.st-listen-player { display: block; width: 100%; height: 166px; border: 0; background: var(--color-surface-2); }
+.st-listen-list { list-style: none; margin: 0; padding: 6px 0; max-height: 360px; overflow-y: auto; }
+.st-listen-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; gap: 12px; width: 100%;
+  padding: 6px 14px; border: 0; background: none; color: var(--color-text); font: inherit; text-align: left; cursor: pointer; }
+.st-listen-row img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+.st-listen-row:hover, .st-listen-row:focus-visible { background: var(--color-surface-2); }
+.st-listen-row.on { background: var(--color-surface-2); }
+.st-listen-row.on .st-listen-name { color: var(--color-gold); }
+.st-listen-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-listen-kind { color: var(--color-text-muted); font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 560px) { .st-listen-row { grid-template-columns: 40px minmax(0, 1fr); } .st-listen-kind { display: none; } }
 .sp-done { margin-top: 24px; background: rgba(197,160,89,.12); border: 1px solid ${GOLD}; border-radius: 10px; padding: 18px 20px; line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) { .sp-lamp i { animation: none; } }
 `;
@@ -193,6 +209,8 @@ export default function SamplePacksPage({ user }) {
       <div className="st-grid">
         {packs.map((p) => <PackCard key={p.slug} pack={p} by={publisherOf(cat, p.publisher)} />)}
       </div>
+
+      <SoundCloudPlaylist packs={packs} />
 
       <p className="st-foot">Buy a pack once and it is yours: no subscription. Royalty-free use in your own music; the licence summary is on each pack&rsquo;s page.</p>
 

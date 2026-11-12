@@ -43,6 +43,7 @@ function fakeStorage() {
         setMetadata: async (m) => { const o = objects.get(key); o.meta = { ...o.meta, ...m, metadata: { ...(o.meta.metadata || {}), ...(m.metadata || {}) } }; },
         download: async () => { const o = objects.get(key); if (!o) throw new Error('No such object'); return [Buffer.from(o.data)]; },
         save: async (data, opts) => { objects.set(key, { data: String(data), meta: { contentType: opts?.contentType, metadata: opts?.metadata || {} } }); },
+        delete: async () => { objects.delete(key); },
       };
     },
   });
@@ -261,6 +262,52 @@ await test('applyCatalogData: prices, checkouts, dates and the plug-in index tak
   assert.equal(MUSEHUB.harmony, 'https://www.musehub.com/plugin/harmony');
 });
 
+// ---- Videos and edits of a room in the code (owner 2 Nov: "bunlar da panelden eklenebilir olmalı") ------------------
+await test('videos: YouTube links parse (watch, youtu.be, shorts, embed, bare id); a bad link or a missing caption is refused', async () => {
+  const { youtubeId, videosToDemos } = await import('../api/catalogSchema.js');
+  assert.equal(youtubeId('https://youtu.be/aUPclGBDIKg'), 'aUPclGBDIKg');
+  assert.equal(youtubeId('https://www.youtube.com/watch?v=aUPclGBDIKg&t=10s'), 'aUPclGBDIKg');
+  assert.equal(youtubeId('https://www.youtube.com/watch?feature=share&v=aUPclGBDIKg'), 'aUPclGBDIKg');
+  assert.equal(youtubeId('https://www.youtube.com/shorts/Gdd1WtYiEbM'), 'Gdd1WtYiEbM');
+  assert.equal(youtubeId('https://www.youtube-nocookie.com/embed/aUPclGBDIKg'), '', 'only youtube.com and youtu.be hosts');
+  assert.equal(youtubeId('aUPclGBDIKg'), 'aUPclGBDIKg');
+  assert.equal(youtubeId('https://evil.example/watch?v=aUPclGBDIKg'), '');
+  assert.deepEqual(videosToDemos([['https://youtu.be/aUPclGBDIKg', 'How to'], ['https://www.youtube.com/shorts/Gdd1WtYiEbM', 'Short']]),
+    [{ youtube: 'aUPclGBDIKg', caption: 'How to', vertical: false }, { youtube: 'Gdd1WtYiEbM', caption: 'Short', vertical: true }]);
+  const ok = cleanDoc('plugins', { id: 'harmony', displayName: 'H', kind: 'k', tagline: 't', intro: 'i', cardImage: '/h.webp', videos: [['https://youtu.be/aUPclGBDIKg', 'How to']] });
+  assert.deepEqual(ok.errors, []); assert.deepEqual(ok.doc.videos, [['https://youtu.be/aUPclGBDIKg', 'How to']]);
+  assert.ok(cleanDoc('plugins', { id: 'h', displayName: 'H', kind: 'k', tagline: 't', intro: 'i', cardImage: '/h.webp', videos: [['https://vimeo.com/1', 'x']] }).errors.some((e) => /YouTube link/.test(e)));
+  assert.ok(cleanDoc('plugins', { id: 'h', displayName: 'H', kind: 'k', tagline: 't', intro: 'i', cardImage: '/h.webp', videos: [['https://youtu.be/aUPclGBDIKg', '']] }).errors.some((e) => /caption/.test(e)));
+});
+await test('edits: an item that edits a room in the code needs only its slug; a new plug-in still needs name, kind and tagline', () => {
+  assert.deepEqual(cleanDoc('plugins', { id: 'torna', edits: true, videos: [['https://youtu.be/aUPclGBDIKg', 'How to use every control']] }).errors, []);
+  const fresh = cleanDoc('plugins', { id: 'torna2' }).errors;
+  assert.ok(['Name', 'Kind', 'Tagline'].every((n) => fresh.some((e) => e.startsWith(`${n}:`))));
+  assert.ok(cleanDoc('plugins', { id: 'Bad Slug', edits: true }).errors.some((e) => /^Slug:/.test(e)), 'the slug is checked even when editing');
+});
+await test('livePlugin: a live item lays its filled-in fields and videos over the code room; empty fields, flags and hidden items change nothing', async () => {
+  const code = { slug: 'torna', name: 'TORNA', displayName: 'TORNA', kind: 'Graphic equalizer', tagline: 'code tagline', intro: 'code intro', free: false, noKey: true, sections: [{ heading: 'h', text: 't' }], demos: [{ youtube: 'OLDOLDOLD01', caption: 'old', vertical: true }, { youtube: 'aUPclGBDIKg', caption: 'dup', vertical: false }] };
+  const doc = { id: 'torna', edits: true, published: true, tagline: '', intro: 'panel intro', free: false, noKey: true, sections: [], videos: [['https://youtu.be/aUPclGBDIKg', 'How to use every control']] };
+  const out = merges.livePlugin(code, [doc]);
+  assert.equal(out.intro, 'panel intro'); assert.equal(out.tagline, 'code tagline'); assert.equal(out.kind, 'Graphic equalizer');
+  assert.deepEqual(out.sections, code.sections, 'an empty list keeps the code\'s sections');
+  assert.deepEqual(out.demos.map((d) => d.youtube), ['aUPclGBDIKg', 'OLDOLDOLD01'], 'panel videos first, an id in both shown once');
+  assert.equal(out.demos[0].caption, 'How to use every control');
+  assert.equal(code.intro, 'code intro', 'the code object itself is not changed');
+  assert.equal(merges.livePlugin(code, [{ ...doc, published: false }]), code);
+  assert.equal(merges.livePlugin(code, [{ ...doc, publishAt: '2999-01-01T00:00:00Z' }]), code);
+  assert.equal(merges.livePlugin(code, []), code);
+});
+await test('applyCatalogData: an edit of a code room does not enter the catalogue plug-in index (the code room stays the room)', async () => {
+  const { CATALOG_PLUGIN_INDEX, pluginBySlug } = await import('../src/data/plugins.js');
+  merges.applyCatalogData({ plugins: [{ id: 'torna', edits: true, published: true, videos: [['https://youtu.be/aUPclGBDIKg', 'x']] }], samplePacks: [], presetPacks: [], news: [] });
+  assert.equal(CATALOG_PLUGIN_INDEX.torna, undefined); assert.equal(pluginBySlug('torna').model, 'TR-83');
+});
+await test('catalogue-only plug-ins carry their videos as demos', () => {
+  const [pl] = merges.catalogPlugins([{ id: 'harmony', displayName: 'HARMONY', kind: 'k', tagline: 't', cardImage: '/h.webp', published: true, videos: [['https://www.youtube.com/shorts/Gdd1WtYiEbM', 'Short']] }], []);
+  assert.deepEqual(pl.demos, [{ youtube: 'Gdd1WtYiEbM', caption: 'Short', vertical: true }]);
+});
+
 // ---- Publishers, preview scenes, agent keys (owner 31 Oct: "tester ya da yayıncı almak için … agentlar dahi bu paneli kullanmalı") ----
 await test('publishers: a kind of its own; products point at one; the public view never carries the e-mail', async () => {
   const { KINDS, cleanDoc, PRODUCT_KINDS } = await import(new URL('../api/catalogSchema.js', import.meta.url));
@@ -294,6 +341,24 @@ await test('shapes: scene lines become markers; a catalogue pack carries peaks, 
   assert.deepEqual(publisherOf(cat, 'babasultan'), { id: 'babasultan', name: 'BabaSultan', link: 'https://babasultan.art', role: 'producer' });
   assert.equal(publisherOf(cat, ''), null); assert.equal(publisherOf(cat, 'nobody'), null);
 });
+await test('pack details from the panel (owner 3 Nov): technical rows, folders and the licence reach a catalogue pack page', async () => {
+  const { cleanDoc } = await import(new URL('../api/catalogSchema.js', import.meta.url));
+  const base = { id: 'p2', name: 'P', kindLine: 'k', cover: '/c.jpg', listedAt: '2026-11-05T00:00:00+03:00' };
+  const r = cleanDoc('samplePacks', { ...base, technical: [['Audio format', '24-bit / 44.1 kHz WAV, stereo']], folders: [['Breaks/Uptown', '18 files']] });
+  assert.deepEqual(r.errors, []); assert.equal(r.doc.licence, 'standard', 'the pack licence is shown unless switched off');
+  assert.deepEqual(r.doc.technical, [['Audio format', '24-bit / 44.1 kHz WAV, stereo']]);
+  assert.ok(cleanDoc('samplePacks', { ...base, technical: [['Tempos', '']] }).errors.some((e) => /both columns/.test(e)));
+  assert.ok(cleanDoc('samplePacks', { ...base, licence: 'mine' }).errors.some((e) => /choices/.test(e)));
+  const { samplePackFromDoc } = await import(new URL('../src/catalog/shapes.js', import.meta.url));
+  const { detailRows, packLicence } = await import(new URL('../src/data/packFacts.js', import.meta.url));
+  const pack = samplePackFromDoc(r.doc);
+  assert.deepEqual(detailRows(pack), [['Audio format', '24-bit / 44.1 kHz WAV, stereo']]);
+  assert.deepEqual(pack.folderRows, [['Breaks/Uptown', '18 files']]);
+  const lic = packLicence(pack); assert.ok(lic && lic.clauses.length >= 5 && lic.clauses[0].title === 'Grant', 'the SVL pack clauses');
+  assert.equal(packLicence(samplePackFromDoc({ ...r.doc, licence: 'none' })), null);
+  const old = samplePackFromDoc({ id: 'w', name: 'W', kindLine: 'k', cover: '/c.jpg' });
+  assert.deepEqual(detailRows(old), []); assert.ok(packLicence(old), 'an item saved before the field existed still shows the licence');
+});
 await test('agent keys: made once, found by hash, revoked for good; a bad label or id is refused', async () => {
   const { createAgentStore, hashAgentKey, isAgentKey } = await import(new URL('../api/agents.js', import.meta.url));
   const { db, store } = fakeDb();
@@ -310,6 +375,44 @@ await test('agent keys: made once, found by hash, revoked for good; a bad label 
   assert.equal((await agents.revoke('zz')).status, 400); assert.equal((await agents.revoke('0'.repeat(64))).status, 404);
   assert.ok((await agents.revoke(made.id)).ok);
   assert.equal(await agents.find(made.key), null, 'a revoked key opens nothing');
+});
+
+
+// ---- SoundCloud link and the panel's own uploads (owner 5 Nov 2026) ------------------------------------------------------
+await test('schema: a sample pack takes a soundcloud.com track link and refuses anything else', () => {
+  const base = { id: 'mirage', name: 'Mirage', kindLine: 'loops', cover: '/c.jpg', listedAt: '2026-11-01T00:00:00Z' };
+  assert.deepEqual(cleanDoc('samplePacks', { ...base, soundcloud: 'https://soundcloud.com/subverselab/svl-mirage-demo' }).errors, []);
+  assert.equal(cleanDoc('samplePacks', { ...base, soundcloud: 'https://soundcloud.com/subverselab/svl-mirage-demo' }).doc.soundcloud, 'https://soundcloud.com/subverselab/svl-mirage-demo');
+  for (const bad of ['https://example.com/x/y', 'https://soundcloud.com/subverselab', 'http://soundcloud.com/a/b', '/sample-packs/mirage']) {
+    assert.ok(cleanDoc('samplePacks', { ...base, soundcloud: bad }).errors.some((e) => e.startsWith('SoundCloud track:')), bad);
+  }
+});
+await test('merge: the SoundCloud link reaches a known pack and a catalogue-only pack', async () => {
+  const { mergeSamplePacks } = await import('../src/catalog/merge.js');
+  const sc = 'https://soundcloud.com/subverselab/svl-mirage-demo';
+  const out = mergeSamplePacks([{ slug: 'mirage', name: 'Mirage', cover: { jpg: '/c.jpg' } }],
+    [{ id: 'mirage', soundcloud: sc, published: true }, { id: 'newpack', name: 'New', kindLine: 'k', cover: '/n.jpg', soundcloud: 'https://soundcloud.com/subverselab/new', published: true }]);
+  assert.equal(out.find((p) => p.slug === 'mirage').soundcloud, sc);
+  assert.equal(out.find((p) => p.slug === 'newpack').soundcloud, 'https://soundcloud.com/subverselab/new');
+});
+await test('service: a replaced or removed upload leaves the bucket, one still in use stays', async () => {
+  const { mediaPathsIn } = await import('../api/catalog.js');
+  const B = 'project-62238635-aae4-41f4-880.firebasestorage.app';
+  const media = (path) => `https://firebasestorage.googleapis.com/v0/b/${B}/o/${encodeURIComponent(path)}?alt=media&token=t`;
+  const oldCover = 'catalog/samplePacks/cleanpack/a-cover.jpg'; const newCover = 'catalog/samplePacks/cleanpack/b-cover.jpg';
+  const shared = 'catalog/samplePacks/cleanpack/shared.mp3';
+  for (const p of [oldCover, newCover, shared]) st.put(B, p, 'x', 'image/jpeg');
+  const item = { id: 'cleanpack', name: 'Clean', kindLine: 'k', listedAt: '2026-11-01T00:00:00Z', snippet: media(shared) };
+  assert.ok((await svc.save('samplePacks', { ...item, cover: media(oldCover) })).ok);
+  assert.ok((await svc.save('samplePacks', { id: 'otherpack', name: 'O', kindLine: 'k', listedAt: '2026-11-01T00:00:00Z', cover: '/o.jpg', snippet: media(shared) })).ok);
+  const r = await svc.save('samplePacks', { ...item, cover: media(newCover), snippet: '' });
+  assert.deepEqual(r.removedFiles, [oldCover], 'the old cover goes; the preview another pack still uses stays');
+  assert.ok(!st.objects.has(`${B}/${oldCover}`) && st.objects.has(`${B}/${newCover}`) && st.objects.has(`${B}/${shared}`));
+  const d = await svc.remove('samplePacks', 'cleanpack');
+  assert.deepEqual(d.removedFiles, [newCover]);
+  assert.ok(!st.objects.has(`${B}/${newCover}`));
+  assert.deepEqual([...mediaPathsIn({ a: '/site/path.jpg', b: 'https://example.com/o/catalog%2Fx' })], [], 'site paths and other hosts are never touched');
+  await svc.remove('samplePacks', 'otherpack');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

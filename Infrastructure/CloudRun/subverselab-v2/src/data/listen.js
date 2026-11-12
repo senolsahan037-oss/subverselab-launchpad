@@ -198,23 +198,52 @@ export const LISTEN = {
 
   // RU-8: kits bring the character, sets bring the rhythm. Every button is the same Boom bap set (90 BPM, A, fill, B, fill)
   // on another kit, rendered by RU-8's own processor; no dry button (an instrument has no dry). Readout: the time for the
-  // kick on each downbeat to fall 20 dB, measured on the file (an isolated kick of each kit agrees within 6 ms).
+  // kick on each downbeat to fall 20 dB, measured on the file. Re-rendered 8 Nov 2026 with the 1.1 engine (redesigned synth kits + three sample kits), marketing/listen/measurements.json.
   ru8: {
     headline: 'One rhythm.',
     accent: 'Change the kit.',
-    note: 'The same 21-second rhythm (the Boom bap set at 90 BPM: A, a fill, B, a fill) on each kit, all at the same loudness. Headphones on.',
+    note: 'The same 21-second rhythm (the Boom bap set at 90 BPM: A, a fill, B, a fill) on synth kits and sample kits, all at the same loudness. Headphones on.',
     start: 'lofi',
     buttons: [
       { key: 'analog', name: 'Analog', file: media('/plugins/ru8/audio/analog.m4a'), panel: { src: media('/plugins/ru8/panel-kit-analog.webp'), w: 1600, h: 1116 },
-        line: 'A sine-sub kick, square-cluster hats and round toms, in a small room.', readout: { label: 'Kick decay · measured', value: 166, digits: 0, unit: 'ms' }, colors: TEAL },
+        line: 'Synth kit: a sine-sub kick, square-cluster hats and round toms, in a small room.', readout: { label: 'Kick decay · measured', value: 160, digits: 0, unit: 'ms' }, colors: TEAL },
       { key: 'lofi', name: 'Lo-fi', file: media('/plugins/ru8/audio/lofi.m4a'), panel: { src: media('/plugins/ru8/panel-kit-lofi.webp'), w: 1600, h: 1116 },
-        line: 'Dusty tape, a soft kick and a muted snare: the peaks sit 6.3 dB closer to the body than on Analog.', readout: { label: 'Kick decay · measured', value: 144, digits: 0, unit: 'ms' }, colors: GOLD },
+        line: 'Synth kit: dusty tape, a soft kick and a muted snare; the peaks sit 6.7 dB closer to the body than on Analog.', readout: { label: 'Kick decay · measured', value: 144, digits: 0, unit: 'ms' }, colors: GOLD },
       { key: 'steel', name: 'Industrial', file: media('/plugins/ru8/audio/steel.m4a'), panel: { src: media('/plugins/ru8/panel-kit-steel.webp'), w: 1600, h: 1116 },
-        line: 'Metal hits, grit and a long hall: the spectral centre sits at 0.94 kHz, Analog’s at 0.29 kHz.', readout: { label: 'Kick decay · measured', value: 100, digits: 0, unit: 'ms' }, colors: MIST },
+        line: 'Synth kit: metal hits, grit and a long hall; the spectral centre sits at 1.00 kHz, Analog’s at 0.39 kHz.', readout: { label: 'Kick decay · measured', value: 120, digits: 0, unit: 'ms' }, colors: MIST },
       { key: 'trap', name: 'Trap', file: media('/plugins/ru8/audio/trap.m4a'), panel: { src: media('/plugins/ru8/panel-kit-trap.webp'), w: 1600, h: 1116 },
-        line: 'A long 808 under a tight snare and fast hats: 97 % of the energy sits below 150 Hz.', readout: { label: 'Kick decay · measured', value: 254, digits: 0, unit: 'ms' }, colors: TEAL },
+        line: 'Synth kit: a long 808 under a tight snare and fast hats; 92 % of the energy sits below 150 Hz.', readout: { label: 'Kick decay · measured', value: 110, digits: 0, unit: 'ms' }, colors: TEAL },
       { key: 'dry', name: 'Dry', file: media('/plugins/ru8/audio/dry.m4a'), panel: { src: media('/plugins/ru8/panel-kit-dry.webp'), w: 1600, h: 1116 },
-        line: 'Short and close: clicks, a small room and no tail; the peaks stand 23.3 dB above the body.', readout: { label: 'Kick decay · measured', value: 72, digits: 0, unit: 'ms' }, colors: GREY },
+        line: 'Synth kit: short and close, clicks and no tail; the peaks stand 22.9 dB above the body.', readout: { label: 'Kick decay · measured', value: 86, digits: 0, unit: 'ms' }, colors: GREY },
+      { key: 'uptown', name: 'Uptown', file: media('/plugins/ru8/audio/uptown.m4a'), panel: { src: media('/plugins/ru8/panel-kit-uptown.webp'), w: 1600, h: 1116 },
+        line: 'Sample kit: a real kit with close mics and room, and a tambourine.', readout: { label: 'Kick decay · measured', value: 120, digits: 0, unit: 'ms' }, colors: GOLD },
+      { key: 'basement', name: 'Basement', file: media('/plugins/ru8/audio/basement.m4a'), panel: { src: media('/plugins/ru8/panel-kit-basement.webp'), w: 1600, h: 1116 },
+        line: 'Sample kit: a 24-inch kick, a big snare and a ride in a small room.', readout: { label: 'Kick decay · measured', value: 40, digits: 0, unit: 'ms' }, colors: MIST },
+      { key: 'drill', name: 'Drill', file: media('/plugins/ru8/audio/drill.m4a'), panel: { src: media('/plugins/ru8/panel-kit-drill.webp'), w: 1600, h: 1116 },
+        line: 'Sample kit: slide 808s, sharp hats and hard claps.', readout: { label: 'Kick decay · measured', value: 53, digits: 0, unit: 'ms' }, colors: TEAL },
+    ],
+  },
+
+  // AHENK (8 Nov 2026): one score on five of its factory stage setups. The first verse (bars 1-16) of Schubert's Heidenroeslein
+  // D.257 (OpenScore Lieder, CC0), every part on the piano, rendered by AHENK's own engine with each setup's piano, stands and hall;
+  // recorded microphones only (stands the plug-in builds from models are not in these files). One gain per file, no limiter.
+  // Readout: time after the last note for the sound to fall 30 dB. Source: 01_AI_Tools/subverselab-fazilsay/marketing/listen/.
+  ahenk: {
+    headline: 'One score.',
+    accent: 'Change the stage.',
+    note: 'The first verse of Schubert\u2019s Heidenr\u00f6slein (OpenScore, CC0) on five of AHENK\u2019s stage setups, all at the same loudness. Headphones on.',
+    start: 'stage',
+    buttons: [
+      { key: 'stage', name: 'Stage', file: media('/plugins/ahenk/audio/stage.m4a'), panel: { src: media('/plugins/ahenk/listen-default.webp'), w: 1600, h: 1024 },
+        line: 'The concert grand with its lip and stage-lid microphones, in the room it was recorded in.', readout: { label: 'Room tail \u00b7 measured', value: 350, digits: 0, unit: 'ms' }, colors: TEAL },
+      { key: 'recital', name: 'Recital Studio', file: media('/plugins/ahenk/audio/recital.m4a'), panel: { src: media('/plugins/ahenk/listen-hall-recital.webp'), w: 1600, h: 1024 },
+        line: 'The studio grand on its stage pair, in the recital room, a measured chamber music room.', readout: { label: 'Room tail \u00b7 measured', value: 400, digits: 0, unit: 'ms' }, colors: GOLD },
+      { key: 'felt', name: 'Felt Room', file: media('/plugins/ahenk/audio/felt.m4a'), panel: { src: media('/plugins/ahenk/listen-hall-recital.webp'), w: 1600, h: 1024 },
+        line: 'The felt-damped upright on its pair, in the same recital room: soft hammers, a close and intimate sound.', readout: { label: 'Room tail \u00b7 measured', value: 650, digits: 0, unit: 'ms' }, colors: MIST },
+      { key: 'chamber', name: 'Chamber Evening', file: media('/plugins/ahenk/audio/chamber.m4a'), panel: { src: media('/plugins/ahenk/listen-hall-theatre.webp'), w: 1600, h: 1024 },
+        line: 'The baby grand on its close pair, in the chamber theatre, a measured small theatre.', readout: { label: 'Room tail \u00b7 measured', value: 450, digits: 0, unit: 'ms' }, colors: TEAL },
+      { key: 'church', name: 'Stone Church', file: media('/plugins/ahenk/audio/church.m4a'), panel: { src: media('/plugins/ahenk/listen-hall-church.webp'), w: 1600, h: 1024 },
+        line: 'The concert grand on the stage-lid pair, in the stone church: the longest tail of these five.', readout: { label: 'Room tail \u00b7 measured', value: 1250, digits: 0, unit: 'ms' }, colors: GOLD },
     ],
   },
 };

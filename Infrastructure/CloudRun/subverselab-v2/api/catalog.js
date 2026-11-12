@@ -35,6 +35,18 @@ const cannotSign = (err) => /client_email|sign data|signBlob|private key|credent
 const ext = (name) => (String(name).toLowerCase().match(/\.[a-z0-9]+$/) || [''])[0];
 export const safeFilename = (name) => String(name || '').split(/[\\/]/).pop().replace(/[^A-Za-z0-9._+-]+/g, '-').replace(/^[.-]+/, '').slice(-120);
 
+// The panel's own uploads (pictures, previews, peaks, manuals) in the media bucket, as object paths, wherever they sit in an
+// item (a field, a list, a row). Only catalog/… objects of this bucket count; site paths and other hosts are never touched.
+const MEDIA_URL_RE = new RegExp(`^https://firebasestorage\\.googleapis\\.com/v0/b/${MEDIA_BUCKET.replace(/[.]/g, '\\.')}/o/(catalog%2F[^?#\\s]+)`);
+export function mediaPathsIn(value, out = new Set()) {
+  if (typeof value === 'string') {
+    const m = MEDIA_URL_RE.exec(value);
+    if (m) { try { out.add(decodeURIComponent(m[1])); } catch { /* not a path */ } }
+  } else if (Array.isArray(value)) value.forEach((v) => mediaPathsIn(v, out));
+  else if (value && typeof value === 'object') Object.values(value).forEach((v) => mediaPathsIn(v, out));
+  return out;
+}
+
 export function createCatalogService({ getAdmin, getStorage, now = () => Date.now() }) {
   let cache = { at: 0, value: null, loading: null };
   const empty = () => ({ news: [], plugins: [], samplePacks: [], presetPacks: [], publishers: [] });
@@ -102,6 +114,29 @@ export function createCatalogService({ getAdmin, getStorage, now = () => Date.no
 
   const slugFor = (productId) => lsMap.get(String(productId)) || null;
 
+  // A replaced or removed upload is deleted from the bucket (owner 5 Nov 2026: an old cover must not stay behind), but only
+  // when no item at all (published or hidden, any kind) still points at it. The check reads Firestore afresh; when that
+  // read fails nothing is deleted. Never fails the save: a file that cannot be deleted is logged and left.
+  async function dropUnused(admin, before) {
+    const gone = [...mediaPathsIn(before)];
+    if (!gone.length) return [];
+    let all;
+    try { all = await readAll(admin); } catch (err) { console.error('catalog cleanup: not deleting, the catalogue could not be read:', err.message); return []; }
+    const still = new Set();
+    for (const kind of KINDS) for (const d of all[kind] || []) mediaPathsIn(d, still);
+    const removed = [];
+    let storage;
+    for (const path of gone) {
+      if (still.has(path)) continue;
+      try {
+        storage = storage || await getStorage();
+        await storage.bucket(MEDIA_BUCKET).file(path).delete({ ignoreNotFound: true });
+        removed.push(path);
+      } catch (err) { console.error(`catalog cleanup: ${path} not deleted:`, err.message); }
+    }
+    return removed;
+  }
+
   async function save(kind, input) {
     if (!KINDS.includes(kind)) return { error: 'unknown kind', status: 400 };
     const { doc, errors } = cleanDoc(kind, input);
@@ -115,16 +150,20 @@ export function createCatalogService({ getAdmin, getStorage, now = () => Date.no
     await ref.set(data);
     invalidate();
     await load({ force: true });
-    return { ok: true, id: doc.id, doc: { ...data, id: doc.id } };
+    const removedFiles = before.exists ? await dropUnused(admin, before.data()) : [];
+    return { ok: true, id: doc.id, doc: { ...data, id: doc.id }, removedFiles };
   }
 
   async function remove(kind, id) {
     if (!KINDS.includes(kind) || !/^[a-z0-9][a-z0-9-]{0,59}$/.test(String(id || ''))) return { error: 'unknown item', status: 400 };
     const admin = await getAdmin();
-    await admin.db.collection(COLLECTIONS[kind]).doc(id).delete();
+    const ref = admin.db.collection(COLLECTIONS[kind]).doc(id);
+    const before = await ref.get();
+    await ref.delete();
     invalidate();
     await load({ force: true });
-    return { ok: true, id };
+    const removedFiles = before.exists ? await dropUnused(admin, before.data()) : [];
+    return { ok: true, id, removedFiles };
   }
 
   // ---- Media (Firebase Storage, public through a download token) -------------------------------------------------------

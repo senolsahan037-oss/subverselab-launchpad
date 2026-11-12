@@ -1,8 +1,8 @@
-import { UPDATE_YEARS, UPDATES_LINE } from './plugins.js';
+import { UPDATES_LINE } from './plugins.js';
 
 // The "Learn" sections: one for the tester panel (/testers, approved view) and one for every customer on /account.
-// Plain data so the pages only draw it and the tests can read it. The update promise is never typed here as a number:
-// it comes from UPDATE_YEARS / UPDATES_LINE in plugins.js, like everywhere else on the site.
+// Plain data so the pages only draw it and the tests can read it. No updates term is promised (owner 7 Nov 2026);
+// the updates wording comes from UPDATES_LINE in plugins.js, like everywhere else on the site.
 
 // The vision, in our own words (owner 2026-10-14). The long form greets testers; the short line sits in the customer Learn.
 export const VISION = 'We care deeply about how you work: your habits, your sessions, what feels right under your hands. '
@@ -45,7 +45,7 @@ export const TESTER_LEARN = [
 // buraya bir düzen getirelim"): each fact said once, here, and nowhere else on the page.
 export const CUSTOMER_LEARN = [
   { id: 'updates', title: 'Updates', body: [
-    `Buying a plug-in gives you all of its updates for ${UPDATE_YEARS} years from the purchase date; the version you have keeps working forever.`,
+    UPDATES_LINE,
   ] },
   { id: 'downloads', title: 'Downloads', body: [
     'Downloads are tied to this sign-in and work on any computer you use.',

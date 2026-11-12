@@ -68,6 +68,24 @@ function BarList({ title, items, nameKey }) {
   );
 }
 
+// Visits from the social platforms we post on (stats.js SOCIAL_CHANNELS): the referrer host plus links tagged
+// ?utm_source=<channel>, each visit counted once. Every channel is listed, a zero too.
+const CHANNEL_NAMES = { youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', soundcloud: 'SoundCloud', mastodon: 'Mastodon',
+  bluesky: 'Bluesky', kofi: 'Ko-fi', x: 'X (Twitter)', facebook: 'Facebook', threads: 'Threads', linkedin: 'LinkedIn' };
+function SocialList({ items }) {
+  const total = items.reduce((n, i) => n + i.visits, 0);
+  const tagged = items.reduce((n, i) => n + i.tagged, 0);
+  return (
+    <div style={{ marginBottom: '24px' }}>
+      <BarList
+        title={`From social platforms: ${num(total)} visits${tagged ? `, ${num(tagged)} by our tagged links` : ''}`}
+        items={items.map((i) => ({ name: `${CHANNEL_NAMES[i.channel] || i.channel}${i.tagged ? ` (${num(i.tagged)} tagged)` : ''}`, views: i.visits }))}
+        nameKey="name"
+      />
+    </div>
+  );
+}
+
 // Visits per day, oldest on the left. The server sends newest first.
 function VisitBars({ series }) {
   const days = [...series].reverse();
@@ -150,6 +168,8 @@ export default function StatsTab({ user }) {
             <BarList title="Where visitors came from" items={data.traffic.refs} nameKey="host" />
           </div>
 
+          {data.traffic.social && <SocialList items={data.traffic.social} />}
+
           <details className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 600 }}>More detail: per day, downloads, Buy clicks, buyers</summary>
             <div style={{ marginTop: '16px', display: 'grid', gap: '20px' }}>
@@ -173,6 +193,30 @@ export default function StatsTab({ user }) {
                 minWidth={520}
                 empty="No Buy clicks counted yet."
                 rows={(data.traffic.buys || []).map((b) => ({ key: `${b.slug}|${b.path}|${b.place}|${b.intro}`, cells: [b.slug.toUpperCase(), b.path, b.place, b.intro ? 'yes' : 'no', num(b.clicks)] }))}
+              />
+              <Table
+                title={`Sample pack preview plays (${num(data.traffic.preview_plays || 0)})`}
+                note="One play = a preview started once on a page load (a pause and resume is not counted again). Card = the play key on /sample-packs, Page = the preview on a pack page, SoundCloud = the playlist under the grid (also counted on SoundCloud)."
+                head={['Pack', 'Card', 'Page', 'SoundCloud', 'Total']}
+                minWidth={480}
+                empty="No preview plays counted yet."
+                rows={(data.traffic.previews || []).map((p) => ({ key: p.slug, cells: [p.slug, num(p.card), num(p.page), num(p.soundcloud), num(p.total)] }))}
+              />
+              <Table
+                title="Buy clicks by where the visit came from"
+                note={'The channel of the tab\'s first page: a social link tag (?utm_source) or the referring site; "direct" = no referrer, "other" = another site, "unknown" = clicks counted before 6 Nov 2026 tracking.'}
+                head={['Came from', 'Buy clicks', 'Products']}
+                minWidth={480}
+                empty="No Buy clicks with a source yet."
+                rows={(data.traffic.buy_via || []).map((r) => ({ key: r.channel, cells: [r.channel, num(r.clicks), Object.entries(r.products).sort((x, y) => y[1] - x[1]).map(([k, n]) => `${k.toUpperCase()} ${n}`).join(', ')] }))}
+              />
+              <Table
+                title="Footer social icon clicks"
+                note="Clicks on the social icons at the bottom of every page (people leaving to follow us)."
+                head={['Channel', 'Clicks']}
+                minWidth={320}
+                empty="No social icon clicks yet."
+                rows={(data.traffic.social_out || []).map((r) => ({ key: r.channel, cells: [r.channel, num(r.clicks)] }))}
               />
               <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', lineHeight: '1.7', margin: 0 }}>
                 {num(buyers.paid_emails)} e-mails have paid, {num(buyers.free_emails)} took a free plugin; {num(buyers.free_and_family)} took a free plugin and bought the 7-plugin bundle ({num(buyers.free_first_then_family)} free first).

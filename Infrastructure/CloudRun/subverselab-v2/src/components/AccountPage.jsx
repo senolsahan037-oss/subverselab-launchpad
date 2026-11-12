@@ -14,6 +14,7 @@ import useInbox from '../hooks/useInbox';
 import { CUSTOMER_LEARN } from '../data/learnContent';
 import TesterSpace from './tester/TesterSpace';
 import { usePurchases } from './LaunchPage';
+import { RedeemForm } from './RedeemCode';
 import { PackDownload } from './packs/PackKey';
 import { samplePackBySlug } from '../data/samplePacks';
 import { PRESET_PACK_LIST } from '../data/presetPacks';
@@ -26,8 +27,8 @@ import { apiUrl, media } from '../utils/endpoints';
 // The account page: the signed-in producer's Download Room.
 //
 // "My plugins" asks GET /api/purchases/status which plugins this account owns
-// (single orders, the family, a tester's plugins) and until when its 2 years of
-// updates run; the licence keys come from GET /api/purchases/licenses, which
+// (single orders, the family, a tester's plugins); no updates end date is shown
+// (owner 7 Nov 2026: no term is promised); the licence keys come from GET /api/purchases/licenses, which
 // reads plugin_licenses/{lowercased e-mail}, written only by server.js from
 // signed Lemon Squeezy webhooks (order_created, license_key_created,
 // license_key_updated) and from a free launch-licence claim on /launch
@@ -41,7 +42,7 @@ import { apiUrl, media } from '../utils/endpoints';
 
 // Licence keys from paid orders: GET /api/purchases/licenses returns only this
 // signed-in account's keys, each with the product it belongs to, how many
-// computers have activated it and when its 2 years of updates end. They show up
+// computers have activated it and when it was bought. They show up
 // by themselves after a purchase (the Lemon Squeezy webhook writes them, which
 // can take a minute); `expectKeys` is true when this account owns something paid.
 // One row of the account's lower half (owner 28 Oct: "hepsi açılır ok olsun"; the mix of frames, flat text and arrows read as
@@ -50,7 +51,8 @@ import { apiUrl, media } from '../utils/endpoints';
 function Fold({ id, title, meta, children, danger = false }) {
   const [open, setOpen] = useState(false);
   const { hash } = useLocation();
-  useEffect(() => { if (id && hash === `#${id}`) setOpen(true); }, [hash, id]);
+  // Opened from a link (the site search: /account#keys, #install, #updates): open the fold and bring it into view.
+  useEffect(() => { if (id && hash === `#${id}`) { setOpen(true); requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' })); } }, [hash, id]);
   return (
     <details className={`acct-fold${danger ? ' acct-fold-danger' : ''}`} id={id} open={open}
              onToggle={(e) => setOpen(e.currentTarget.open)}>
@@ -102,7 +104,6 @@ function LicenceKeys({ user, expectKeys, onCount, onLicences, refreshKey = 0 }) 
             <p className="acct-key-meta">
               {l.activationLimit != null ? `Activations: ${l.instancesCount ?? 0} of ${l.activationLimit}` : `Activations: ${l.instancesCount ?? 0}`}
               {l.purchased ? ` · Bought ${formatDay(l.purchased)}` : ''}
-              {l.updatesUntil ? ` · Updates until ${formatDay(l.updatesUntil)}` : ''}
             </p>
           </li>
         ))}
@@ -300,8 +301,8 @@ function keyShownFor(plugin, licences) {
   return licences.some((l) => l.product === plugin.slug || KEY_COVERS[l.product]?.includes(plugin.slug));
 }
 
-function MyPlugins({ user, onPlugins, onKeys, onUpdates, refreshKey, onConfirmed, compact = false }) {
-  const { owned, updatesUntil, standing, unverified: emailOnlyHidden, emailOrdersWaiting } = usePurchases(user, true, false, refreshKey);
+function MyPlugins({ user, onPlugins, onKeys, refreshKey, onConfirmed, compact = false }) {
+  const { owned, standing, unverified: emailOnlyHidden, emailOrdersWaiting } = usePurchases(user, true, false, refreshKey);
   const [licences, setLicences] = useState(null);
   const { hash } = useLocation();
   // Free plugins (a $0 order) are listed with their downloads, never offered for sale below.
@@ -309,12 +310,10 @@ function MyPlugins({ user, onPlugins, onKeys, onUpdates, refreshKey, onConfirmed
   const mine = byLatestRelease([...ALL_PLUGINS, ...SOLO_PLUGINS, ...FREE_PLUGINS].filter((p) => owned?.includes(p.slug)), (p) => p.slug);
   const others = owned ? ALL_PLUGINS.filter((p) => !owned.includes(p.slug)) : [];
   const checking = owned === null;
-  // Free plugins (a $0 order) carry no updates term and no licence key, so they do not count as paid here.
+  // Free plugins (a $0 order) carry no licence key, so they do not count as paid here.
   const hasPaid = mine.some((p) => !FREE_PLUGINS.includes(p)) && standing !== 'tester';
   const mineCount = owned ? mine.length : null;
   useEffect(() => { onPlugins?.(mineCount); }, [mineCount]); // eslint-disable-line react-hooks/exhaustive-deps
-  const updatesKey = mine.filter((p) => updatesUntil?.[p.slug]).map((p) => `${p.displayName}=${updatesUntil[p.slug]}`).join('|');
-  useEffect(() => { onUpdates?.(updatesKey ? updatesKey.split('|').map((x) => x.split('=')) : []); }, [updatesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // /account#kubbe (the owned Buy buttons link here): scroll to that plugin's card once the list is on the page.
   useEffect(() => {
     const slug = decodeURIComponent((hash || '').replace(/^#/, ''));
@@ -489,18 +488,14 @@ function useTesterStatus(user) {
   return status;
 }
 
-// Help, at the bottom of /account (owner 28 Oct): every practical fact once, as cards (CUSTOMER_LEARN), the account's own update
-// dates on the Updates card, and the two "something is wrong" paths (report, claim an order) together.
-function AccountHelp({ updates, claim }) {
+// Help, at the bottom of /account (owner 28 Oct): every practical fact once, as cards (CUSTOMER_LEARN), the Updates card (no dates:
+// no term is promised, owner 7 Nov 2026), and the two "something is wrong" paths (report, claim an order) together.
+function AccountHelp({ claim }) {
   const item = (id) => CUSTOMER_LEARN.find((i) => i.id === id);
-  const days = [...new Set(updates.map(([, d]) => d))];
   return (
     <>
-      <Fold id="updates" title="Updates" meta={updates.length ? (days.length === 1 ? `until ${formatDay(days[0])}` : `${updates.length} plugins`) : ''}>
+      <Fold id="updates" title="Updates">
         {item('updates').body.map((t) => <p key={t}>{t}</p>)}
-        {updates.length > 1 && days.length > 1 && (
-          <ul className="acct-help-dates">{updates.map(([n, d]) => <li key={n}><b>{n}</b><span>until {formatDay(d)}</span></li>)}</ul>
-        )}
       </Fold>
       <Fold id="install" title="Downloads and installing">
         {item('downloads').body.map((t) => <p key={t}>{t}</p>)}
@@ -579,7 +574,6 @@ export default function AccountPage({ user, packs = [], onLogout, onDeleted }) {
   const [pluginCount, setPluginCount] = useState(null);
   const [packCount, setPackCount] = useState(null);
   const [credits, setCredits] = useState(null);
-  const [updates, setUpdates] = useState([]);
 
   const content = (
     <>
@@ -588,7 +582,7 @@ export default function AccountPage({ user, packs = [], onLogout, onDeleted }) {
 
         <section className="acct-section" id="plugins">
           <h3 className="acct-h">My plugins</h3>
-          <MyPlugins user={user} refreshKey={claimNonce} compact={tester} onPlugins={setPluginCount} onUpdates={setUpdates}
+          <MyPlugins user={user} refreshKey={claimNonce} compact={tester} onPlugins={setPluginCount}
                      onConfirmed={() => { setClaimNonce((n) => n + 1); inbox.reload(); }} />
         </section>
 
@@ -596,11 +590,16 @@ export default function AccountPage({ user, packs = [], onLogout, onDeleted }) {
 
         <section className="acct-section acct-folds" aria-label="Your account">
           <LicenceKeys user={user} expectKeys={pluginCount > 0} refreshKey={claimNonce} />
+          {/* A code from a store (api/redeem.js); /redeem is the same form on its own page. */}
+          <Fold id="redeem" title="Redeem a code">
+            <p className="acct-note" style={{ marginTop: 0 }}>Bought from a store? Enter the code you received and the product is added to this account.</p>
+            <RedeemForm user={user} inAccount onRedeemed={() => { setClaimNonce((n) => n + 1); inbox.reload(); }} />
+          </Fold>
           <Fold id="inbox" title="Inbox" meta={inbox.unread ? `${inbox.unread} new` : ''}>
             <div className="acct-inbox"><InboxList inbox={inbox} /></div>
           </Fold>
           <ToolCredits user={user} onBalance={setCredits} />
-          <AccountHelp updates={updates} claim={<ClaimOrder user={user} onClaimed={() => { setClaimNonce((n) => n + 1); inbox.reload(); }} />} />
+          <AccountHelp claim={<ClaimOrder user={user} onClaimed={() => { setClaimNonce((n) => n + 1); inbox.reload(); }} />} />
           <DeleteAccount user={user} onDeleted={onDeleted || onLogout} />
         </section>
         {downloadable.length > 0 && (

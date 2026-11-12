@@ -70,6 +70,8 @@ const transformed = serverSource
   .replace("from './catalog.js';", `from '${url('api/catalog.js')}';`)
   .replace("from './catalogSchema.js';", `from '${url('api/catalogSchema.js')}';`)
   .replace("from './agents.js';", `from '${url('api/agents.js')}';`)
+  .replace("from './trialGrant.js';", `from '${url('api/trialGrant.js')}';`)
+  .replace("from './partners.js';", `from '${url('api/partners.js')}';`)
   .replace("from './inbox.js';", `from '${url('api/inbox.js')}';`)
   .replace("from './stats.js';", `from '${url('api/stats.js')}';`)
   .replace('const app = express();', 'export const app = express();')
@@ -415,6 +417,66 @@ await test('counter: Buy clicks. Counted by product|page|place|intro, never as a
   assert.equal(capped['(other)|/other|other|no-intro'], 10);
 });
 
+await test('counter: preview plays. Counted by pack|place (card, page, soundcloud), never as a page view; junk pack, unknown place or a bot ignored; capped; aggregated per pack', async () => {
+  state.db.docs.clear();
+  const c = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  assert.equal(c.hit({ preview: 'woodpanel', place: 'card' }, BROWSER), true);
+  assert.equal(c.hit({ preview: 'woodpanel', place: 'card' }, BROWSER), true);
+  assert.equal(c.hit({ preview: 'woodpanel', place: 'soundcloud' }, BROWSER), true);
+  assert.equal(c.hit({ preview: 'mirage', place: 'page' }, BROWSER), true);
+  assert.equal(c.hit({ preview: 'mirage', place: 'nowhere' }, BROWSER), false, 'an unknown place is not counted');
+  assert.equal(c.hit({ preview: '../x', place: 'card' }, BROWSER), false, 'a slug outside [a-z0-9-] is not counted');
+  assert.equal(c.hit({ preview: 'mirage', place: 'card' }, 'Googlebot/2.1'), false);
+  assert.equal(c.pendingViews(), 0, 'a preview play is not a page view');
+  assert.equal(c.pendingBuys(), 0);
+  assert.equal(c.pendingPreviews(), 4);
+  await c.flush();
+  const doc = state.db.docs.get('site_stats/2026-10-11');
+  assert.equal(doc.views, 0); assert.equal(doc.visits, 0);
+  const previews = Object.fromEntries(Object.entries(doc.previews).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.deepEqual(previews, { 'woodpanel|card': 2, 'woodpanel|soundcloud': 1, 'mirage|page': 1 });
+  assert.equal(c.pendingPreviews(), 0, 'flushed');
+  const v = stats.aggregateViews([{ id: '2026-10-11', data: { views: 5, visits: 2, previews: doc.previews } }], { days: 1, now: NOW });
+  assert.equal(v.preview_plays, 4);
+  assert.equal(v.perDay.get('2026-10-11').preview_plays, 4);
+  assert.deepEqual(v.previews, [{ slug: 'woodpanel', card: 2, page: 0, soundcloud: 1, total: 3 }, { slug: 'mirage', card: 0, page: 1, soundcloud: 0, total: 1 }]);
+  state.db.docs.clear();
+  const c2 = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  for (let i = 0; i < stats.MAX_PREVIEW_KEYS + 10; i++) c2.hit({ preview: `p${i}`, place: 'card' }, BROWSER);
+  await c2.flush();
+  const capped = Object.fromEntries(Object.entries(state.db.docs.get('site_stats/2026-10-11').previews).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.equal(Object.keys(capped).length, stats.MAX_PREVIEW_KEYS + 1);
+  assert.equal(capped['(other)|other'], 10);
+});
+
+await test('counter: Buy clicks by channel (owner 6 Nov 2026) and footer social clicks; only channel names are kept', async () => {
+  state.db.docs.clear();
+  const c = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  assert.equal(c.hit({ buy: 'family', path: '/plugins', place: 'showcase', viaRef: 'https://l.instagram.com/?u=x', viaSrc: '' }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'family', path: '/plugins', place: 'showcase', viaRef: '', viaSrc: 'tt' }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'elek', path: '/plugins/elek', place: 'room', viaRef: '', viaSrc: '' }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'elek', path: '/plugins/elek', place: 'room', viaRef: 'https://www.kvraudio.com/news/x', viaSrc: 'newsletter' }, BROWSER), true);
+  assert.equal(c.hit({ buy: 'elek', path: '/plugins/elek', place: 'room' }, BROWSER), true, 'an old client: unknown');
+  assert.equal(c.hit({ out: 'youtube' }, BROWSER), true);
+  assert.equal(c.hit({ out: 'youtube' }, BROWSER), true);
+  assert.equal(c.hit({ out: 'myspace' }, BROWSER), false, 'not one of our channels');
+  assert.equal(c.hit({ out: 'x' }, 'Googlebot/2.1'), false);
+  assert.equal(c.pendingViews(), 0); assert.equal(c.pendingOuts(), 2);
+  await c.flush();
+  const doc = state.db.docs.get('site_stats/2026-10-11');
+  const via = Object.fromEntries(Object.entries(doc.buyvia).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.deepEqual(via, { 'family|instagram': 1, 'family|tiktok': 1, 'elek|direct': 1, 'elek|other': 1, 'elek|unknown': 1 });
+  assert.ok(!JSON.stringify(doc).includes('kvraudio') && !JSON.stringify(doc.buyvia).includes('instagram.com'), 'no host or address is stored with a Buy click');
+  const outs = Object.fromEntries(Object.entries(doc.outs).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.deepEqual(outs, { youtube: 2 });
+  const v = stats.aggregateViews([{ id: '2026-10-11', data: { views: 1, visits: 1, buyvia: doc.buyvia, outs: doc.outs, buys: doc.buys } }], { days: 1, now: NOW });
+  const byCh = Object.fromEntries(v.buy_via.map((r) => [r.channel, r.clicks]));
+  assert.deepEqual(byCh, { instagram: 1, tiktok: 1, direct: 1, other: 1, unknown: 1 });
+  assert.deepEqual(v.social_out, [{ channel: 'youtube', clicks: 2 }]);
+  assert.equal(stats.viaChannel({ viaRef: 'https://go.bsky.app/', viaSrc: '' }), 'bluesky');
+  assert.equal(stats.viaChannel({ viaRef: 'https://subverselab.com/plugins', viaSrc: '' }), 'direct');
+});
+
 /* ---- the route -------------------------------------------------------------- */
 await test('POST /api/hit: 204 for anything, counts a browser, ignores a bot, stores no IP or user agent, 120 per minute per IP', async () => {
   state.db.docs.clear();
@@ -440,7 +502,7 @@ await test('POST /api/hit: 204 for anything, counts a browser, ignores a bot, st
 
 await test('privacy text, rules and Dockerfile: one plain sentence, site_stats closed to clients, stats.js copied', async () => {
   const legal = await readFile(resolve(root, 'src/data/legalContent.js'), 'utf8');
-  assert.match(legal, /without cookies: only the page address, the name of the referring website and, when you press a Buy button, which product and which part of the page it was are counted, with no IP address and no identifier/);
+  assert.match(legal, /without cookies: only the page address, the name of the referring website and, when you press a Buy button, which product and which part of the page it was, and when you play a sample pack preview, which pack and where it was played \(the cover, the pack page or the SoundCloud playlist\), and when you click one of our social icons, which one, are counted; a Buy click also carries the name of the social channel or kind of site the visit came from, with no IP address and no identifier/);
   assert.match(legal, /svl-intro-seen = 1/);
   const rules = await readFile(resolve(root, 'firestore.rules'), 'utf8');
   assert.match(rules, /match \/site_stats\/\{document=\*\*\} \{\s*allow read, write: if false;/);
@@ -481,6 +543,73 @@ await test('joinMembers: orders join by e-mail, buyers without an account are li
   assert.equal(guest.purchases[0].kind, 'free');
   const src = await readFile(resolve(root, 'api/server.js'), 'utf8');
   assert.match(src, /lastActiveAt: u\.metadata\.lastRefreshTime/);
+});
+
+await test('joinMembers: an order with the buyer account\'s uid joins that account even when the checkout e-mail differs', async () => {
+  const members = [{ uid: 'u1', email: 'account@example.com' }];
+  const licences = [
+    { id: 'other@example.com', data: { orders: {
+      a: { product: 'slagworks', status: 'paid', amount_usd_cents: 595, uid: 'u1', created: '2026-11-01T17:50:21Z' },
+      b: { product: 'alev', status: 'paid', amount_usd_cents: 0, uid: 'gone-uid', created: '2026-11-01T18:00:00Z' },
+    } } },
+  ];
+  const rows = stats.joinMembers(members, licences);
+  assert.equal(rows.length, 2, 'the account plus one guest row for the order whose uid is not an account');
+  const account = rows.find((r) => r.uid === 'u1');
+  assert.deepEqual(account.purchases.map((p) => p.product), ['slagworks']);
+  assert.equal(account.spentCents, 595);
+  const guest = rows.find((r) => r.email === 'other@example.com');
+  assert.deepEqual(guest.purchases.map((p) => p.product), ['alev']);
+});
+
+await test('social channels: hosts and link tags map to our channel names, nothing else', () => {
+  const h = stats.channelOfHost;
+  assert.equal(h('youtube.com'), 'youtube'); assert.equal(h('m.youtube.com'), 'youtube'); assert.equal(h('youtu.be'), 'youtube');
+  assert.equal(h('l.instagram.com'), 'instagram'); assert.equal(h('tiktok.com'), 'tiktok'); assert.equal(h('soundcloud.com'), 'soundcloud');
+  assert.equal(h('mastodon.social'), 'mastodon'); assert.equal(h('bsky.app'), 'bluesky'); assert.equal(h('go.bsky.app'), 'bluesky');
+  assert.equal(h('ko-fi.com'), 'kofi'); assert.equal(h('t.co'), 'x'); assert.equal(h('l.facebook.com'), 'facebook');
+  assert.equal(h('notyoutube.com'), null); assert.equal(h('youtube.com.evil.test'), null); assert.equal(h('(direct)'), null); assert.equal(h(null), null);
+  const s = stats.channelOfSrc;
+  assert.equal(s('instagram'), 'instagram'); assert.equal(s(' IG '), 'instagram'); assert.equal(s('bsky'), 'bluesky'); assert.equal(s('ko-fi'), 'kofi');
+  assert.equal(s('WS'), null, 'MuseHub\'s own utm_source is not one of ours'); assert.equal(s('toString'), null); assert.equal(s('__proto__'), null);
+  assert.equal(s(undefined), null); assert.equal(s('x'.repeat(500)), null);
+});
+
+await test('counter: a tagged landing is counted once per channel, the tag is the only thing kept', async () => {
+  state.db.docs.clear();
+  const c = stats.createHitCounter({ getAdmin: async () => ({ db: state.db, FieldValue: state.FieldValue }), clock: () => NOW });
+  c.hit({ path: '/', ref: '', landing: true, src: 'instagram' }, BROWSER);                              // in-app browser, no referrer
+  c.hit({ path: '/', ref: 'https://l.instagram.com/?u=x', landing: true, src: 'instagram' }, BROWSER);  // tag and referrer agree
+  c.hit({ path: '/', ref: 'https://www.youtube.com/', landing: true }, BROWSER);                         // referrer only
+  c.hit({ path: '/plugins', ref: '', landing: false, src: 'tiktok' }, BROWSER);                         // not a landing: ignored
+  c.hit({ path: '/', ref: '', landing: true, src: 'someone-else' }, BROWSER);                           // not ours: nothing stored
+  await c.flush();
+  const doc = state.db.docs.get('site_stats/2026-10-11');
+  const srcs = Object.fromEntries(Object.entries(doc.srcs).map(([k, n]) => [stats.decodeKey(k), n]));
+  assert.deepEqual(srcs, { 'instagram|link': 1, 'instagram|both': 1 });
+  assert.equal(JSON.stringify(doc).includes('someone-else'), false);
+  const v = stats.aggregateViews([{ id: '2026-10-11', data: doc }], { days: 1, now: NOW });
+  const by = Object.fromEntries(v.social.map((r) => [r.channel, r]));
+  assert.deepEqual([by.instagram.visits, by.instagram.tagged], [2, 2], 'two visits, the referrer one not counted twice');
+  assert.deepEqual([by.youtube.visits, by.youtube.tagged], [1, 0]);
+  assert.equal(by.tiktok.visits, 0);
+  assert.equal(v.social.length, stats.SOCIAL_CHANNELS.length, 'every channel listed, a zero too');
+  assert.equal(v.social[0].channel, 'instagram');
+});
+
+await test('social channels from old days: refs alone give the channel counts', () => {
+  const refs = { [stats.encodeKey('youtube.com')]: 5, [stats.encodeKey('t.co')]: 2, [stats.encodeKey('google.com')]: 9 };
+  const v = stats.aggregateViews([{ id: '2026-10-11', data: { views: 20, visits: 16, refs } }], { days: 1, now: NOW });
+  const by = Object.fromEntries(v.social.map((r) => [r.channel, r.visits]));
+  assert.equal(by.youtube, 5); assert.equal(by.x, 2);
+  assert.equal(v.social.reduce((n, r) => n + r.visits, 0), 7, 'google.com is not a social channel');
+});
+
+await test('countDownloads: plug-ins (mac/win) and packs (zip) all count', async () => {
+  assert.equal(stats.countDownloads({ kubbe: { mac: { count: 2 }, win: { count: 1 } }, slagworks: { zip: { count: 1 } }, 'racks-drums': { zip: { count: 3 } } }), 7);
+  assert.equal(stats.countDownloads(null), 0);
+  const src = await readFile(resolve(root, 'api/server.js'), 'utf8');
+  assert.match(src, /m\.downloads \+= countDownloads\(d\.data\(\)\)/);
 });
 
 const failed = results.filter((r) => !r.ok);

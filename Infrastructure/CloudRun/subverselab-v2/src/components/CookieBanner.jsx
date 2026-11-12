@@ -26,7 +26,7 @@ export default function CookieBanner() {
     <div className="cookie-banner" role="region" aria-label="Cookie settings">
       <p className="cookie-banner-text">
         {choice ? `Analytics is currently ${choice === 'granted' ? 'on' : 'off'}. ` : ''}
-        Accept to let Google Analytics count visits; nothing is set before you choose, and there are no advertising cookies.{' '}
+        Accept to let Google Analytics count visits and to remember a partner's link for 30 days; nothing is set before you choose, and there are no advertising cookies.{' '}
         <Link to="/privacy#storage">Privacy Policy</Link>
       </p>
       <div className="cookie-banner-actions">

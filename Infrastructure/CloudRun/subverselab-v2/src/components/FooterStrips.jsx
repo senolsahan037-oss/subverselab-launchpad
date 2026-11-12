@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Two strips that drift across the footer's empty middle (owner 29 Oct: "2 şerit kuralım logolar transparan bir şekilde yüzsün,
 // birinde dawları koyalım diğerinde mağazaları, kvr'yi de koyabilirsin").
@@ -16,6 +16,7 @@ const HOSTS = [
   { name: 'Bitwig Studio', mark: '/partners/daws/bitwig.svg', w: 45, h: 34 },
 ];
 
+// The list follows 01_AI_Tools/instagram_2026-10/launch_desk/STORES.md (rows with FOOTER: yes); change both together.
 // Stores that list SubverseLab now. Not links (owner 29 Oct: "tıklanabilir olmaması daha iyi, kullanıcı sayfada kalır"). Marks: MuseHub's from musehub.com, Gumroad and itch.io
 // from simple-icons (CC0), KVR's from kvraudio.com. All are drawn as one-colour masks in the footer's ink, like the emblem.
 const STORES = [
@@ -23,6 +24,12 @@ const STORES = [
   { name: 'KVR Audio', mark: '/partners/stores/kvr.png', w: 90, h: 37 },
   { name: 'Gumroad', mark: '/partners/stores/gumroad.svg', w: 32, h: 32, label: 'Gumroad' },
   { name: 'itch.io', mark: '/partners/stores/itchio.svg', w: 32, h: 32, label: 'itch.io' },
+  // Owner 6 Nov 2026 ("yeni anlaştığımız mağazaların logolarını filigrana ekle"): agreements signed / features booked that day.
+  // Loot Audio's mark from the lootaudio.com header (inline SVG, viewBox cropped to the lockup); Audio Plugin Deals' from audioplugin.deals.
+  { name: 'Loot Audio', mark: '/partners/stores/lootaudio.svg', w: 67, h: 36 },
+  { name: 'Audio Plugin Deals', mark: '/partners/stores/audioplugindeals.png', w: 149, h: 26 },
+  // Owner 7 Nov 2026 ("alt filigrana ekipboardı da ekle"): Equipboard lists our plug-ins; mark from the equipboard.com header, made a mask.
+  { name: 'Equipboard', mark: '/partners/stores/equipboard.svg', w: 110, h: 30 },
 ];
 
 // A mark is painted in the footer's ink through a CSS mask; a full-colour app icon (img) is shown greyed instead.
@@ -56,18 +63,52 @@ function Strip({ name, repeat = 1, children }) {
   );
 }
 
-// Owner 31 Oct: one slow, faint line instead of two: the seven hosts, a dot, the four stores; the loop repeats the whole line
-// once, so no mark shows twice in one window on a wide screen. A quiet colophon, not a "trusted by" band.
+// Owner 31 Oct: one slow, faint line of the seven hosts. Owner 5 Nov: the stores left this line for the footer's empty middle,
+// where they take turns through a glitch (FooterStores below); the loop repeats the whole line once.
 export default function FooterStrips() {
   return (
     <div className="footer-strips">
-      <Strip name="Works in Ableton Live, Logic Pro, FL Studio, Cubase, Studio One, REAPER and Bitwig Studio; also on MuseHub, KVR Audio, Gumroad and itch.io" repeat={1}>
+      <Strip name="Works in Ableton Live, Logic Pro, FL Studio, Cubase, Studio One, REAPER and Bitwig Studio" repeat={1}>
         {HOSTS.map((h) => <span key={h.name} className="footer-strip-host" role="img" aria-label={h.name} title={h.name}><Logo x={h} /></span>)}
-        <span className="footer-strip-dot" aria-hidden="true" />
-        {STORES.map((s) => (
-          <span key={s.name} className="footer-strip-store" role="img" aria-label={s.name} title={s.name}><Logo x={s} /></span>
-        ))}
       </Strip>
+    </div>
+  );
+}
+
+// Owner 5 Nov ("ortadaki boşlukta glitch efektiyle döndürelim"): the stores, one at a time, in the gap between the brand
+// column and the link columns. Every few seconds the mark tears into two colour channels and slices, and the next one lands.
+// Still a colophon, not links. With reduced motion they stand side by side, without the glitch.
+const STORE_HOLD_MS = 3400;
+const GLITCH_SWAP_MS = 190;
+const GLITCH_MS = 460;
+
+export function FooterStores() {
+  const [index, setIndex] = useState(0);
+  const [glitch, setGlitch] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const timers = [];
+    const tick = setInterval(() => {
+      if (document.hidden) return;
+      setGlitch(true);
+      timers.push(setTimeout(() => setIndex((n) => (n + 1) % STORES.length), GLITCH_SWAP_MS));
+      timers.push(setTimeout(() => setGlitch(false), GLITCH_MS));
+    }, STORE_HOLD_MS);
+    return () => { clearInterval(tick); timers.forEach(clearTimeout); };
+  }, []);
+
+  const s = STORES[index];
+  return (
+    <div className="footer-stores" role="img" aria-label={`Also on ${STORES.map((x) => x.name).join(', ')}`}>
+      <div className={`footer-stores-stage${glitch ? ' is-glitch' : ''}`} aria-hidden="true">
+        <span className="footer-stores-layer footer-stores-base"><Logo x={s} /></span>
+        <span className="footer-stores-layer footer-stores-ch1"><Logo x={s} /></span>
+        <span className="footer-stores-layer footer-stores-ch2"><Logo x={s} /></span>
+      </div>
+      <div className="footer-stores-still" aria-hidden="true">
+        {STORES.map((x) => <span key={x.name} className="footer-stores-item"><Logo x={x} /></span>)}
+      </div>
     </div>
   );
 }

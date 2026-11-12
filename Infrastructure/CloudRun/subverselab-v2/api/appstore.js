@@ -1,5 +1,7 @@
-// RU-8 for iPhone / iPad: App Store purchases as an `ru8` entitlement (contract:
-// 01_AI_Tools/subverselab-ru8/docs/api_runs/contract_ru8_ios_unlock.md). One $25 purchase = RU-8 on Mac, Windows and iOS.
+// iPhone / iPad apps: App Store purchases as site entitlements (contracts:
+// 01_AI_Tools/subverselab-ru8/docs/api_runs/contract_ru8_ios_unlock.md, 01_AI_Tools/subverselab-plugin-common/docs/TRIAL_AND_SIGNIN.md
+// "App Store"). One purchase = the product on Mac, Windows and iOS. APPLE_APPS below lists each app (bundle id, the one
+// non-consumable that is ownership, the site slug it opens): RU-8 (`ru8`) and AHENK (`ahenk`, 7 Nov 2026).
 //
 // Plain logic over a Firestore-shaped `db`; server.js does the HTTP, the token checks and the rate limits.
 //   apple_purchases/{originalTransactionId}  {uid|null, productId, bundleId, environment, purchaseDate, transactionId,
@@ -20,12 +22,22 @@
 import { X509Certificate, createHash, verify as cryptoVerify } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
-export const APPLE_BUNDLE_ID = 'com.subverselab.ru8.app';
-export const APPLE_PRODUCT_ID = 'com.subverselab.ru8.app.full';
 export const APPLE_PURCHASES = 'apple_purchases';
 export const APPLE_BY_UID = 'apple_by_uid';
-// The site slug an App Store purchase opens (desktop downloads via the 'solo' ticket route, like a paid Lemon Squeezy order).
-export const APPLE_SLUG = 'ru8';
+// One row per iOS app. `productId` is the non-consumable that means "owns the product"; any other in-app item of the app
+// (AHENK's free 30-day trial item com.subverselab.ahenk.trial30) is not ownership: it is refused by the link route and
+// ignored by notifications. `slug` is the site product it opens (downloads, desktop sign-in) like a paid Lemon Squeezy order.
+export const APPLE_APPS = Object.freeze([
+  Object.freeze({ slug: 'ru8', name: 'RU-8', bundleId: 'com.subverselab.ru8.app', productId: 'com.subverselab.ru8.app.full' }),
+  Object.freeze({ slug: 'ahenk', name: 'AHENK', bundleId: 'com.subverselab.ahenk', productId: 'com.subverselab.ahenk.full' }),
+]);
+export const appleAppBySlug = (slug) => APPLE_APPS.find((a) => a.slug === slug) || null;
+const appByBundle = (bundleId) => APPLE_APPS.find((a) => a.bundleId === bundleId) || null;
+const appByProduct = (productId) => APPLE_APPS.find((a) => a.productId === productId) || null;
+// RU-8's names, kept for the callers and tests written before the table.
+export const APPLE_BUNDLE_ID = APPLE_APPS[0].bundleId;
+export const APPLE_PRODUCT_ID = APPLE_APPS[0].productId;
+export const APPLE_SLUG = APPLE_APPS[0].slug;
 
 const LEAF_OID = '1.2.840.113635.100.6.11.1';         // Apple Mac App Store and iTunes Store receipt signing
 const INTERMEDIATE_OID = '1.2.840.113635.100.6.2.1';  // Apple Worldwide Developer Relations intermediate
@@ -149,17 +161,19 @@ export function verifyAppleJws(jws, { now = Date.now() } = {}) {
 const OTID = /^[0-9]{1,32}$/;
 const isoMs = (ms) => (Number.isFinite(Number(ms)) && Number(ms) > 0 ? new Date(Number(ms)).toISOString() : null);
 
-// null when the decoded transaction is a live RU-8 purchase this server may accept; otherwise {status, error}.
-export function transactionProblem(tx, { allowSandbox = sandboxAllowed() } = {}) {
-  if (tx?.bundleId !== APPLE_BUNDLE_ID) return { status: 400, error: 'This purchase is not for RU-8.' };
-  if (tx?.productId !== APPLE_PRODUCT_ID) return { status: 400, error: 'This purchase is not RU-8.' };
+// null when the decoded transaction is a live purchase of `slug` (default RU-8) this server may accept; otherwise {status, error}.
+export function transactionProblem(tx, { allowSandbox = sandboxAllowed(), slug = APPLE_SLUG } = {}) {
+  const app = appleAppBySlug(slug);
+  if (!app) return { status: 400, error: 'Unknown product.' };
+  if (tx?.bundleId !== app.bundleId) return { status: 400, error: `This purchase is not for ${app.name}.` };
+  if (tx?.productId !== app.productId) return { status: 400, error: `This purchase is not ${app.name}.` };
   if (!OTID.test(String(tx?.originalTransactionId ?? ''))) return { status: 400, error: 'This purchase has no transaction id.' };
   if (tx.environment !== 'Production' && !(tx.environment === 'Sandbox' && allowSandbox)) return { status: 400, error: 'Test purchases are not accepted.' };
   if (tx.revocationDate) return { status: 403, error: 'Apple refunded this purchase.' };
   return null;
 }
 
-// POST /api/ru8/ios/apple-purchase after the signature check. Returns {status, body}.
+// POST /api/<slug>/ios/apple-purchase after the signature check and transactionProblem. Returns {status, body}.
 export async function linkApplePurchase(db, { uid, tx, now = () => new Date().toISOString() }) {
   const otid = String(tx.originalTransactionId);
   const purchaseRef = db.collection(APPLE_PURCHASES).doc(otid);
@@ -199,10 +213,11 @@ export async function handleAppleNotification(db, payload, { now = () => new Dat
   const type = String(payload?.notificationType || '');
   const data = payload?.data || {};
   if (!REVOKING.has(type) && !RESTORING.has(type)) return { result: `ignored:${type || 'no-type'}` };
-  if (data.bundleId !== APPLE_BUNDLE_ID) return { result: 'ignored:other-app' };
+  const app = appByBundle(data.bundleId);
+  if (!app) return { result: 'ignored:other-app' };
   if (data.environment !== 'Production' && !(data.environment === 'Sandbox' && allowSandbox)) return { result: 'ignored:environment' };
   const tx = verifyAppleJws(data.signedTransactionInfo, { now: verifyNow });
-  if (tx.bundleId !== APPLE_BUNDLE_ID || tx.productId !== APPLE_PRODUCT_ID || !OTID.test(String(tx.originalTransactionId ?? ''))) return { result: 'ignored:other-product' };
+  if (tx.bundleId !== app.bundleId || tx.productId !== app.productId || !OTID.test(String(tx.originalTransactionId ?? ''))) return { result: 'ignored:other-product' };
   const otid = String(tx.originalTransactionId);
   const signedAt = Number(payload.signedDate) || 0;
   const ref = db.collection(APPLE_PURCHASES).doc(otid);
@@ -227,7 +242,7 @@ export async function handleAppleNotification(db, payload, { now = () => new Dat
 
 // ---- Ownership ---------------------------------------------------------------------------------------------------
 // The App Store purchases linked to this uid, in the shape of orders_by_uid entries (entitlements.js merges them), keyed
-// 'apple:<originalTransactionId>'. A refunded one reads as refunded; a Sandbox one counts only while APPLE_ALLOW_SANDBOX=1.
+// 'apple:<originalTransactionId>', each with the slug of its app (APPLE_APPS). A refunded one reads as refunded; a Sandbox one counts only while APPLE_ALLOW_SANDBOX=1.
 export async function readAppleOrders(db, uid, { allowSandbox = sandboxAllowed() } = {}) {
   const index = await db.collection(APPLE_BY_UID).doc(uid).get();
   if (!index.exists) return {};
@@ -236,9 +251,10 @@ export async function readAppleOrders(db, uid, { allowSandbox = sandboxAllowed()
   const out = {};
   snaps.forEach((snap, i) => {
     const p = snap.exists ? snap.data() : null;
-    if (!p || p.uid !== uid || p.productId !== APPLE_PRODUCT_ID) return;
+    const app = p ? appByProduct(p.productId) : null;
+    if (!app || p.uid !== uid || (p.bundleId && p.bundleId !== app.bundleId)) return;
     if (p.environment !== 'Production' && !(p.environment === 'Sandbox' && allowSandbox)) return;
-    out[`apple:${ids[i]}`] = { product: APPLE_SLUG, status: p.revoked ? 'refunded' : 'paid', refunded: Boolean(p.revoked), created: p.purchaseDate || null, source: 'appstore' };
+    out[`apple:${ids[i]}`] = { product: app.slug, status: p.revoked ? 'refunded' : 'paid', refunded: Boolean(p.revoked), created: p.purchaseDate || null, source: 'appstore' };
   });
   return out;
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { HONESTY_LINE, mmss } from '../../data/packFacts';
+import { sendPreviewPlay } from '../../hooks/useHitCounter';
 
 // Pack previews. Rules (UX spec 2026-10-16 §d): one snippet per pack, never autoplay (sound starts only on a tap),
 // ONE snippet plays at a time on the page, the browser preloads nothing on the catalogue and only the metadata on a
@@ -13,15 +14,23 @@ if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => { if (document.hidden && current) current.pause(); });
 }
 
-export function useSnippet() {
+// `count` = {slug, place}: the first play of this player is reported once (stats.js preview plays); a pause and resume is not a new play.
+export function useSnippet(count) {
   const ref = useRef(null);
+  const counted = useRef(false);
+  const countRef = useRef(count);
+  countRef.current = count;
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   useEffect(() => {
     const a = ref.current;
     if (!a) return undefined;
-    const on = () => { claim(a); setPlaying(true); };
+    const on = () => {
+      claim(a); setPlaying(true);
+      const c = countRef.current;
+      if (c?.slug && !counted.current) { counted.current = true; sendPreviewPlay(c.slug, c.place); }
+    };
     const off = () => setPlaying(false);
     const tick = () => setTime(a.currentTime);
     const meta = () => setDuration(Number.isFinite(a.duration) ? a.duration : 0);
@@ -46,7 +55,7 @@ const StopIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5"
 // The round gold key on a catalogue cover. `onState` (optional) tells the card whether the snippet is playing (the record
 // card spins its disc while it plays).
 export function CoverPlay({ pack, onState }) {
-  const s = useSnippet();
+  const s = useSnippet({ slug: pack.slug, place: 'card' });
   useEffect(() => { onState?.(s.playing); }, [s.playing, onState]);
   return (
     <>
@@ -59,9 +68,36 @@ export function CoverPlay({ pack, onState }) {
   );
 }
 
+// Drag the preview out of the browser into a DAW or Finder. Chromium browsers (Chrome, Edge, Brave, Arc) read
+// `DownloadURL` ("mime:filename:absolute url") and hand the dropped app a real file; others get the plain link.
+const DragIcon = () => <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v9M4.5 7 8 10.5 11.5 7M2.5 12.5v2h11v-2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+export function previewFileName(pack) {
+  const base = String(pack.fullName || pack.name || pack.slug || 'preview').replace(/[^A-Za-z0-9 _-]+/g, '').trim().replace(/\s+/g, '_');
+  const ext = (String(pack.snippet?.src || '').split('?')[0].match(/\.(mp3|wav|ogg|flac|m4a|aiff?)$/i) || [, 'mp3'])[1].toLowerCase();
+  return `${base}_Preview.${ext}`;
+}
+const MIME = { mp3: 'audio/mpeg', wav: 'audio/wav', ogg: 'audio/ogg', flac: 'audio/flac', m4a: 'audio/mp4', aif: 'audio/aiff', aiff: 'audio/aiff' };
+export function DragOut({ pack }) {
+  const onDragStart = (e) => {
+    const url = new URL(pack.snippet.src, window.location.href).href;
+    const name = previewFileName(pack);
+    const mime = MIME[name.split('.').pop()] || 'application/octet-stream';
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('DownloadURL', `${mime}:${name}:${url}`);
+    e.dataTransfer.setData('text/uri-list', url);
+    e.dataTransfer.setData('text/plain', url);
+  };
+  return (
+    <a className="pk-drag" href={pack.snippet.src} download={previewFileName(pack)} draggable="true" onDragStart={onDragStart}
+      title="Drag into your DAW (Chrome, Edge) or click to save" aria-label={`Drag or save the ${pack.name} preview`}>
+      <DragIcon /><span>Drag to DAW</span>
+    </a>
+  );
+}
+
 // The preview strip on a pack page: play key, waveform (the snippet's own peaks) with a gold needle, scene markers.
 export function PreviewStrip({ pack }) {
-  const s = useSnippet();
+  const s = useSnippet({ slug: pack.slug, place: 'page' });
   const [peaks, setPeaks] = useState(null);
   useEffect(() => {
     let alive = true;
@@ -108,6 +144,7 @@ export function PreviewStrip({ pack }) {
           <span className="pk-needle" style={{ left: `calc(${(frac * 100).toFixed(3)}% - 1px)` }} />
         </div>
         <span className="pk-time">{mmss(s.time)} / {mmss(total)}</span>
+        <DragOut pack={pack} />
       </div>
       {scenes.length > 0 && (
         <ol className="pk-scenes" aria-label="Scenes in the preview">

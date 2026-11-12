@@ -22,7 +22,8 @@
     "test:samplepacks": "node scripts/test-sample-packs.js",
     "import:packs": "node scripts/import-sample-packs.js",
     "start:api": "node api/server.js",
-    "start:site": "node server.js"
+    "start:site": "node server.js",
+    "test:trial": "node scripts/test-trial.js"
   },
   "keywords": [],
   "author": "",

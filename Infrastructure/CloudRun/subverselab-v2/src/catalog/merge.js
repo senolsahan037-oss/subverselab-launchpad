@@ -1,7 +1,7 @@
 // Pure merges of the live catalogue over the hand-written data (no React, no data imports: scripts/test-catalog.js runs
 // them under Node). The pages call them through src/catalog/catalog.js.
 import { liveAt, staticOrder } from '../../api/catalogSchema.js';
-import { pluginFromDoc, samplePackFromDoc, presetPackFromDoc, newsFromDoc } from './shapes.js';
+import { pluginFromDoc, samplePackFromDoc, presetPackFromDoc, newsFromDoc, overlayPlugin } from './shapes.js';
 
 // Static news frames + live items -> the frames to draw, in order. A live item with a static frame's key edits that frame
 // (only the fields it fills in) or hides it (published off); a new key is a new frame placed by `order`.
@@ -50,7 +50,15 @@ export function mergePresetPacks(staticList, liveDocs, now = Date.now()) {
   return out;
 }
 
-// Live plug-ins that are not in src/data/plugins.js, as room objects (a known slug is edited through the data objects only).
+// Live plug-ins that are not in src/data/plugins.js, as room objects. A known slug is drawn by its own room with the live
+// item laid over it (livePlugin below).
 export function catalogPlugins(liveDocs, knownSlugs, now = Date.now()) {
   return liveDocs.filter((d) => liveAt(d, now) && !knownSlugs.includes(d.id)).map((d) => pluginFromDoc(d));
+}
+
+// A plug-in from src/data/plugins.js with its live catalogue item (same slug) laid over it; the plug-in itself when there
+// is none or it is hidden.
+export function livePlugin(p, liveDocs, now = Date.now()) {
+  const d = (liveDocs || []).find((x) => x.id === p.slug);
+  return d && liveAt(d, now) ? overlayPlugin(p, d) : p;
 }

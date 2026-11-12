@@ -58,6 +58,18 @@ export const packPath = (p) => `${SAMPLE_PACKS_PATH}/${p.slug}`;
 export const folderLabel = (f) => f.replace(/^One Shots\//, 'One Shots / ');
 
 // The measurement plate: [label, value] rows, every value read from the pack's own files.
+// The clauses every SVL pack ships with (the importer packs all carry the same set); a catalogue pack added from /admin shows
+// them unless its Licence summary is set to "Not shown" (a publisher's pack with its own licence).
+const LICENCE_SOURCE = SAMPLE_PACK_LIST.find((p) => p.licence?.clauses?.length)?.licence || null;
+export function packLicence(p) {
+  if (!p.catalogOnly) return p.licence;
+  if (p.licenceMode === 'none' || !LICENCE_SOURCE) return null;
+  return { draft: LICENCE_SOURCE.draft, clauses: LICENCE_SOURCE.clauses };
+}
+
+// The "Technical details" rows: measured by the importer, or typed into the panel for a catalogue pack.
+export const detailRows = (p) => (p.catalogOnly ? (p.technical || []) : plateRows(p));
+
 export function plateRows(p) {
   const rows = [];
   rows.push(['Files in the zip', `${p.counts.total} (${p.folders.map((f) => `${folderLabel(f.folder)} ${f.count}`).join(' · ')} · documents ${p.counts.docs})`]);

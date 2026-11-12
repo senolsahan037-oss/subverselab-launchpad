@@ -6,6 +6,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { CHECKOUT, pluginBySlug, currentPrice } from '../data/plugins';
 import usePurchaseStatus, { checkoutStarted, markCheckoutStarted } from '../hooks/usePurchaseStatus';
 import { sendBuyClick } from '../hooks/useHitCounter';
+import { withAffiliate } from '../affiliate';
 
 // One Lemon Squeezy checkout button. The links live in CHECKOUT in
 // src/data/plugins.js; while one is empty the button is shown disabled as
@@ -17,14 +18,22 @@ import { sendBuyClick } from '../hooks/useHitCounter';
 // `uid` (optional) is the signed-in Firebase uid, passed as checkout[custom][uid]:
 // Lemon Squeezy returns it as meta.custom_data.uid in the webhook, so the paid
 // order is bound to the account that clicked Buy and needs no e-mail round trip.
-export function withBuyer(url, email, uid) {
-  if (!url || (!email && !uid)) return url;
+// Every checkout link also carries a partner's code when the visitor came in through a partner link (src/affiliate.js): aff,
+// checkout[custom][aff] and, when `product` (the slug the checkout sells) is one the partner's reader discount applies to and
+// the link has no discount code yet, checkout[discount_code]. Without `product` no partner discount is added.
+export function withBuyer(url, email, uid, product) {
+  if (!url) return url;
+  if (!email && !uid) return withAffiliate(url, { product });
   try {
     const u = new URL(url);
     if (email) u.searchParams.set('checkout[email]', email);
     if (uid) u.searchParams.set('checkout[custom][uid]', uid);
-    return u.toString();
+    return withAffiliate(u.toString(), { product });
   } catch { return url; }
+}
+export function withDiscount(url, code) {
+  if (!url || !code) return url;
+  try { const u = new URL(url); u.searchParams.set('checkout[discount_code]', code); return u.toString(); } catch { return url; }
 }
 // Remembered for this tab when a checkout opens (src/hooks/usePurchaseStatus.js), so /launch knows a purchase
 // may be on its way and polls for it, and so the buttons can tell the buyer the order is on its way.
@@ -40,15 +49,19 @@ export { checkoutStarted };
 // checkout exists: the launch sells nothing it is giving away.
 // `place` says which part of the page the button sits in (stats.js BUY_PLACES: showcase, offer, room, room-family, account,
 // launch); a click is counted by the cookieless counter with the page and whether the homepage opening was seen.
-export default function BuyButton({ slug, label, email, uid, full, place, className = 'btn btn-primary' }) {
+// `discount` (optional) is a Lemon Squeezy discount code put into the checkout (checkout[discount_code]): the family upgrade.
+export default function BuyButton({ slug, label, email, uid, full, place, discount, className = 'btn btn-primary' }) {
   // Pages that pass no buyer still bind the order to whoever is signed in.
   const [signedIn, setSignedIn] = useState(() => auth.currentUser);
   useEffect(() => onAuthStateChanged(auth, setSignedIn), []);
   const status = usePurchaseStatus();
   const name = pluginBySlug(slug)?.displayName || '';
-  const url = full === false ? '' : withBuyer(CHECKOUT[slug], email || signedIn?.email, uid || signedIn?.uid);
+  // The page's own discount (the family upgrade) goes in first, so a partner's reader discount never replaces it.
+  const url = full === false ? '' : withBuyer(withDiscount(CHECKOUT[slug], discount), email || signedIn?.email, uid || signedIn?.uid, slug);
   // The label carries the price a buyer pays now (ELEK: the launch price); the struck regular price lives next to the button, as the family's does.
-  const text = label || `Buy ${pluginBySlug(slug)?.displayName || ''} \u2014 $${currentPrice(slug)}`;
+  const price = currentPrice(slug);
+  // A price of 0 (a time-boxed free offer, OFFERS in plugins.js) reads "Get X free", never "Buy X \u2014 $0".
+  const text = label || (Number(price) === 0 ? `Get ${pluginBySlug(slug)?.displayName || ''} free` : `Buy ${pluginBySlug(slug)?.displayName || ''} \u2014 $${price}`);
   if (signedIn && status.loaded && status.owns(slug)) {
     return (
       <Link to={slug === 'family' ? '/account' : `/account#${slug}`} className={`${className} plugin-buy-owned`}>

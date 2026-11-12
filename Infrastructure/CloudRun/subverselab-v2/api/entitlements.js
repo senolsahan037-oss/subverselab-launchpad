@@ -16,10 +16,13 @@
 import { promises as dnsPromises } from 'node:dns';
 import { emailMarker, ERASED_COLLECTION, ORDERS_BY_UID } from './accountDeletion.js';
 import { readAppleOrders } from './appstore.js';
+import { readCodeOrders } from './redeem.js';
 
 export { ORDERS_BY_UID };
-// RU-8 on iPhone / iPad (appstore.js): server.js takes the App Store pieces from here, so it keeps one entitlement import.
-export { APPLE_BUNDLE_ID, APPLE_PRODUCT_ID, APPLE_PURCHASES, APPLE_BY_UID, AppleJwsError, verifyAppleJws, transactionProblem, linkApplePurchase, handleAppleNotification, readAppleOrders } from './appstore.js';
+// RU-8 and AHENK on iPhone / iPad (appstore.js): server.js takes the App Store pieces from here, so it keeps one entitlement import.
+// Store codes (redeem.js, /redeem): the same single-import rule.
+export { redeemCode, readCodeOrders, redeemedFamilyAt, loadRedeemCodes, REDEMPTIONS, REDEEMED_BY_UID, REDEEM_PRODUCTS } from './redeem.js';
+export { APPLE_APPS, APPLE_BUNDLE_ID, APPLE_PRODUCT_ID, APPLE_PURCHASES, APPLE_BY_UID, AppleJwsError, verifyAppleJws, transactionProblem, linkApplePurchase, handleAppleNotification, readAppleOrders } from './appstore.js';
 export const LAUNCH1_SLUGS = ['kubbe', 'kaset'];
 // Every plugin that can be bought on its own, in the order the site lists them.
 export const ALL_SLUGS = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal'];
@@ -33,7 +36,7 @@ export const FREE_SLUGS = ['taban', 'alev', 'kiyma'];
 // JING FANG (owner 19 Oct: $60, sold on its own like RU-8): "<id>:jingfang" in LS_PRODUCT_SLUGS once its Lemon Squeezy product exists.
 // SEDA (owner 19 Oct, $15): "1453230:seda" in LS_PRODUCT_SLUGS. (Moved to the family on 26 Oct; owner 27 Oct reverted it.)
 // TORNA (owner 28 Oct, $12): "1481039:torna" in LS_PRODUCT_SLUGS once its Lemon Squeezy product is published.
-export const SOLO_SLUGS = ['elek', 'ru8', 'jingfang', 'seda', 'torna'];
+export const SOLO_SLUGS = ['adalet', 'ahenk', 'elek', 'ru8', 'jingfang', 'seda', 'torna'];   // adalet: on sale 8 Nov ($15, LS 1509139)   // ahenk on sale (lead 8 Nov, AHENK launch; stays in UNLISTED_SLUGS too, de-duplicated)
 // Every plugin an order can open (paid singles first, then the solo products, then the free ones), in the order the account lists them.
 export const PLUGIN_SLUGS = [...ALL_SLUGS, ...SOLO_SLUGS, ...FREE_SLUGS];
 // Sample packs and preset packs (owner 16 Oct): paid only, no free path of any kind. A pack opens for a paid, non-refunded
@@ -88,8 +91,15 @@ export function sweepSlugs(sweep, created) {
 }
 // The packs a sweep bought today opens (what the page may promise): every listed pack of that kind.
 export const SWEEP_SLUGS = Object.keys(SAMPLE_PACK_LISTED);   // live: registerCatalogProducts keeps it equal to SAMPLE_PACK_SLUGS
+// Products an order can open that are NOT on sale on the site yet (owner 7 Nov 2026: AHENK, the trial + browser sign-in of
+// api/trialGrant.js). Deliberately not in SOLO_SLUGS / PLUGIN_SLUGS: those feed the download manifest, the download ticket,
+// the tester list and the account's plug-in list, and a product appears only when it is on sale (root CLAUDE.md). Here it
+// only counts for ownership (ownedVia), so a paid order (LS_PRODUCT_SLUGS "<id>:ahenk") opens the plug-in's sign-in.
+// When it goes on sale (from /admin -> Catalogue or by hand into SOLO_SLUGS) it may stay here: OWNABLE_SLUGS is de-duplicated.
+export const UNLISTED_SLUGS = ['ahenk'];
 // Every slug an order can open.
-export const OWNABLE_SLUGS = [...PLUGIN_SLUGS, ...PACK_SLUGS];
+const ownableList = () => [...new Set([...PLUGIN_SLUGS, ...UNLISTED_SLUGS, ...PACK_SLUGS])];
+export const OWNABLE_SLUGS = ownableList();
 
 // ---- The live catalogue (api/catalog.js, owner 2026-10-31) ---------------------------------------------------------------
 // Products added from /admin (catalog_* collections) are registered here at request time, so every rule above also knows
@@ -103,7 +113,7 @@ function syncDerivedLists() {
   replaceInPlace(PACK_SLUGS, [...SAMPLE_PACK_SLUGS, ...PRESET_PACK_SLUGS]);
   replaceInPlace(PLUGIN_SLUGS, [...ALL_SLUGS, ...SOLO_SLUGS, ...FREE_SLUGS]);
   replaceInPlace(SWEEP_SLUGS, [...SAMPLE_PACK_SLUGS]);
-  replaceInPlace(OWNABLE_SLUGS, [...PLUGIN_SLUGS, ...PACK_SLUGS]);
+  replaceInPlace(OWNABLE_SLUGS, ownableList());
 }
 const knownSlug = (slug) => PLUGIN_SLUGS.includes(slug) || PACK_SLUGS.includes(slug) || MEMBER_PACK_SLUGS.includes(slug) || slug in SWEEPS || ['family', 'bundle'].includes(slug);
 const slugOk = (slug) => /^[a-z0-9][a-z0-9-]{0,59}$/.test(String(slug || ''));
@@ -130,8 +140,8 @@ export function registerCatalogProducts({ samplePacks = [], presetPacks = [], pl
   return changed;
 }
 
-// Every purchase includes this many years of updates (src/data/plugins.js UPDATE_YEARS says the same).
-// Not enforced on downloads yet: the account page only shows the date.
+// The record of a purchase's updates date (purchase + 2 years). Since 7 Nov 2026 no term is promised or shown
+// anywhere on the site (owner: a plugin reaches its last version); the API still returns it, nothing gates on it.
 export const UPDATE_YEARS = 2;
 
 // 'YYYY-MM-DD' of the date `years` after `iso`; null when `iso` is not a date.
@@ -226,13 +236,14 @@ function mergeOrders(...maps) {
 }
 
 // What is bound to this account for ownership: its Lemon Squeezy orders (orders_by_uid) plus its linked App Store
-// purchases (apple_purchases via apple_by_uid, shaped as ru8 orders 'apple:<id>'; a refunded one reads as refunded).
+// purchases (apple_purchases via apple_by_uid, shaped as orders 'apple:<id>' of their app's slug, ru8 or ahenk; a refunded one reads as refunded).
 // readUidOrders above stays Lemon Squeezy only: the licences list reads it, and an App Store purchase has no licence key.
+// Store codes redeemed on /redeem (redeem.js, 'code:<hash>' entries) count here too, bound to the uid like an App Store purchase.
 async function readUidOwnership(admin, uid) {
   const id = orderUid(uid);
   if (!id) return {};
-  const [orders, apple] = await Promise.all([readUidOrders(admin, id), readAppleOrders(admin.db, id)]);
-  return { ...orders, ...apple };
+  const [orders, apple, codes] = await Promise.all([readUidOrders(admin, id), readAppleOrders(admin.db, id), readCodeOrders(admin.db, id)]);
+  return { ...orders, ...apple, ...codes };
 }
 
 // Orders of this e-mail UNION orders bound to this uid.
@@ -258,17 +269,19 @@ export async function purchasedByUidOrders(admin, uid) {
 export async function ownedUidOrderSlugs(admin, uid) {
   return ownedFromOrders(await readUidOwnership(admin, uid));
 }
-// GET /api/ru8/ios/entitlement: does this account own `slug`, and through which store? Lemon Squeezy orders follow the
+// GET /api/<slug>/ios/entitlement, device approve, grant refresh: does this account own `slug`, and through which store? Lemon Squeezy orders follow the
 // download rules (by e-mail AND uid for a proven e-mail, by uid alone otherwise); App Store purchases are bound to the uid.
-// -> 'lemonsqueezy' | 'appstore' | null (a Lemon Squeezy order wins when both exist).
+// -> 'lemonsqueezy' | 'appstore' | 'code' | null (a Lemon Squeezy order wins, then the App Store, then a redeemed store code).
 export async function ownedVia(admin, { email, uid, proven }, slug) {
   const id = orderUid(uid);
-  const [lsOrders, apple] = await Promise.all([
+  const [lsOrders, apple, codes] = await Promise.all([
     proven ? mergeOrders(await readOrders(admin, email), await readUidOrders(admin, id)) : readUidOrders(admin, id),
     id ? readAppleOrders(admin.db, id) : {},
+    id ? readCodeOrders(admin.db, id) : {},
   ]);
   if (ownedFromOrders(lsOrders).includes(slug)) return 'lemonsqueezy';
   if (ownedFromOrders(apple).includes(slug)) return 'appstore';
+  if (ownedFromOrders(codes).includes(slug)) return 'code';
   return null;
 }
 // True when a refunded / unpaid order bound to the uid covers this plugin (the answer is "refunded", not "verify").

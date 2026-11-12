@@ -14,9 +14,10 @@
 //
 // Text may use `code` and **bold**; both renderers understand only those two.
 // Block types: { p }, { list }, { steps }, { table: { head, rows } },
-// { note }, { recipes: [{ name, settings, text }] }, { h3 }.
+// { note }, { recipes: [{ name, settings, text }] }, { h3 },
+// { img, w, h, alt, caption } (a panel picture; caption may use the inline markup; ADALET first, 8 Nov 2026).
 
-import { KUBBE, KASET, ACTIVATION_LINE, RU8_ON_SALE, JINGFANG_ON_SALE } from './plugins.js';
+import { KUBBE, KASET, ACTIVATION_LINE, RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE } from './plugins.js';
 import { media } from '../utils/endpoints.js';
 import { installation } from './manuals/common.js';
 import { KORO_MANUAL } from './manuals/koro.js';
@@ -33,6 +34,7 @@ import { JINGFANG_MANUAL } from './manuals/jingfang.js';
 import { ELEK_MANUAL } from './manuals/elek.js';
 import { SEDA_MANUAL } from './manuals/seda.js';
 import { TORNA_MANUAL } from './manuals/torna.js';
+import { AHENK_MANUAL } from './manuals/ahenk.js';
 
 const downloadRoom = () => [
   { p: `Sign in on subverselab.com/launch and download. ${ACTIVATION_LINE}` },
@@ -381,13 +383,13 @@ export const KASET_MANUAL = {
   ],
 };
 
-export { KORO_MANUAL, YANKI_MANUAL, HAVA_MANUAL, MIHENK_MANUAL, TUTKAL_MANUAL, TABAN_MANUAL, ALEV_MANUAL, KIYMA_MANUAL, ADALET_MANUAL, RU8_MANUAL, JINGFANG_MANUAL, ELEK_MANUAL, SEDA_MANUAL, TORNA_MANUAL };
+export { KORO_MANUAL, YANKI_MANUAL, HAVA_MANUAL, MIHENK_MANUAL, TUTKAL_MANUAL, TABAN_MANUAL, ALEV_MANUAL, KIYMA_MANUAL, ADALET_MANUAL, RU8_MANUAL, JINGFANG_MANUAL, ELEK_MANUAL, SEDA_MANUAL, TORNA_MANUAL, AHENK_MANUAL };
 
-// Every manual page, in the order the plugin pages list the products. RU-8 and JING FANG only while they are on sale,
+// Every manual page, in the order the plugin pages list the products. RU-8, JING FANG and AHENK only while they are on sale,
 // like their rooms (ROOM_PLUGINS). App.jsx routes, scripts/prerender.js and scripts/generate-sitemap.js read this list.
 export const MANUALS = [
   KUBBE_MANUAL, KASET_MANUAL, KORO_MANUAL, YANKI_MANUAL, HAVA_MANUAL, MIHENK_MANUAL, TUTKAL_MANUAL,
-  ...(JINGFANG_ON_SALE ? [JINGFANG_MANUAL] : []), ...(RU8_ON_SALE ? [RU8_MANUAL] : []), ELEK_MANUAL, SEDA_MANUAL, TORNA_MANUAL,
+  ...(AHENK_ON_SALE ? [AHENK_MANUAL] : []), ...(JINGFANG_ON_SALE ? [JINGFANG_MANUAL] : []), ...(RU8_ON_SALE ? [RU8_MANUAL] : []), ELEK_MANUAL, SEDA_MANUAL, TORNA_MANUAL,
   ADALET_MANUAL, TABAN_MANUAL, ALEV_MANUAL, KIYMA_MANUAL,
 ];
 

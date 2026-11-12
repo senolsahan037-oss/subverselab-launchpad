@@ -4,13 +4,15 @@
 
 ## Plug-ins and apps
 
-Plug-ins for macOS and Windows (VST3 and AU on macOS, VST3 on Windows; some are also standalone apps). Bought through Lemon Squeezy; the download appears on the buyer's Account page at https://subverselab.com/account. Paid plug-ins: Includes 2 years of updates; the version you have keeps working forever.
+Plug-ins for macOS and Windows (VST3 and AU on macOS, VST3 on Windows; some are also standalone apps). Bought through Lemon Squeezy; the download appears on the buyer's Account page at https://subverselab.com/account. Paid plug-ins: Updates appear on your Account page; the version you have keeps working forever.
 
-- [TORNA](https://subverselab.com/plugins/torna): Graphic equalizer. Graphic equalizer plugin: twelve bands from 16 Hz to 32 kHz, ±12 dB, a LEFT and a RIGHT bank, and a spectrum analyzer, modelled part by part from a 1983 service schematic. For the mix bus and the master. Mac and Windows. Price: $12.
+- [ADALET](https://subverselab.com/plugins/adalet): Dynamic EQ. ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows. Price: $15.
+- [AHENK](https://subverselab.com/plugins/ahenk): Piano instrument. Sampled piano instrument: four pianos, microphone positions around them, measured halls, and a score page that plays and writes MusicXML and MIDI. Free 30-day trial. Price: $29.99 (regular $49), launch price until 1 January 2027.
 - [JING FANG](https://subverselab.com/plugins/jingfang): Microtonal synthesizer. Microtonal synthesizer plugin: a 3-row keyboard on a 53-step grid (or any equal grid), a Tuning Lab that learns a tuning from a recording, Scala in and out. Price: $60 (regular $150), launch price until 1 December 2026.
+- [RU-8](https://subverselab.com/plugins/ru8): Drum machine. Drum machine plugin and app: synth kits and recorded sample kits, your own WAV or AIFF samples on any pad, an EDIT screen for every pad, a drummer’s groove, A/B rhythms with fill and auto, and MIDI drag-out. Price: $25.
+- [TORNA](https://subverselab.com/plugins/torna): Graphic equalizer. Graphic equalizer plugin: twelve bands from 16 Hz to 32 kHz, ±12 dB, a LEFT and a RIGHT bank, and a spectrum analyzer, modelled part by part from a 1983 service schematic. For the mix bus and the master. Mac and Windows. Price: $12.
 - [ELEK](https://subverselab.com/plugins/elek): Stem separation app. Stem separation app: split a track into vocals, drums, bass and other, remove the vocal, or read tempo and key. It runs on your computer; nothing is uploaded. Price: $7 (regular $25), launch price until 1 December 2026.
 - [SEDA](https://subverselab.com/plugins/seda): Analog delay. Bucket-brigade (BBD) analog delay plugin, 20 to 1200 ms, zero latency. LISTEN ducks the echo while you play and throws it at the end of the phrase. Mac and Windows. Price: $15.
-- [RU-8](https://subverselab.com/plugins/ru8): Drum machine. Drum machine plugin and app: synthesized pads that carry their own steps, kits that change the whole sound, A/B rhythms with fill and auto, and MIDI drag-out. Price: $25.
 - [KIYMA](https://subverselab.com/plugins/kiyma): Audio mincer. Free glitch and beat-repeat plugin: it chops the last phrase into steps and replays them in a new order, locked to the bar. Zero latency. Mac and Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
 - [KUBBE](https://subverselab.com/plugins/kubbe): Reverb. Algorithmic reverb plugin with three modes (Hammam, Cistern, Valley) and a decay display that is measured, not nominal. VST3 and AU for Mac, VST3 for Windows. $9. Price: $9.
 - [KASET](https://subverselab.com/plugins/kaset): Tape colour. Cassette tape colour plugin: pick a generation from Master to 4th Dub and a tape type; every copy loses top end and gains hiss and saturation. VST3/AU, Windows VST3. $9. Price: $9.
@@ -21,7 +23,6 @@ Plug-ins for macOS and Windows (VST3 and AU on macOS, VST3 on Windows; some are 
 - [TUTKAL](https://subverselab.com/plugins/tutkal): Bus compressor. Bus compressor plugin with three voicings: GLUE for the drum or mix bus, LA for vocals, PUMP for sidechain ducking in time with a kick. Price: $12.
 - [ALEV](https://subverselab.com/plugins/alev): 3-band saturator. Free three-band saturation plugin, loudness-matched so you hear the heat, not the volume. 8x oversampled, no fold-back. VST3 and AU for Mac, VST3 for Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
 - [TABAN](https://subverselab.com/plugins/taban): Reverse limiter. Free reverse limiter plugin: audio under the FLOOR is lifted to it, audio above it is left bit for bit. One fader, zero latency. VST3 and AU for Mac, VST3 for Windows. Price: Free (a $0 checkout that asks for an e-mail address, no card).
-- [ADALET](https://subverselab.com/plugins/adalet): Dynamic EQ. ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows. Price: Coming soon.
 
 ## Sample packs
 
