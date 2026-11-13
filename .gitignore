@@ -64,3 +64,18 @@ Scripts/.subverselab_youtube_token.pickle
 Infrastructure/CloudRun/subverselab-v2/_bak_trial/
 # macOS folder icon
 Icon?
+
+# ─── never in the public repo (cleanup 2026-11-14) ───
+# Effect Racks: product content for sale, like the RU-8 Drum Pack
+03_Presets/SubverseLab Effect Racks/
+03_Presets/SubverseLab_*_Racks.zip
+# Old plug-in builds and binaries (Splitter with its 316 MB model, JING FANG, pluginval)
+_arsiv/temizlik_2026-10-12/
+_arsiv/jf_local_build_2026-10-24/
+00_Inbox/lanes_2026-09-29/tools/
+*.component/
+*.vst3/
+*.app/
+*.onnx
+# Downloaded live site bundle (a compare copy, not source)
+Infrastructure/CloudRun/subverselab-v2/live.js
