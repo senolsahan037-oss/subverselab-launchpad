@@ -99,6 +99,10 @@ function fakeStorage() {
     ['plugins/ahenk/1.0.0/AHENK-1.0.0-macOS.pkg', { name: 'AHENK-1.0.0-macOS.pkg', body: 'AHENK-MAC' }],
     ['plugins/ahenk/1.0.0/AHENK-1.0.0-Windows.zip', { name: 'AHENK-1.0.0-Windows.zip', body: 'AHENK-WIN' }],
     ['plugins/elek/1.0.0/Elek-1.0.0-big.pkg', { name: 'plugins/elek/1.0.0/Elek-1.0.0-macOS.pkg', body: 'ELEK-BIG', size: 680334241 }],
+    ['ahenk/pianos/v1/manifest.json', { name: 'ahenk/pianos/v1/manifest.json', body: '{"format":1,"packs":[]}' }],
+    ['ahenk/pianos/v1/core/core-01.zip', { name: 'ahenk/pianos/v1/core/core-01.zip', body: 'CORE-PART' }],
+    ['ahenk/pianos/v1/upright/upright-01.zip', { name: 'ahenk/pianos/v1/upright/upright-01.zip', body: 'UPRIGHT-PART', size: 63709168 }],
+    ['plugins/ahenk/secret.zip', { name: 'plugins/ahenk/secret.zip', body: 'PAID' }],
   ]);
   return {
     bucket: () => ({ file: (object) => ({
@@ -2058,6 +2062,54 @@ await test('firestore.rules: orders_by_uid is closed to every client; Dockerfile
     assert.deepEqual([last.response.status, last.body], [429, 'Too many requests']);
   });
   delete process.env.GRANT_SIGNING_KEY;
+}
+
+{
+  // AHENK iPhone / iPad piano packs (owner 12 Nov, route b): public, streamed from the private bucket, only packer-shaped names.
+  const routes = new Map(server.app.router.stack.filter((l) => l.route).map((l) => [l.route.path, l.route.stack.at(-1).handle]));
+  async function piano(path, ip = '10.7.0.1') {
+    const m = path.match(/^\/api\/ahenk\/pianos\/v1\/(.+)$/);
+    const rel = m ? m[1] : '';
+    const parts = rel.split('/');
+    const handler = rel === 'manifest.json' ? routes.get('/api/ahenk/pianos/v1/manifest.json') : routes.get('/api/ahenk/pianos/v1/:pack/:file');
+    const req = { path, query: {}, params: parts.length === 2 ? { pack: parts[0], file: parts[1] } : {}, headers: {}, ip, get() { return undefined; } };
+    const res = new FakeResponse();
+    const done = new Promise((r) => res.once('finish', r));
+    await handler(req, res);
+    if (!res.writableEnded) await done;
+    const chunks = [];
+    if (res.body === undefined) { for await (const c of res) chunks.push(c); res.body = Buffer.concat(chunks).toString('utf8'); }
+    return { status: res.statusCode, headers: res.headers, body: res.body };
+  }
+  await test('ahenk pianos: the manifest is public, JSON, never cached', async () => {
+    const r = await piano('/api/ahenk/pianos/v1/manifest.json');
+    assert.deepEqual([r.status, r.body, r.headers['content-type'], r.headers['cache-control']], [200, '{"format":1,"packs":[]}', 'application/json', 'no-cache, max-age=0']);
+  });
+  await test('ahenk pianos: a small part streams with its length, immutable', async () => {
+    const r = await piano('/api/ahenk/pianos/v1/core/core-01.zip');
+    assert.deepEqual([r.status, r.body, r.headers['content-type'], r.headers['content-length']], [200, 'CORE-PART', 'application/zip', 9]);
+    assert.match(r.headers['cache-control'], /immutable/);
+  });
+  await test('ahenk pianos: a 64 MB part goes out chunked (no Content-Length, Cloud Run 32 MiB rule)', async () => {
+    const r = await piano('/api/ahenk/pianos/v1/upright/upright-01.zip');
+    assert.equal(r.status, 200);
+    assert.equal(r.headers['content-length'], undefined);
+  });
+  await test('ahenk pianos: other names never reach the bucket (no paid installers, no traversal)', async () => {
+    for (const bad of ['plugins/secret.zip', 'core/..%2Fsecret.zip', 'Core/core-01.zip', 'core/core-1.zip', 'core/core-01.pkg', 'x/y-01.zip/z']) {
+      const parts = bad.split('/');
+      if (parts.length !== 2) continue;
+      const r = await piano(`/api/ahenk/pianos/v1/${bad}`, '10.7.0.2');
+      assert.equal(r.status, 404, bad);
+    }
+    const missing = await piano('/api/ahenk/pianos/v1/concert/concert-99.zip', '10.7.0.2');
+    assert.equal(missing.status, 404);
+  });
+  await test('ahenk pianos: 30 a minute per address, then 429', async () => {
+    const codes = [];
+    for (let i = 0; i < 31; i += 1) codes.push((await piano('/api/ahenk/pianos/v1/manifest.json', '10.7.0.9')).status);
+    assert.deepEqual([codes.slice(0, 30).every((c) => c === 200), codes[30]], [true, 429]);
+  });
 }
 
 const failed = results.filter((result) => !result.ok);

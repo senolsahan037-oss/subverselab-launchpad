@@ -892,6 +892,28 @@ h1, h2 {
 }
 
 /* Footer link columns (Footer.jsx FOOTER_COLUMNS): three short lists on the right, as tall as the brand column. */
+/* Live edit (src/liveEdit/liveEdit.jsx): drawn only for a signed-in admin. */
+:root { --live-edit-line: var(--color-primary); }
+.live-edit-field { outline: 1px dashed var(--live-edit-line); outline-offset: 4px; border-radius: 4px; cursor: text; min-width: 2ch; }
+.live-edit-field:hover, .live-edit-field:focus { outline-style: solid; outline-width: 2px; background: var(--color-surface); }
+.live-edit-chip { display: inline-block; margin: 8px 8px 0 0; padding: 4px 10px; border: 0; border-radius: 999px; font: inherit; font-size: .78rem; font-weight: 700; cursor: pointer; color: var(--color-bg); background: var(--color-text); }
+.live-edit-chip:disabled { opacity: .5; cursor: default; }
+.live-edit-picture { position: absolute; right: 12px; bottom: 12px; margin: 0; box-shadow: var(--shadow-card); }
+.plugin-panel { position: relative; }
+.live-edit-row { margin: 10px 0 0; font-size: .85rem; color: var(--color-text-muted); }
+/* At the top of the window, under the header: the cookie banner owns the foot of the page. */
+.live-edit-bar { position: fixed; left: 50%; top: 84px; transform: translateX(-50%); z-index: 1200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: min(94vw, 900px); padding: 10px 14px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-card-hover); }
+.live-edit-bar-text { font-size: .88rem; font-weight: 700; color: var(--color-text); margin-right: 6px; }
+.live-edit-error { color: var(--color-danger); }
+.live-edit-btn { padding: 8px 14px; font-size: .85rem; }
+.footer-contact { font-style: normal; display: flex; flex-direction: column; gap: 3px; margin: 0 0 18px; max-width: 360px; font-size: .8rem; line-height: 1.5; color: var(--color-text-muted); }
+.footer-contact a { color: var(--color-text-muted); text-decoration: underline; text-underline-offset: 3px; width: fit-content; }
+.footer-contact a:hover { color: var(--color-text); }
+.help-contact { margin: 0 0 40px; padding: 20px 22px; border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-card); scroll-margin-top: 90px; }
+.help-contact h2 { margin: 0 0 10px; font-size: 1.15rem; font-weight: 800; }
+.help-contact a { color: var(--color-primary); font-weight: 800; font-size: 1.1rem; text-decoration: none; }
+.help-contact a:hover { text-decoration: underline; }
+.help-contact p { margin: 8px 0 0; color: var(--color-text-muted); line-height: 1.6; }
 .footer-cols { display: flex; gap: 56px; flex-wrap: wrap; justify-content: flex-end; }
 .footer-col { display: flex; flex-direction: column; gap: 10px; min-width: 120px; }
 .footer-col-title { font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text); margin-bottom: 4px; }
@@ -1161,6 +1183,8 @@ h1, h2 {
 }
 .plugin-btn:hover { background: var(--pl-btn-hover); color: var(--pl-btn-ink); }
 .plugin-cta-note { color: var(--pl-muted); font-size: 0.9rem; }
+.plugin-family-line { margin: 10px 0 0; color: var(--pl-muted); font-size: 0.9rem; line-height: 1.5; }
+.plugin-family-line a { color: var(--pl-cream); font-weight: 700; }
 .plugin-panel { margin: 0; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-card-hover); }
 .plugin-panel img { display: block; width: 100%; height: auto; }
 .plugin-places { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
@@ -1610,18 +1634,35 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
               radial-gradient(circle at var(--mx) var(--my), transparent 22%, var(--stage-shade) 62%); }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .family-band-stage:hover::after { opacity: 1; } }
 .family-band-kicker { margin: 0 0 8px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); }
-.family-band h2 { margin: 0 0 14px; font-size: clamp(1.25rem, 2.1vw, 1.7rem); line-height: 1.25; font-weight: 900; color: var(--color-text); }
-.family-band-price { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 0 0 10px; }
-.family-band-price strong { font-size: 2rem; font-weight: 900; color: var(--color-primary); }
-.family-band-price span { color: var(--color-text-muted); font-size: 0.95rem; }
-.family-band-price s { color: var(--color-text-muted); font-size: 1.15rem; font-weight: 700; }
-.family-band-price em { font-style: normal; font-weight: 900; font-size: 0.9rem; letter-spacing: 0.04em; color: var(--color-primary); }
+.family-band h2, .family-band h1 { margin: 0 0 14px; font-size: clamp(1.25rem, 2.1vw, 1.7rem); line-height: 1.25; font-weight: 900; color: var(--color-text); }
+.family-band-price { margin: 0 0 14px; }   /* holds PriceTag (size band) */
+.family-band-more { margin: 0 0 18px; font-weight: 700; }
+.family-band-more a { color: var(--color-text); }
 .family-band-line { margin: 0 0 14px; color: var(--color-text-muted); line-height: 1.6; }
 .family-band-upgrade { margin: 0 0 14px; color: var(--color-text); font-weight: 700; line-height: 1.5; }
 .family-band-names { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 18px; padding: 0; font-weight: 800; letter-spacing: 0.06em; font-size: 0.86rem; }
 .family-band-names a { color: var(--color-text); text-decoration: none; }
 .family-band-names a:hover, .family-band-names a:focus-visible { color: var(--color-primary); text-decoration: underline; }
 @media (max-width: 860px) { .family-band { grid-template-columns: 1fr; } }
+/* The family room, /plugins/family (FamilyRoom.jsx, owner 14 Nov 2026): the band on top, then the products, then buying. */
+.family-room-back { display: inline-block; margin: 0 0 16px; color: var(--color-text-muted); text-decoration: none; font-size: .9rem; }
+.family-room-back:hover { color: var(--color-text); }
+.family-room-section { margin-top: 56px; }
+.family-room-section h2 { margin: 0 0 22px; font-size: clamp(1.25rem, 2.1vw, 1.7rem); font-weight: 900; color: var(--color-text); }
+.family-room-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 28px 24px; }
+.family-room-item { display: flex; flex-direction: column; gap: 6px; }
+.family-room-pic { display: block; margin-bottom: 6px; }
+.family-room-pic img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: contain; }
+.family-room-item h3 { margin: 0; font-size: 1.15rem; font-weight: 900; letter-spacing: .06em; }
+.family-room-item h3 a { color: var(--color-text); text-decoration: none; }
+.family-room-kind { margin: 0; color: var(--color-text-muted); font-size: .88rem; }
+.family-room-line { margin: 0; color: var(--color-text); font-size: .92rem; line-height: 1.5; }
+.family-room-own { margin: 4px 0 0; color: var(--color-text-muted); font-size: .85rem; display: flex; align-items: baseline; gap: 8px; }
+.family-room-own .price-tag { margin-top: 0; }
+.family-room-open { margin-top: 2px; font-weight: 700; font-size: .88rem; color: var(--color-text); }
+.family-room-buy { max-width: var(--read-max); }
+.family-room-buy p { margin: 0 0 12px; color: var(--color-text-muted); line-height: 1.65; }
+.family-room-buy a { color: var(--color-text); }
 
 /* ============================================================
    /plugins as boxes (owner 2026-10-31): each product is its clear box (public/plugins/<slug>/box.webp) sitting on the page
@@ -1656,6 +1697,28 @@ a.plugin-cta-note:hover { color: var(--pl-cream); text-decoration: underline; }
 .box-price s { color: var(--color-text-muted); font-weight: 600; margin-right: 4px; }
 .box-buy-row { margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .box-until { font-size: .72rem; color: var(--color-text-muted); }
+/* The one price block (PriceTag.jsx, owner 14 Nov 2026): new price large, regular struck, one stamp, one note line.
+   The stamp has its own tokens: in the dark theme --color-primary-dark is gold, so gold text sat on a gold stamp. */
+:root { --price-stamp-bg: #C5A059; --price-stamp-fg: #022421; }
+:root[data-theme="dark"] { --price-stamp-bg: #E8CE95; --price-stamp-fg: #0F2A28; }
+.price-tag { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 5px; text-transform: none; letter-spacing: 0; vertical-align: middle; }
+.price-tag-row { display: inline-flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.price-tag-now { font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.85rem; font-weight: 700; line-height: 1; letter-spacing: .01em; color: var(--color-text); }
+.price-tag-was { font-family: var(--font, 'Inter', sans-serif); font-size: 1rem; font-weight: 600; color: var(--color-text-muted); text-decoration-thickness: 1.5px; }
+.price-tag-off { align-self: center; padding: 3px 8px; border-radius: 4px; background: var(--price-stamp-bg); color: var(--price-stamp-fg); font-family: var(--font, 'Inter', sans-serif); font-size: .8rem; font-weight: 900; letter-spacing: .04em; line-height: 1.2; white-space: nowrap; }
+.price-tag-note { font-family: var(--font, 'Inter', sans-serif); font-size: .78rem; color: var(--color-text-muted); letter-spacing: .02em; }
+.price-tag-name { text-transform: uppercase; letter-spacing: .1em; font-weight: 800; color: var(--color-gold); }
+.price-tag--card { margin-top: 8px; align-items: center; }
+.price-tag--band .price-tag-now { font-size: 2.3rem; }
+.price-tag--room .price-tag-now { font-size: 2.3rem; color: var(--pl-cream); }
+.price-tag--room .price-tag-was, .price-tag--room .price-tag-note { color: var(--pl-muted); }
+.price-tag--room .price-tag-name { color: var(--pl-gold); }
+.price-tag--pack { margin-top: 6px; gap: 3px; }
+.price-tag--pack .price-tag-now { font-size: 1.2rem; }
+.price-tag--pack .price-tag-was { font-size: .85rem; }
+.price-tag--pack .price-tag-off { font-size: .7rem; padding: 2px 6px; }
+.price-tag--pack .price-tag-note { font-size: .7rem; }
+.price-tag--packpage .price-tag-now { font-size: 2rem; }
 .box-buy { padding: 9px 16px; font-size: .84rem; }
 .box-buy.plugin-buy-owned { font-size: .8rem; }
 .box-launch { font-size: .74rem; color: var(--color-text-muted); }
@@ -1966,6 +2029,8 @@ details[open] > summary:not(.acct-claim-btn)::after { content: '+'; transform: r
 .musehub-btn { box-shadow: var(--shadow-card); }
 .musehub-btn:hover { transform: translateY(-1px); opacity: .92; }
 .musehub-btn:focus-visible { outline: 2px solid var(--gold, currentColor); outline-offset: 3px; }
+.family-band-keys { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+/* "-40%" beside a struck price is .price-tag-off now (PriceTag.jsx, 14 Nov 2026); the old .price-off rule is gone. */
 
 /* Boxes: a shadow, not a line (owner 28 Oct: "her şeyin etrafında kalın sarı çizgi var; bunun yerine gölge, her iki modda").
    The border stays in the box model (transparent) so nothing moves; dividers inside boxes keep --color-border. */

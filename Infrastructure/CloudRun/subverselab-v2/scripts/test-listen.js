@@ -150,7 +150,7 @@ await test('The homepage is the news, read by scrolling; the tools are on /tools
   }
 });
 
-await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET on their own; the launch offer retired 28 Oct (FAMILY_RETIRED); back 3 Nov at $39.99 on /plugins#family only', async () => {
+await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET on their own; the launch offer retired 28 Oct (FAMILY_RETIRED); back 3 Nov at $39.99; its own room /plugins/family and a line in each of its rooms since 14 Nov', async () => {
   const pl = await import('../src/data/plugins.js');
   assert.ok(!pl.FAMILY_SLUGS.includes('adalet'), 'ADALET stays out of the family');
   assert.ok(pl.SOLO_PLUGINS.some((p) => p.slug === 'seda'), 'SEDA is sold on its own (owner 27 Oct)');
@@ -166,7 +166,8 @@ await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET o
   // owner 2026-11-03: the family is back, at the MuseHub price, in one place: FamilyBand.jsx on /plugins (+ the news item)
   assert.equal(pl.FAMILY_BUNDLE_ON, true); assert.equal(pl.PRICES.family, 39.99);
   assert.ok(pl.PRICES.family >= 19.99, 'price floor: never below the $19.99 earlier buyers paid');
-  for (const f of ['src/components/LaunchPage.jsx', 'src/components/PluginRoom.jsx', 'src/components/HomeIntro.jsx', 'src/components/Footer.jsx', 'src/components/InfoFigures.jsx', 'src/components/BuyButton.jsx', 'src/data/legalContent.js', 'src/data/faqContent.js']) {   // news.js: the owner's 28 Oct thank-you item names it on purpose
+  // PluginRoom.jsx names it again since 14 Nov (owner: the family room, and one line in each family product's room).
+  for (const f of ['src/components/LaunchPage.jsx', 'src/components/HomeIntro.jsx', 'src/components/Footer.jsx', 'src/components/InfoFigures.jsx', 'src/components/BuyButton.jsx', 'src/data/legalContent.js', 'src/data/faqContent.js']) {   // news.js: the owner's 28 Oct thank-you item names it on purpose
     const text = (await readFile(new URL(`../${f}`, import.meta.url), 'utf8')).split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*|\{\/\*)/.test(l)).join('\n');
     assert.ok(!/plugin family|whole family|Get the family|In the family|own the family|refunded family|Plugin family/i.test(text), `${f} still names the family`);
   }
@@ -178,6 +179,32 @@ await test('The family (owner 27 Oct): seven products as sold, SEDA and ADALET o
   assert.deepEqual(pl.FAMILY_SLUGS, ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk', 'tutkal'], 'the family stays the seven products it was sold as');
   const ent = await import('../api/entitlements.js');
   assert.ok(!ent.ALL_SLUGS.includes('seda') && ent.SOLO_SLUGS.includes('seda'), 'server: only its own order opens SEDA');
+});
+
+await test('One price block (owner 14 Nov 2026): pluginOffer feeds every price; the family is measured against $79.99 only', async () => {
+  const pl = await import('../src/data/plugins.js');
+  const fam = pl.pluginOffer('family');
+  assert.deepEqual(fam, { price: 39.99, regular: 79.99, pct: 50, label: '', ends: '' });
+  const nov14 = Date.parse('2026-11-14T12:00:00+03:00');
+  const adalet = pl.pluginOffer('adalet', nov14);
+  assert.equal(adalet.price, 7.49); assert.equal(adalet.regular, 15); assert.equal(adalet.pct, 50);
+  assert.equal(adalet.label, '', 'ADALET was sold at $15 before: no "launch price" word');
+  assert.equal(adalet.ends, '4 January 2027');
+  assert.equal(pl.pluginOffer('ahenk', nov14).label, 'launch price');
+  assert.deepEqual(pl.pluginOffer('kubbe', nov14), { price: 9, regular: null, pct: 0, label: '', ends: '' });
+  assert.equal(pl.pluginOffer('jingfang', Date.parse('2026-11-28T12:00:00+03:00')).label, 'Black Friday');
+  assert.equal(pl.pluginOffer('jingfang', Date.parse('2026-12-02T12:00:00+03:00')).label, '', 'the standing sale has no name');
+  assert.equal(pl.pluginOffer('jingfang', Date.parse('2026-12-02T12:00:00+03:00')).price, 99);
+  const { readFile: rf } = await import('node:fs/promises');
+  const band = await rf(new URL('../src/components/FamilyBand.jsx', import.meta.url), 'utf8');
+  assert.ok(!/FAMILY_SINGLES_TOTAL|one by one/.test(band), 'the band shows one reference price');
+  const news = await rf(new URL('../src/data/news.js', import.meta.url), 'utf8');
+  assert.ok(news.includes("to: '/plugins/family'"), 'the family news item opens the family room');
+  for (const f of ['src/components/PluginsPage.jsx', 'src/components/PluginRoom.jsx', 'src/components/FamilyBand.jsx', 'src/components/packs/PackPrice.jsx']) {
+    assert.ok((await rf(new URL(`../${f}`, import.meta.url), 'utf8')).includes('PriceTag'), `${f} draws its price with PriceTag`);
+  }
+  const html = await rf(new URL('../dist/plugins/family/index.html', import.meta.url), 'utf8').catch(() => '');
+  if (html) assert.ok(html.includes('$39.99') && html.includes('$79.99') && !html.includes('$115'), 'prerendered family room');
 });
 
 await test('RU-8: one rhythm on several kits — no bypass button, a measured readout each, files matched within 0.5 LU and at most -1 dBTP', async () => {

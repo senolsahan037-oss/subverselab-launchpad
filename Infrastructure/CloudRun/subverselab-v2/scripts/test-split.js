@@ -182,7 +182,7 @@ await test('site: AHENK switched off = no /plugins/ahenk page, no dist/plugins/a
   }
 });
 
-await test('site: security.txt, robots, llms.txt and llms-full.txt answer 200; sitemap lists 34 URLs (32 + /refunds + /tools; /plugins/torna joined 28 Oct) + one per manual page + /plugins/ru8 only while RU-8 is on sale + one per visible sample pack', async () => {
+await test('site: security.txt, robots, llms.txt and llms-full.txt answer 200; sitemap lists 35 URLs (32 + /refunds + /tools; /plugins/torna joined 28 Oct; /plugins/family 14 Nov) + one per manual page + /plugins/ru8 only while RU-8 is on sale + one per visible sample pack', async () => {
   const sec = await fetch(`${SITE}/.well-known/security.txt`);
   assert.equal(sec.status, 200);
   assert.match(sec.headers.get('content-type'), /text\/plain/);
@@ -192,10 +192,11 @@ await test('site: security.txt, robots, llms.txt and llms-full.txt answer 200; s
   const { visiblePacks } = await import('../src/data/packFacts.js');
   const { RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE } = await import('../src/data/plugins.js');   // RU-8, JING FANG and AHENK are on the site only once on sale
   const { MANUALS } = await import('../src/data/pluginManuals.js');   // every owner's manual page, KUBBE and KASET included
-  assert.equal(sm.match(/<loc>/g).length, 34 + MANUALS.length + (RU8_ON_SALE ? 1 : 0) + (JINGFANG_ON_SALE ? 1 : 0) + (AHENK_ON_SALE ? 1 : 0) + visiblePacks().length);
+  assert.equal(sm.match(/<loc>/g).length, 35 + MANUALS.length + (RU8_ON_SALE ? 1 : 0) + (JINGFANG_ON_SALE ? 1 : 0) + (AHENK_ON_SALE ? 1 : 0) + visiblePacks().length);
   assert.equal(/\/plugins\/ru8</.test(sm), RU8_ON_SALE);
   assert.equal(/\/plugins\/jingfang</.test(sm), JINGFANG_ON_SALE);
   assert.equal(/\/plugins\/ahenk</.test(sm), AHENK_ON_SALE);
+  assert.ok(sm.includes('/plugins/family</loc>'), 'the family room is in the sitemap (14 Nov 2026)');
 });
 
 await test('site: prerendered pages are crawlable HTML with their own title (home, a plugin room, /plugins)', async () => {

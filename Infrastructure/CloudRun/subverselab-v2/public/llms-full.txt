@@ -7,7 +7,7 @@ Source: https://subverselab.com/plugins/adalet
 
 ADALET is a dynamic EQ with zero latency: six bands, any bell or shelf can be dynamic, and three helpers: TARGET cuts a named part of a sound, COLLIDE clears the room between two tracks, SELF finds resonances. VST3 and AU for macOS, VST3 for Windows.
 ADALET is a dynamic EQ with six bands and zero latency, with helpers that find the problem for you. Any bell or shelf can be made dynamic, so it cuts or lifts only while the sound needs it. TARGET cuts a named part of a sound, such as a boxy vocal or a kick’s sub; COLLIDE clears room for this track where another one is loud; SELF finds the resonances of the track it sits on. They do the finding, so you can do the deciding.
-Price: $15.
+Price: $7.49 (regular $15), until 4 January 2027.
 Formats: macOS 11 or later · Windows, 64-bit · VST3 and AU on macOS, VST3 on Windows · One licence, your own computers, personal and commercial use · Paid through Lemon Squeezy in US dollars; refunds: subverselab.com/refunds.
 
 ## Six bands, any of them dynamic

@@ -7,7 +7,10 @@
 // reverb section, the PDF's CPU row (development machine) and "Getting the plugin" row (gettingIt() says it).
 
 import { TORNA } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/torna/manual/${file}`), w, h, alt, caption });
 
 export const TORNA_MANUAL = {
   ...manualBase(TORNA, {
@@ -37,6 +40,7 @@ export const TORNA_MANUAL = {
       id: 'panel',
       heading: 'The panel',
       blocks: [
+        pic('panel-front.webp', 1600, 556, 'The TORNA front panel: two banks of twelve sliders, the spectrum analyzer and equalizer graphic between them, key strips and the INPUT and OUTPUT sliders below.', 'The front panel: LEFT bank, analyzer and graphic in the middle, RIGHT bank, and the key strips below.'),
         {
           list: [
             '**LEFT bank:** twelve sliders, 16 Hz to 32 kHz, ±12 dB. The red window in each cap lights while EQ is IN.',
@@ -63,6 +67,7 @@ export const TORNA_MANUAL = {
       id: 'controls',
       heading: 'The controls',
       blocks: [
+        pic('panel-keys.webp', 540, 100, 'The right key strip: MEMORY A, B, C, COPY L to R, R to L, FLAT, the ANALYZER OUT/IN key and the SIZE 75/100 key.', 'The right key strip: **MEMORY**, **COPY**, **ANALYZER** and **SIZE**.'),
         {
           table: {
             head: ['Control', 'Range · default', 'What it does'],
@@ -85,6 +90,7 @@ export const TORNA_MANUAL = {
             ],
           },
         },
+        pic('panel-bands.webp', 1440, 520, 'Twelve band curves: each band alone at full boost in green and full cut in gold, all others at 0 dB, from 16 Hz to 32 kHz.', 'Each band alone at full boost and full cut, all others at 0 dB, from the model of the circuit.'),
       ],
     },
     {
@@ -103,6 +109,7 @@ export const TORNA_MANUAL = {
       id: 'analyzer',
       heading: 'The spectrum analyzer',
       blocks: [
+        pic('panel-center.webp', 360, 410, 'The middle of the panel: the LEFT and RIGHT keys and LEVEL slider, the spectrum analyzer with twelve band columns and TOTAL, the equalizer graphic and the PRESET keys.', 'The middle of the panel: analyzer with **LEVEL**, then the equalizer graphic and ◀ **PRESET** ▶.'),
         { p: 'Twelve band-pass filters with a Q of about 10, one per slider, each followed by a peak detector and read in turn by the display. The ten segments are marked −24, −18, −15, −12, −9, −6, −3, 0, +3 and +6; from −18 to 0 each segment lights within 0.3 dB of its mark. A column falls back with a time constant of about a quarter of a second.' },
         {
           list: [
@@ -118,6 +125,7 @@ export const TORNA_MANUAL = {
       id: 'rear',
       heading: 'The rear plate',
       blocks: [
+        pic('panel-rear.webp', 1600, 556, 'The TORNA rear plate: six pairs of sockets, the LINE LEVEL and CAP LIGHTS slide switches, the mains socket and the model plate.', 'The rear plate: **LINE LEVEL** and **CAP LIGHTS** are the two switches that work.'),
         { p: 'The REAR key in the footer turns the unit round; FRONT turns it back. The window keeps its size. Two slide switches work:' },
         {
           table: {

@@ -6,7 +6,7 @@
 // No product counts and no "coming soon" in the copy (CLAUDE.md); BOE-B may tell its dedication (owner 2026-10-24).
 import { media } from '../utils/endpoints.js';
 import { byLatestRelease } from './productDates.js';
-import { FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FAMILY_SINGLES_TOTAL, FAMILY_STACK_IMG, LAUNCH_PRICES, OFFERS, PRICES, formatDay, launchEndLabel, launchPriceActive, offerActive, currentPrice } from './plugins.js';
+import { FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FAMILY_LIST_PRICE, FAMILY_STACK_IMG, LAUNCH_PRICES, OFFERS, PRICES, formatDay, launchEndLabel, launchPriceActive, offerActive, currentPrice } from './plugins.js';
 
 export const NEWS = [
   {
@@ -53,14 +53,14 @@ export const NEWS = [
   },
   {
     // Owner 3 Nov: the family is back, at the MuseHub price. This replaces the 28 Oct "thank you, the offer has ended" frame
-    // (its line said every plugin is sold on its own from here on, no longer true). The offer itself lives on /plugins#family.
+    // (its line said every plugin is sold on its own from here on, no longer true). The offer itself lives on /plugins/family (since 14 Nov; before it /plugins#family). One reference price, the $79.99 list price (owner 14 Nov).
     key: 'family',
     kicker: 'Back by popular demand · the plugin family',
     title: 'You asked for it: the SubverseLab plugin family is back.',
-    line: `When the launch offer closed, the messages did not stop, so we put the whole family back in one box. ${byLatestRelease(FAMILY_PLUGINS, (p) => p.slug).map((p) => p.displayName).join(', ').replace(/, ([^,]*)$/, ' and $1')}: reverb, tape colour, vocal doubling, echo, air, bus glue and mastering, for $${PRICES.family} instead of $${FAMILY_SINGLES_TOTAL} one by one. One checkout, and every one of them opens on your account for macOS and Windows.`,
+    line: `When the launch offer closed, the messages did not stop, so we put the whole family back in one box. ${byLatestRelease(FAMILY_PLUGINS, (p) => p.slug).map((p) => p.displayName).join(', ').replace(/, ([^,]*)$/, ' and $1')}: reverb, tape colour, vocal doubling, echo, air, bus glue and mastering, for $${PRICES.family} instead of $${FAMILY_LIST_PRICE}. One checkout, and every one of them opens on your account for macOS and Windows.`,
     image: FAMILY_STACK_IMG[0],
     alt: 'The SubverseLab family in their cream boxes, stacked on a dark green floor',
-    to: '/plugins#family',
+    to: '/plugins/family',   // the family room (owner 14 Nov 2026); before it /plugins#family
     cta: 'Get the family',
   },
   {

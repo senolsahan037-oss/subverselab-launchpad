@@ -133,7 +133,17 @@ await test('prices: $5 per sample pack and a $25 sweep (owner, permanent floors)
   const saved = { ...prices.PACK_CHECKOUT }; const sw = { ...prices.SWEEP };
   try {
     prices.PACK_CHECKOUT.kerbstone = 'https://subverselab.lemonsqueezy.com/checkout/buy/test';
-    assert.deepEqual(prices.packOffer({ slug: 'kerbstone', status: 'approved' }), { price: 5, checkout: prices.PACK_CHECKOUT.kerbstone, buyable: true });
+    assert.deepEqual(prices.packOffer({ slug: 'kerbstone', status: 'approved' }), { price: 5, checkout: prices.PACK_CHECKOUT.kerbstone, buyable: true, regular: null, off: 0, saleEnds: null });
+    // Pack sales (owner 13 Nov 2026): $2.99 against $5 (-40 %) from 13 Nov 00:00 TR to 4 Jan 2027 00:00 TR, then the pack's own price.
+    for (const s of Object.keys(prices.PACK_SALES)) {
+      const sale = prices.PACK_SALES[s];
+      assert.ok(sale.price > 0 && sale.price < sale.regular, `${s}: sale price under the regular one`);
+      assert.ok((1 - sale.price / sale.regular) <= 0.5, `${s}: no more than 50 % off (MuseHub rule, owner 5 Nov)`);
+      const on = prices.packOffer(s, Date.parse('2026-12-01T12:00:00Z'));
+      assert.equal(on.price, 2.99, s); assert.equal(on.regular, 5, s); assert.equal(on.off, 40, s); assert.equal(on.saleEnds, '2027-01-04', s);
+      assert.equal(prices.packOffer(s, Date.parse('2026-11-12T20:59:00Z')).regular, null, `${s}: not before 13 Nov 00:00 TR`);
+      assert.equal(prices.packOffer(s, Date.parse('2027-01-03T21:00:00Z')).regular, null, `${s}: over at 4 Jan 00:00 TR`);
+    }
     prices.PACK_CHECKOUT.stepwell = 'https://x';
     assert.equal(prices.packOffer({ slug: 'stepwell', status: 'rebuild-pending' }).buyable, prices.SELL_REBUILD_PENDING);
     prices.SWEEP.checkout = 'https://x';

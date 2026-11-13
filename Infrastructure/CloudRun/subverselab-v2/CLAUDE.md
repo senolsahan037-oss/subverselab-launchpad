@@ -177,3 +177,25 @@ key, else the public one; `--check` exits 1 when the snapshot is behind). First 
 30 media files, 17 MB. The folder is in `.dockerignore` / `.gcloudignore` (never built). Run it after every panel change and before a commit.
 Sold zips and installers are not copied (downloads bucket; `manifest.json` lists them). Not built yet: the build (prerender, sitemap) reading
 the snapshot, and a push back from the tree to the panel.
+
+**12 Nov 2026 evening (DEPLOYED ~18:30 TR, site `00263-cag`, tag nov12c; rollback 00260-vef; not committed; RELEASE_QUEUE "DEPLOYED 12 Nov ~18:30"):** live edit of product rooms for a signed-in admin (in place, saved
+as the room's live catalogue item, no deploy after this one ships; `src/liveEdit/`, `docs/CATALOG.md` "Live edit"), contact details in the
+footer and on /help, 53 panel pictures in the AHENK, RU-8, JING FANG, SEDA, TORNA and ELEK web manuals. RELEASE_QUEUE "prepared 12 Nov 2026,
+evening". Next for live edit, not built: web manuals and the listen rooms' texts from the panel (needs a new catalogue kind, site AND api).
+
+**12 Nov 2026 ~19:10 TR (DEPLOYED, site `00266-lub`, tag nov12d; rollback 00263-cag; not committed):** contact block rewritten on the owner's
+word: company type (sole proprietorship, not a limited company) and the registered business address in the footer, /help and the privacy
+controller line; no tax number. One source: `CONTACT` in `src/data/faqContent.js`.
+
+**12 Nov 2026 evening (DEPLOYED, site `00269-jef`, tag nov12e; rollback 00266-lub; not committed):** footer contact shortened on the owner's word to "Gaziantep, Türkiye" + e-mail
+(`CONTACT.city`); company line and full address stay on /help#contact and the privacy page. RELEASE_QUEUE "prepared 12 Nov 2026, evening".
+
+**13 Nov 2026 evening (DEPLOYED, site `00272-fav`, tag nov13b; rollback 00269-jef; not committed; RELEASE_QUEUE "DEPLOYED 13 Nov 2026 (evening)"):**
+"Download on MuseHub" badge for every product public on MuseHub (`MUSEHUB` in plugins.js: family bundle, 9 plug-ins, SVL Woodpanel; add RU-8,
+ADALET, 8-Bit Orchestral when MuseHub publishes them); "-X%" beside every struck price (`pctOff`, `.price-off`); `PACK_SALES`: Woodpanel and
+8-Bit Orchestral $2.99 against $5 (-40 %) until 4 Jan 2027 00:00 TR. Lemon Squeezy and panel price of both set to $2.99 the same hour.
+4 Jan 2027: LS both back to $5 and panel price 2.99 → 5 (the site's sale ends by itself).
+
+**14 Nov 2026 (DEPLOYED, site `00278-len`, tag nov14; rollback 00275-yir; not committed; LS ADALET $7.49 until 4 Jan 2027):** "Download on MuseHub" for RU-8 and ADALET (approved by MuseHub 13 Nov);
+the family room `/plugins/family` (FamilyRoom.jsx) and one price block for every price (PriceTag.jsx + `pluginOffer` in plugins.js);
+the family's only reference price is the $79.99 list price (owner); ADALET's -50 % carries no "launch price" word. RELEASE_QUEUE "prepared 14 Nov".

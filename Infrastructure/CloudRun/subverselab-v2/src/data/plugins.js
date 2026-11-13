@@ -138,8 +138,11 @@ export const SOLD_SINGLY = ['kubbe', 'kaset', 'koro', 'yanki', 'hava', 'mihenk',
 // AHENK (7 Nov 2026): $49 regular, $29.99 until 1 January 2027 00:00 Istanbul (= 31 Dec 2026 21:00 UTC). Price floor: AHENK has
 // never been sold (no Lemon Squeezy product yet; the MuseHub beta had no price), so $29.99 is the first price any buyer pays and
 // becomes the floor for every later AHENK promotion, discount code, bundle or gift.
-export const LAUNCH_PRICES = { elek: 7, jingfang: 60, ahenk: 29.99 };   // JING FANG: owner 19 Oct "150 dolardan 60 düşür lansmana özel 1 aralığa kadar"
-export const LAUNCH_ENDS = { elek: '2026-12-01', jingfang: '2026-12-01', ahenk: '2027-01-01' };
+// ADALET (owner 13 Nov 2026: "yüzde 50 indirim", the same as set for its MuseHub listing, still in review): $15 regular, $7.49
+// until 4 Jan 2027 00:00 Istanbul (the end of the MuseHub family and pack discounts). Price floor: ADALET sold at $15 since 8 Nov
+// with no earlier promotion, so $7.49 becomes its floor. The Lemon Squeezy price (1509139) is set to $7.49 by hand the same hour.
+export const LAUNCH_PRICES = { elek: 7, jingfang: 60, ahenk: 29.99, adalet: 7.49 };   // JING FANG: owner 19 Oct "150 dolardan 60 düşür lansmana özel 1 aralığa kadar"
+export const LAUNCH_ENDS = { elek: '2026-12-01', jingfang: '2026-12-01', ahenk: '2027-01-01', adalet: '2027-01-04' };
 // Standing sale prices with a start and NO end (owner 7 Nov 2026: "jing fang 150 dolar üstü çizik 99 … ikinci bir duruma kadar
 // kalıcı indirim", the same on Loot Audio). From `from` (00:00 Istanbul) the struck regular price and this price show until the
 // entry is removed. Like LAUNCH_*, the server never reads it: the Lemon Squeezy price is set to it by hand on that day.
@@ -157,6 +160,12 @@ export const offerActive = (slug, now = Date.now()) => {
   if (!o) return false;
   const from = istanbulMidnight(o.starts); const to = istanbulMidnight(o.ends);
   return Number.isFinite(from) && Number.isFinite(to) && now >= from && now < to;
+};
+// How much a reduced price takes off the regular one, in whole per cent (owner 13 Nov 2026: "indirimde olan ürünlerin yüzde
+// kaç indirimde bulunduğunu da gösterelim"). 0 when nothing is off. Drawn as "-40%" next to the struck price everywhere.
+export const pctOff = (regular, price) => {
+  const r = Number(regular); const p = Number(price);
+  return Number.isFinite(r) && Number.isFinite(p) && r > 0 && p < r ? Math.round((1 - p / r) * 100) : 0;
 };
 // "$7", or "Free" for a price of 0.
 export const priceWord = (price) => (Number(price) === 0 ? 'Free' : `$${price}`);
@@ -272,14 +281,31 @@ export const launchPriceActive = (slug, now = Date.now()) => offerActive(slug, n
 export const currentPrice = (slug, now = Date.now()) => (offerActive(slug, now) ? OFFERS[slug].price : launchOn(slug, now) ? LAUNCH_PRICES[slug] : saleActive(slug, now) ? SALE_PRICES[slug].price : PRICES[slug]);
 // The end day of the reduced price; '' for a standing sale (it has none).
 export const launchEndLabel = (slug, now = Date.now()) => (offerActive(slug, now) ? formatDay(OFFERS[slug].ends) : launchOn(slug, now) ? formatDay(LAUNCH_ENDS[slug]) : '');
-// What the reduced price is called on a card: "Black Friday", "launch price", or '' for a standing sale (struck price only).
-export const offerName = (slug, now = Date.now()) => (offerActive(slug, now) ? OFFERS[slug].label : launchOn(slug, now) ? 'launch price' : '');
-// "Black Friday: free until 1 December 2026" / "launch price until 1 December 2026" ('' when nothing is on)
+// What a LAUNCH_PRICES entry is called. 'launch price' unless named here; '' = no name, only "until <date>" (owner 14 Nov 2026:
+// ADALET was sold at $15 from 8 Nov, so its -50 % from 14 Nov is not a launch price).
+export const LAUNCH_LABELS = { adalet: '' };
+const launchWord = (slug) => (slug in LAUNCH_LABELS ? LAUNCH_LABELS[slug] : 'launch price');
+// What the reduced price is called on a card: "Black Friday", "launch price", or '' (a standing sale, or a reduction without a name).
+export const offerName = (slug, now = Date.now()) => (offerActive(slug, now) ? OFFERS[slug].label : launchOn(slug, now) ? launchWord(slug) : '');
+// "Black Friday: free until 1 December 2026" / "launch price until 1 December 2026" / "until 4 January 2027" ('' when nothing is on)
 export const launchNote = (slug, now = Date.now()) => {
   if (offerActive(slug, now)) return `${OFFERS[slug].label}: ${Number(OFFERS[slug].price) === 0 ? 'free' : `$${OFFERS[slug].price}`} until ${launchEndLabel(slug, now)}`;
-  return launchOn(slug, now) ? `launch price until ${launchEndLabel(slug, now)}` : '';
+  return launchOn(slug, now) ? `${launchWord(slug) ? `${launchWord(slug)} ` : ''}until ${launchEndLabel(slug, now)}` : '';
 };
-// Plain-text price for meta text and the prerendered HTML; components/LaunchPrice.jsx draws the struck price.
+// One offer shape for every price block on the site (owner 14 Nov 2026: "indirimlerin görseli hâlâ kötü ... karmaşa var"):
+// { price, regular, pct, label, ends }. `regular` is null and `pct` 0 when nothing is off. components/PriceTag.jsx draws it the
+// same way on the /plugins cards, in the rooms, for the family and (through packs/PackPrice.jsx) for sample packs.
+// The family's reference price is its list price, $79.99 (owner 14 Nov 2026: "79,99"; MuseHub base price), never the singles total.
+export const pluginOffer = (slug, now = Date.now()) => {
+  if (slug === 'family') return { price: FAMILY_PRICE, regular: FAMILY_LIST_PRICE, pct: pctOff(FAMILY_LIST_PRICE, FAMILY_PRICE), label: '', ends: '' };
+  const price = currentPrice(slug, now);
+  const regular = PRICES[slug];
+  const reduced = launchPriceActive(slug, now) && Number(price) !== Number(regular);
+  return reduced
+    ? { price, regular, pct: pctOff(regular, price), label: offerName(slug, now), ends: launchEndLabel(slug, now) }
+    : { price, regular: null, pct: 0, label: '', ends: '' };
+};
+// Plain-text price for meta text and the prerendered HTML; components/PriceTag.jsx draws the price block.
 export const priceText = (slug, now = Date.now()) => (launchPriceActive(slug, now) ? `${priceWord(currentPrice(slug, now))} (regular $${PRICES[slug]})${launchNote(slug, now) ? `, ${launchNote(slug, now)}` : ''}` : `$${PRICES[slug]}`);
 
 // "$19.99 until 1 November 2026"
@@ -1427,8 +1453,25 @@ export const pluginBySlug = (slug) => [...ALL_PLUGINS, ...FREE_PLUGINS, ...LINE2
 // The button art is MuseHub's own "Download with MuseHub" badge from the same thread (public/partners/musehub). A product is
 // shown with the badge only once MuseHub has published it.
 const MUSEHUB_UTM = 'utm_medium=PT&utm_source=WS&utm_campaign=MH_WW_PT_WS_WEB_ALL_271026_';
+// 13 Nov 2026 (owner: "musehubda satılan ürünlere websitede musehub ile indir butonu koy"): every product on the public
+// developer page musehub.com/developer/subverselab that day: the family bundle, nine plug-ins and the SVL Woodpanel pack.
+// RU-8 and ADALET were approved by Jeanette Kats on 13 Nov (same thread) and are public since 14 Nov (checked on the developer
+// page). SVL 8-Bit Orchestral is still in MuseHub review (its page answers 404 on 14 Nov): add it once its page is public.
+// Keys are the site's slugs (plug-in slug, 'family', or the sample pack slug); MuseHubButton.jsx draws the badge.
+const musehubUrl = (path) => `https://www.musehub.com/${path}?${MUSEHUB_UTM}`;
 export const MUSEHUB = {
-  mihenk: `https://www.musehub.com/plugin/mihenk?${MUSEHUB_UTM}`,
-  elek: `https://www.musehub.com/plugin/elek?${MUSEHUB_UTM}`,
+  mihenk: musehubUrl('plugin/mihenk'),
+  elek: musehubUrl('plugin/elek'),
+  koro: musehubUrl('plugin/koro'),
+  yanki: musehubUrl('plugin/yanki'),
+  kaset: musehubUrl('plugin/kaset'),
+  tutkal: musehubUrl('plugin/tutkal'),
+  kubbe: musehubUrl('plugin/kubbe'),
+  hava: musehubUrl('plugin/hava'),
+  ahenk: musehubUrl('plugin/ahenk'),
+  ru8: musehubUrl('plugin/ru-8'),
+  adalet: musehubUrl('plugin/adalet'),
+  family: musehubUrl('bundle/subverselab-plugin-family'),
+  woodpanel: musehubUrl('loops-and-audio/svl-woodpanel'),
 };
 export const MUSEHUB_PARTNER_PAGE = `https://www.musehub.com/developer/subverselab?${MUSEHUB_UTM}`;

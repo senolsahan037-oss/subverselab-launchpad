@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
 import { packsCss } from './packs/packsCss';
 import { CoverPlay } from './packs/Snippet';
+import PackPrice from './packs/PackPrice';
 import { SweepBlock } from './packs/PackKey';
 import SoundCloudPlaylist from './packs/SoundCloudPlaylist';
 import { visiblePacks, packPath } from '../data/packFacts';
@@ -182,7 +183,7 @@ function PackCard({ pack, by }) {
       <h2 className="st-name" id={`pk-${pack.slug}`}><Link to={packPath(pack)}>{pack.name}</Link></h2>
       <span className="st-kind">{pack.kindLine}</span>
       {by && <span className="st-by">by {by.name}</span>}
-      {offer.price != null ? <span className="st-price">{priceLabel(offer.price)}</span> : <span className="st-soon">Available soon</span>}
+      {offer.price != null ? <PackPrice offer={offer} className="st-price" /> : <span className="st-soon">Available soon</span>}
     </article>
   );
 }

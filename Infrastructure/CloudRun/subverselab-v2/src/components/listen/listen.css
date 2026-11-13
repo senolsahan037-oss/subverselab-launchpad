@@ -89,7 +89,7 @@
 .lh-buy .plugin-cta-row { margin: 10px 0 0; }
 
 .lh-offer { margin: 0; font-family: 'Oswald', var(--font-heading, sans-serif); font-size: 1.15rem; letter-spacing: .03em; text-transform: uppercase; color: var(--pl-gold); }
-.lh-offer span { font-family: 'Inter', sans-serif; font-size: .8rem; letter-spacing: 0; text-transform: none; color: var(--pl-muted); }
+.lh-offer-formats { margin: 8px 0 0; font-family: 'Inter', sans-serif; font-size: .8rem; letter-spacing: 0; text-transform: none; color: var(--pl-muted); }
 .lh-trust { margin: 10px 0 0; font-size: .8rem; line-height: 1.5; color: var(--pl-muted); max-width: 760px; }
 
 @media (max-width: 860px) {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../data/faqContent';
+import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ, CONTACT } from '../data/faqContent';
 import { HELP } from '../data/siteMeta';
 import { BuyingFlow, infoFiguresCss } from './InfoFigures';
 
@@ -35,7 +35,7 @@ function FaqSection({ title, items, offset = 0 }) {
 export default function HelpPage() {
   const { hash } = useLocation();
   // An answer linked from the site search (#faq-<n>) is opened by FaqSection; bring it into view.
-  React.useEffect(() => { if (/^#faq-\d+$/.test(hash)) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })); }, [hash]);
+  React.useEffect(() => { if (/^#(faq-\d+|contact)$/.test(hash)) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })); }, [hash]);
   const faqSchema = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -65,6 +65,13 @@ export default function HelpPage() {
       <p style={{ color: 'var(--color-text-muted)', marginBottom: '36px' }}>
         Questions before you buy, or stuck after? Here is how accounts, buying, downloads and credits work, and how each tool works. For the finer details of one tool, read its own <Link to="/learn" style={{ color: 'var(--color-primary)' }}>guide</Link>.
       </p>
+
+      <section id="contact" className="help-contact" aria-labelledby="contact-title">
+        <h2 id="contact-title">Contact</h2>
+        <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+        <p>{CONTACT.who}<br />{CONTACT.where}</p>
+        {CONTACT.lines.map((l) => <p key={l}>{l}</p>)}
+      </section>
 
       <style>{infoFiguresCss}</style>
       <section style={{ marginBottom: '40px' }}>

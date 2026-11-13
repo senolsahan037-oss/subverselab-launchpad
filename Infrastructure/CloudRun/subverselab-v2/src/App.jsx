@@ -22,6 +22,7 @@ import LegalPage from './components/LegalPage';
 import { PRIVACY, TERMS, REFUNDS } from './data/legalContent';
 import LoomPage from './components/LoomPage';
 import PluginsPage from './components/PluginsPage';
+import FamilyRoom from './components/FamilyRoom';
 import PluginRoom from './components/PluginRoom';
 import CatalogPluginRoom, { LivePluginRoom } from './components/CatalogPluginRoom';
 import LabRoom from './components/lab/LabRoom';
@@ -276,6 +277,8 @@ export default function App() {
                   DAW and are sold through Lemon Squeezy. One room template for every
                   product (PluginRoom), driven by src/data/plugins.js. */}
               <Route path="/plugins" element={<PluginsPage />} />
+              {/* The family's own room (owner 14 Nov 2026). */}
+              <Route path="/plugins/family" element={<FamilyRoom />} />
               {/* Prototype, local review only: noindex, not prerendered, not in the sitemap. */}
               <Route path="/lab/:slug" element={<LabRoom />} />
               {ROOM_PLUGINS.map((p) => <Route key={p.slug} path={p.path} element={<LivePluginRoom key={p.slug} plugin={p} />} />)}

@@ -5,7 +5,7 @@ import BuyButton from './BuyButton';
 import MuseHubButton from './MuseHubButton';
 import DownloadButtons from './DownloadButtons';
 import PluginDemos from './PluginDemos';
-import LaunchPrice from './LaunchPrice';
+import PriceTag from './PriceTag';
 import LaunchCountdown from './LaunchCountdown';
 import usePurchaseStatus from '../hooks/usePurchaseStatus';
 import ListenHero from './listen/ListenHero';
@@ -14,9 +14,10 @@ import { LISTEN } from '../data/listen';
 import {
   CHECKOUT, PRICES, FORMATS, PRESS_KIT, RELEASE3_AT, UPDATES_LINE,
   ACTIVATION_LINE, ACTIVATION_SHORT, ACTIVATION_NO_KEY, ACTIVATION_LINE_FREE, TRUST_LINE_FREE, currentPrice,
-  line2AvailableLine, line2Price, trustLineFor,
+  line2AvailableLine, line2Price, trustLineFor, pluginOffer, FAMILY_SLUGS, FAMILY_PRICE, FAMILY_NAME,
 } from '../data/plugins';
 import { SITE_URL } from '../data/siteMeta';
+import { Editable, EditBar, EditChip, PictureButton } from '../liveEdit/liveEdit';
 
 /*  One room for every product: /plugins/<slug> (owner decision 2026-10-15, "Option B").
  *
@@ -47,7 +48,8 @@ function openSignIn() {
 
 // Rooms with a "Hear it first" entry in src/data/listen.js open with ListenHero (sync-switched dry / wet player);
 // the others keep the panel hero below. `hero` (optional) overrides both.
-export default function PluginRoom({ plugin, hero = null, meta = null }) {
+// `edit` is the live edit handle of an admin (src/liveEdit/liveEdit.jsx), null for every visitor.
+export default function PluginRoom({ plugin, hero = null, meta = null, edit = null }) {
   const [modeKey, setModeKey] = useState(plugin.defaultMode);
   const mode = plugin.modes.find((m) => m.key === modeKey) || plugin.modes[0];
   const [w, h] = plugin.imageSize;
@@ -64,8 +66,8 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
   }, [location.hash, owned]);
 
   const priceHead = {
-    family: `$${PRICES[plugin.slug]}`,
-    solo: <LaunchPrice slug={plugin.slug} />,
+    family: <PriceTag offer={pluginOffer(plugin.slug)} size="room" />,
+    solo: <PriceTag offer={pluginOffer(plugin.slug)} size="room" />,
     line2: line2Price(plugin),
     soon: line2AvailableLine(plugin),
     free: 'Free · forever',
@@ -91,6 +93,14 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
       </>
     );
   };
+
+  // A family product's room points to the family room (owner 14 Nov 2026: the family needs a room of its own, and its
+  // products' rooms said nothing about it since 28 Oct). One line under the keys, not a second Buy key.
+  const familyLine = FAMILY_SLUGS.includes(plugin.slug) && !(status.loaded && status.owns('family')) && (
+    <p className="plugin-family-line">
+      Also in the <Link to="/plugins/family">{FAMILY_NAME}</Link>: {name} and the others together for ${FAMILY_PRICE}.
+    </p>
+  );
 
   // Shown under the action, never as a second button: how to get in if you already paid.
   // Paid rooms also point store buyers (Loot Audio, Audio Plugin Deals, ...) to /redeem (owner 8 Nov: nowhere linked it).
@@ -140,6 +150,7 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
                 {action('hero')}
                 {kind === 'free' && !owned && <span className="plugin-cta-note">An e-mail address, no card.</span>}
               </div>
+              {familyLine}
             </>
           )}
           trust={trust} />
@@ -148,12 +159,12 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
           <Link to="/plugins" className="plugin-back">← Plugins</Link>
           <p className="plugin-kicker">{plugin.publisherName ? <>by {plugin.publisherLink ? <a href={plugin.publisherLink} target="_blank" rel="noopener noreferrer">{plugin.publisherName}</a> : plugin.publisherName} · </> : 'SubverseLab · '}{plugin.kind}{plugin.model ? ` · Model ${plugin.model}` : ''}</p>
           <h1 className="plugin-title">{name}</h1>
-          <p className="plugin-tagline">{plugin.tagline}</p>
+          <Editable edit={edit} as="p" className="plugin-tagline" label="Tagline" value={plugin.tagline} onChange={(v) => edit.text('tagline', v)} />
 
           <div className="plugin-offer">
             <div>
               <p className="plugin-offer-head">{owned ? `You own ${name}` : priceHead}</p>
-              <p className="plugin-offer-sub">{plugin.formats || FORMATS}</p>
+              <Editable edit={edit} as="p" className="plugin-offer-sub" label="Formats line" value={plugin.formats || FORMATS} onChange={(v) => edit.text('formats', v)} />
               {/* A product with a free trial (AHENK): the trial and what stays free after it, under the price, in plain words. */}
               {!owned && plugin.trialLines?.length > 0 && <p className="plugin-offer-sub">{plugin.trialLines.join(' ')}</p>}
             </div>
@@ -165,10 +176,12 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
             {kind === 'free' && !owned && <span className="plugin-cta-note">An e-mail address, no card.</span>}
             {plugin.trial && !owned && <span className="plugin-cta-note">Free trial: a free SubverseLab account, no card.</span>}
           </div>
+          {familyLine}
           <p className="plugin-trust">{trust}</p>
 
           <figure className="plugin-panel">
             <img src={mode.image} alt={`${name}'s front panel: ${mode.name}`} width={w} height={h} />
+            <PictureButton edit={edit} onFile={(f) => edit.picture(plugin.modes.indexOf(mode), f)} />
           </figure>
 
           <div className="plugin-places" role="tablist" aria-label={plugin.modesLabel}>
@@ -180,35 +193,40 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
               </button>
             ))}
           </div>
-          <p className="plugin-place-text" aria-live="polite">{mode.text}</p>
+          {edit?.on && <p className="live-edit-row">View name: <Editable edit={edit} as="strong" label="View name" value={mode.name} onChange={(v) => edit.mode(plugin.modes.indexOf(mode), 'name', v)} /></p>}
+          <Editable edit={edit} as="p" className="plugin-place-text" aria-live="polite" label="View line" value={mode.text} onChange={(v) => edit.mode(plugin.modes.indexOf(mode), 'text', v)} />
         </div>
       </section>}
 
       {plugin.tour && <PanelTour name={name} tour={plugin.tour} />}
 
       <div className="container" style={{ maxWidth: 'var(--read-max)', padding: '56px 20px 96px' }}>
-        <p className="plugin-lead">{plugin.intro}</p>
+        <Editable edit={edit} as="p" className="plugin-lead" label="Intro" value={plugin.intro} onChange={(v) => edit.text('intro', v)} />
 
         <PluginDemos plugin={plugin} />
 
-        {plugin.sections.map((s) => (
-          <section key={s.heading} className="plugin-section">
-            <h2>{s.heading}</h2>
-            <p>{s.text}</p>
+        {plugin.sections.map((s, i) => (
+          <section key={edit?.on ? i : s.heading} className="plugin-section">
+            <Editable edit={edit} as="h2" label="Section heading" value={s.heading} onChange={(v) => edit.section(i, 'heading', v)} />
+            <Editable edit={edit} as="p" label="Section text" value={s.text} onChange={(v) => edit.section(i, 'text', v)} />
+            <EditChip edit={edit} onClick={() => edit.removeSection(i)}>Remove this section</EditChip>
           </section>
         ))}
+        <EditChip edit={edit} onClick={edit?.addSection}>+ Add a section</EditChip>
 
         <section className="plugin-section">
           <h2>The controls</h2>
           <div className="plugin-controls">
-            {plugin.controls.map(([n, what]) => (
-              <div key={n} className="plugin-control">
-                <strong>{n}</strong>
-                <span>{what}</span>
+            {plugin.controls.map(([n, what], i) => (
+              <div key={edit?.on ? i : n} className="plugin-control">
+                <Editable edit={edit} as="strong" label="Control name" value={n} onChange={(v) => edit.control(i, 0, v)} />
+                <Editable edit={edit} as="span" label="What the control does" value={what} onChange={(v) => edit.control(i, 1, v)} />
+                <EditChip edit={edit} onClick={() => edit.removeControl(i)}>Remove</EditChip>
               </div>
             ))}
           </div>
-          {plugin.controlsNote && <p style={{ marginTop: '16px' }}>{plugin.controlsNote}</p>}
+          <EditChip edit={edit} onClick={edit?.addControl}>+ Add a control</EditChip>
+          {(plugin.controlsNote || edit?.on) && <Editable edit={edit} as="p" style={{ marginTop: '16px' }} label="Controls note" value={plugin.controlsNote || (edit?.on ? 'Controls note (optional)' : '')} onChange={(v) => edit.text('controlsNote', v)} />}
         </section>
 
         {plugin.notYet?.length > 0 && (
@@ -247,6 +265,7 @@ export default function PluginRoom({ plugin, hero = null, meta = null }) {
           <Link to="/plugins" className="btn btn-outline">See every plugin</Link>
         </div>
       </div>
+      <EditBar edit={edit} name={name} />
     </div>
   );
 }

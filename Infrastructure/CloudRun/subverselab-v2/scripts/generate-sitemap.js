@@ -186,6 +186,7 @@ async function main() {
     urlEntry(`${SITE_URL}/forum`, new Date().toISOString().slice(0, 10), '0.7'),
     urlEntry(`${SITE_URL}/tools`, new Date().toISOString().slice(0, 10), '0.7'),   // its own page since 2026-10-26
     urlEntry(`${SITE_URL}/plugins`, new Date().toISOString().slice(0, 10), '0.7'),
+    urlEntry(`${SITE_URL}/plugins/family`, new Date().toISOString().slice(0, 10), '0.8'),   // the family room (owner 14 Nov 2026)
     urlEntry(`${SITE_URL}/plugins/kubbe`, new Date().toISOString().slice(0, 10), '0.8'),
     urlEntry(`${SITE_URL}/plugins/kaset`, new Date().toISOString().slice(0, 10), '0.8'),
     // Every owner's manual page (src/data/pluginManuals.js MANUALS, the same list App.jsx routes and prerender.js writes).

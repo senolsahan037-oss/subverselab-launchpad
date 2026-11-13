@@ -326,7 +326,8 @@ export default function ListenHero({ plugin, listen, offer, actions, trust }) {
         </div>
 
         <div className="lh-buy">
-          {offer && <p className="lh-offer">{offer} <span>· {plugin.formats || FORMATS}</span></p>}
+          {/* The price block (PriceTag) on its own, the formats on the line under it (owner 14 Nov 2026: the price ran into them). */}
+          {offer && <div className="lh-offer">{offer}<p className="lh-offer-formats">{plugin.formats || FORMATS}</p></div>}
           {actions}
           {trust && <p className="lh-trust">{trust}</p>}
         </div>

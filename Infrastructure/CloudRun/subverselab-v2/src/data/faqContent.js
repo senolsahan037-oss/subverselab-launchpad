@@ -112,6 +112,22 @@ export const LOOM_FAQ = [
   },
 ];
 
+// Contact details, printed in the footer of every page and at the top of /help (owner 12 Nov 2026: "iletişim bilgileri
+// websitede açık olmalı"). The same facts as the privacy page's controller line; one place, so they cannot drift.
+export const CONTACT = {
+  email: 'info@subverselab.com',
+  // Company type and registered business address as on the tax certificate (owner 12 Nov 2026: "şirket türü ve tam adres
+  // yazalım ... vergi numarasına gerek yok"). SubverseLab is not a limited company: it is Şenol Şahan's sole proprietorship.
+  who: 'SubverseLab · Şenol Şahan, sole proprietorship',
+  where: 'Şirinevler Mah. 69082 Blv. No: 2 E, İç Kapı No: 11, Şehitkamil / Gaziantep, Türkiye',
+  // Footer shows only the city and the e-mail (owner 12 Nov 2026); the full line above stays on /help#contact.
+  city: 'Gaziantep, Türkiye',
+  lines: [
+    'Support, orders and refunds, licences, partnerships, stores and press: one address for all of it.',
+    'Write from the e-mail address of your account or order, and name the product and your system (macOS or Windows, your DAW), so the first answer can already be the fix.',
+  ],
+};
+
 export const CONTACT_FAQ = [
   {
     q: 'How do I get in touch?',

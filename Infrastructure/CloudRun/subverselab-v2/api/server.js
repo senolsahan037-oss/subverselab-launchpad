@@ -502,6 +502,34 @@ app.get('/api/download/file', async (req, res) => {
   } catch { res.status(404).type('text/plain').send('Download not found'); }
 });
 
+// AHENK on iPhone / iPad: the piano sample packs (01_AI_Tools/subverselab-fazilsay/Source/Download/PianoPacks.h; owner 12 Nov
+// 2026, route b: through the site, the bucket stays private). No sign-in: the free piano comes down for everyone and the app
+// decides what else may come down (trial / owned). Only the manifest and part names of the packer's shape can be asked for;
+// any other path is a 404 without touching the bucket. Parts over 30 MiB go out chunked (LENGTH_HEADER_MAX above).
+const PIANO_PREFIX = 'ahenk/pianos/v1/';
+export const PIANO_PATH = /^(manifest\.json|[a-z0-9_]{1,24}\/[a-z0-9_]{1,24}-\d{2}\.zip)$/;
+const pianoLimit = tokenBucket({ perMinute: 30 });
+async function sendPianoObject(rel, req, res) {
+  if (!PIANO_PATH.test(rel)) return res.status(404).type('text/plain').send('Not found');
+  if (!pianoLimit(req.ip)) return res.status(429).type('text/plain').send('Too many requests');
+  try {
+    const storage = await downloadStorage();
+    const file = storage.bucket('subverselab-downloads').file(PIANO_PREFIX + rel);
+    const [meta] = await file.getMetadata();
+    const manifest = rel === 'manifest.json';
+    res.setHeader('Content-Type', manifest ? 'application/json' : 'application/zip');
+    // parts never change (a new version gets new names); the manifest is read fresh at every app start
+    res.setHeader('Cache-Control', manifest ? 'no-cache, max-age=0' : 'public, max-age=31536000, immutable');
+    if (meta.size && Number(meta.size) <= LENGTH_HEADER_MAX) res.setHeader('Content-Length', meta.size);
+    file.createReadStream().on('error', () => { if (!res.headersSent) res.status(404).end(); else res.destroy(); }).pipe(res);
+  } catch (err) {
+    if (serviceDown(err)) return res.status(503).type('text/plain').send('Download service unavailable');
+    return res.status(404).type('text/plain').send('Not found');
+  }
+}
+app.get('/api/ahenk/pianos/v1/manifest.json', (req, res) => sendPianoObject('manifest.json', req, res));
+app.get('/api/ahenk/pianos/v1/:pack/:file', (req, res) => sendPianoObject(`${req.params.pack}/${req.params.file}`, req, res));
+
 // A Firestore call that fails because this process has no Google credentials
 // (local preview) or cannot reach Google answers 503, not a stack trace.
 function serviceDown(err) {

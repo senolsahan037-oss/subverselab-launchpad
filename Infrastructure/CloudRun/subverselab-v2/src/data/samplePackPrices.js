@@ -80,13 +80,35 @@ const sweepOver = (s, now) => {
 export const sweepLive = (now = Date.now()) => Boolean(SWEEP.price != null && SWEEP.checkout) && !sweepOver(SWEEP, now);
 export const presetSweepLive = (now = Date.now()) => Boolean(PRESET_SWEEP.price != null && PRESET_SWEEP.checkout) && !sweepOver(PRESET_SWEEP, now);
 
-// What a pack's key can do now: { price, checkout, buyable }.
-export function packOffer(pack) {
+// Time-boxed pack sales (owner 13 Nov 2026: "aynı sample paketlerini de 2.99 indirimle sunalım"): the two packs that were free
+// from 6 Nov sell at $2.99 against the regular $5, the same 2.99 as on MuseHub (MuseHub caps a discount at 50 % and has no 2.49
+// tier, so 2.99 is its deepest allowed price; −40 % on the site). starts / ends: 'YYYY-MM-DD', 00:00 Istanbul (UTC+3).
+// While a sale is on it replaces the pack's own price (PACK_PRICES or the panel's) wherever a price is shown; the struck regular
+// price and "-40%" show beside it. Like OFFERS for plug-ins, the server never reads this: the Lemon Squeezy price is set to
+// $2.99 by hand on the deploy day and back to $5 on 4 Jan 2027 (RELEASE_QUEUE). Price floor: these two were free from 6 Nov,
+// so $2.99 undercuts no buyer.
+export const PACK_SALES = {
+  woodpanel: { price: 2.99, regular: 5, starts: '2026-11-13', ends: '2027-01-04' },
+  '8bitorchestral': { price: 2.99, regular: 5, starts: '2026-11-13', ends: '2027-01-04' },
+};
+const packSaleOn = (slug, now) => {
+  const s = PACK_SALES[slug];
+  if (!s) return false;
+  const from = Date.parse(`${s.starts}T00:00:00+03:00`); const to = Date.parse(`${s.ends}T00:00:00+03:00`);
+  return Number.isFinite(from) && Number.isFinite(to) && now >= from && now < to;
+};
+
+// What a pack's key can do now: { price, checkout, buyable, regular, off, saleEnds }. `regular` is set (with `off`, whole per cent)
+// only while a sale is on.
+export function packOffer(pack, now = Date.now()) {
   const slug = typeof pack === 'string' ? pack : pack.slug;
   const pending = typeof pack === 'object' && pack.status === 'rebuild-pending';
-  const price = PACK_PRICES[slug] ?? null;
+  const sale = packSaleOn(slug, now) ? PACK_SALES[slug] : null;
+  const price = sale ? sale.price : (PACK_PRICES[slug] ?? null);
   const checkout = PACK_CHECKOUT[slug] ?? null;
-  return { price, checkout, buyable: price != null && Boolean(checkout) && (!pending || SELL_REBUILD_PENDING) };
+  const regular = sale ? sale.regular : null;
+  const off = sale ? Math.round((1 - sale.price / sale.regular) * 100) : 0;
+  return { price, checkout, buyable: price != null && Boolean(checkout) && (!pending || SELL_REBUILD_PENDING), regular, off, saleEnds: sale ? sale.ends : null };
 }
 export const priceLabel = (price) => (price == null ? '' : `$${Number.isInteger(price) ? price : price.toFixed(2)}`);
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

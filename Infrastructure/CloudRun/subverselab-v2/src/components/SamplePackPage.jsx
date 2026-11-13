@@ -6,6 +6,8 @@ import { css } from './SamplePacksPage';
 import { packsCss } from './packs/packsCss';
 import { DragOut, PreviewStrip } from './packs/Snippet';
 import PackKey, { SweepBlock } from './packs/PackKey';
+import PackPrice from './packs/PackPrice';
+import MuseHubButton from './MuseHubButton';
 import { SITE_URL } from '../data/siteMeta';
 import {
   visiblePacks, visiblePackBySlug, packTitle, packDescription, packPath, detailRows, packLicence, specList, folderLabel,
@@ -70,8 +72,8 @@ export default function SamplePackPage() {
             </ul>
           )}
           <div className="st-buy" id="buy">
-            {offer.price != null && <span className="st-big-price">{priceLabel(offer.price)}</span>}   {/* owner 28 Oct: the price shows before the checkout exists */}
-            <PackKey pack={pack} />
+            <PackPrice offer={offer} className="st-big-price" />   {/* owner 28 Oct: the price shows before the checkout exists */}
+            <div className="st-buy-keys"><PackKey pack={pack} /><MuseHubButton slug={pack.slug} /></div>
             <p className="st-small">
               {offer.buyable ? 'Paid through Lemon Squeezy in US dollars; the zip downloads from your Account page. ' : ''}
               <a href="#licence">Licence summary</a>

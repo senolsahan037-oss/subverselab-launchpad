@@ -7,7 +7,10 @@
 // (the download and licence sentence come from gettingIt()), anything not confirmed in the source (no hiss figures, no CPU figures).
 
 import { SEDA } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/seda/manual/${file}`), w, h, alt, caption });
 
 export const SEDA_MANUAL = {
   ...manualBase(SEDA, {
@@ -56,6 +59,7 @@ export const SEDA_MANUAL = {
       id: 'panel',
       heading: 'The panel',
       blocks: [
+        pic('panel-default.webp', 1600, 594, 'The SEDA front panel as it opens: RUNAWAY and CHAOS knobs, the ECHO meter and LED display, the LISTEN and IN levers, and the TIME, LOOP, MOD, STEREO, LISTEN and OUT sections.', 'As SEDA opens: TIME 300 ms, FEEDBACK 30 %, COMPANDER 100 %, MIX 50 %, LISTEN off, `P0 MANUAL` on the display.'),
         { p: 'The top band holds the name and model plate, RUNAWAY and CHAOS, the display (the ECHO meter on the left, the LISTEN display on the right), and in the right column the LISTEN lever, the IN lever and the SIZE key. Below sit six sections: TIME, LOOP, MOD, STEREO, LISTEN and OUT. A control that does nothing in the current setting is dimmed, and its value window says why (for example SYNC ON under TIME, or LISTEN OFF under DUCK).' },
         {
           list: [
@@ -74,6 +78,7 @@ export const SEDA_MANUAL = {
       heading: 'The controls',
       blocks: [
         { h3: 'TIME' },
+        pic('time-section-sync-auto.webp', 295, 262, 'The TIME section of the SEDA panel with SYNC and AUTO lit, TIME dimmed and the NOTE window reading AUTO 1/8.', 'The TIME section with **SYNC** and **AUTO** on: TIME is dimmed and the NOTE window reads `AUTO 1/8`.'),
         {
           table: {
             head: ['Control', 'Range · default', 'What it does'],
@@ -143,6 +148,7 @@ export const SEDA_MANUAL = {
           },
         },
         { h3: 'RUNAWAY and CHAOS' },
+        pic('panel-runaway.webp', 1600, 594, 'The SEDA panel with the RUNAWAY and CHAOS knobs turned up and the RUNAWAY lamp lit on the display.', 'RUNAWAY 70 %, CHAOS 30 %, SYNC 1/8: the loop is just over 100 % and the RUNAWAY lamp is lit.'),
         {
           table: {
             head: ['Control', 'Range · default', 'What it does'],
@@ -159,6 +165,7 @@ export const SEDA_MANUAL = {
       id: 'listen',
       heading: 'LISTEN',
       blocks: [
+        pic('panel-listen-duck.webp', 1600, 594, 'The SEDA panel with LISTEN on and program P1 VOCAL: DUCK 60 %, THROW 6 dB, WET HP 250 Hz and the red duck needle on the display.', 'LISTEN on, `P1 VOCAL`: SYNC at a dotted 1/4, WET HP 250 Hz, DUCK 60 %, THROW 6 dB. The red needle shows the duck depth.'),
         { h3: 'Duck' },
         { p: 'While the source plays, the repeats (the echo at the output, not the loop itself) sit down by up to 12 dB, set by DUCK. They go down in about 30 ms; when the source stops they wait 120 ms and come back with a smooth 300 ms release. A gap shorter than 250 ms counts as a breath and the echo stays down, so it does not chatter between syllables. Because only the output is ducked, the tail keeps circulating and blooms when the phrase ends.' },
         { h3: 'Throw' },
@@ -185,6 +192,7 @@ export const SEDA_MANUAL = {
       id: 'display',
       heading: 'The display',
       blocks: [
+        pic('display-listen.webp', 920, 285, 'The SEDA display: the ECHO meter with its red duck scale on the left, the LED readout P1 VOCAL 1/4d, the THROW, GUARD, AUTO NOTE and RUNAWAY lamps and the PROGRAM STEP keys on the right.', 'The display with LISTEN on: ECHO meter and duck needle, program and note value, the four lamps and the PROGRAM STEP keys.'),
         {
           list: [
             '**ECHO meter:** the needle shows the wet level after the duck, −36 to 0 dB. The PEAK lamp lights when the wet signal reaches −3 dB.',

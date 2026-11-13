@@ -157,6 +157,8 @@ a.sp-key { text-decoration: none; }
 .st-buy { margin-top: 26px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .st-buy .st-big-price { font-size: 1.8rem; font-weight: 900; }
 .st-buy .sp-key { padding: 15px 26px; font-size: .9rem; }
+.st-buy-keys { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.st-big-price s, .st-price s { color: var(--color-text-muted); font-weight: 700; font-size: .7em; }
 .st-made { margin: 6px 0 14px; font-size: .95rem; line-height: 1.6; color: var(--color-text-muted); max-width: 52ch; }
 .st-small { font-size: .82rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
 .st-small a { color: inherit; }

@@ -4,6 +4,7 @@ import PluginRoom from './PluginRoom';
 import NotFound from './NotFound';
 import { ROOM_PLUGINS } from '../data/plugins';
 import { useCatalog, catalogPlugins, publisherOf, livePlugin } from '../catalog/catalog';
+import { useRoomEdit } from '../liveEdit/liveEdit';
 
 // /plugins/<slug> for a plug-in that exists only in the live catalogue (added from /admin, src/catalog/catalog.js). The
 // static rooms are routed before this one, so a hand-written room always wins for its own slug. Nothing is drawn until
@@ -22,7 +23,9 @@ export default function CatalogPluginRoom() {
 // is also what the prerendered HTML carries.
 export function LivePluginRoom({ plugin }) {
   const cat = useCatalog();
-  const p = livePlugin(plugin, cat.plugins);
+  const shown = livePlugin(plugin, cat.plugins);
+  // An admin edits the room in place (src/liveEdit/liveEdit.jsx); for everyone else `edit` is null and `p` is `shown`.
+  const { plugin: p, edit } = useRoomEdit(plugin, shown);
   const by = p !== plugin ? publisherOf(cat, p.publisher) : null;
-  return <PluginRoom plugin={by ? { ...p, publisherName: by.name, publisherLink: by.link } : p} />;
+  return <PluginRoom plugin={by ? { ...p, publisherName: by.name, publisherLink: by.link } : p} edit={edit} />;
 }

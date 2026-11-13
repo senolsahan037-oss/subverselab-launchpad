@@ -5,9 +5,203 @@ reached 4 Oct and deploys 00193–00213 followed): every site change is made LOC
 `scripts/test-*.js`) and listed under NEXT DEPLOY. A deploy happens only on the owner's explicit go in chat; related changes
 are batched into it. Release freeze (owner 2026-10-13): no site releases until the family campaign ends on 1 Nov 2026,
 except a live outage, a security hole, or an explicit owner go for that deploy.
-Live now (12 Nov 2026 ~12:20 TR): `subverselab-site-00260-vef` + `subverselab-api-00030-nat` (see the two DEPLOYED 12 Nov entries). Rollback: `subverselab-site-00257-heb` + `subverselab-api-00027-lig`. Nothing is waiting under NEXT DEPLOY: every NEXT DEPLOY entry below has shipped (checked 12 Nov: the live pages equal the local build). Older:
+Live now (14 Nov 2026): `subverselab-site-00278-len` (tag nov14) + `subverselab-api-00032-mev` (tag nov13). Rollback: site traffic to `subverselab-site-00275-yir`; api `subverselab-api-00030-nat`. Nothing waits under NEXT DEPLOY. Older:
+Live before (13 Nov 2026 evening): `subverselab-site-00272-fav` (tag nov13b), then `00275-yir` (13 Nov ~17:40). Older:
+Live before (13 Nov 2026 ~00:55 TR): `subverselab-site-00269-jef` (tag nov12e) + `subverselab-api-00032-mev` (tag nov13; see DEPLOYED 13 Nov). Rollback: site traffic to `subverselab-site-00266-lub`; api `subverselab-api-00030-nat`. Older:
+Live before (12 Nov 2026 evening): `subverselab-site-00269-jef` (tag nov12e) + `subverselab-api-00030-nat` (see the DEPLOYED 12 Nov entries). Rollback: site traffic to `subverselab-site-00266-lub`; api `subverselab-api-00027-lig`. Live now: `subverselab-site-00275-yir` (13 Nov ~17:40, privacy for the iOS apps), rollback 00272-fav; every older NEXT DEPLOY entry has shipped. Older:
 Live before (7 Nov 2026): `subverselab-site-00248-fiq` + `subverselab-api-00021-har` (see the DEPLOYED 7 Nov entry). Rollback: `subverselab-site-00245-heb` + `subverselab-api-00018-yoy`. Older: 
 Live now (1 Nov ~00:55 TR, owner "subverselabin son kontrollerini yapıp deploy edelim"): `subverselab-site-00233-yik` + `subverselab-api-00012-ziv` (see the DEPLOYED 1 Nov entry). Rollback: traffic to `subverselab-site-00230-cuq` and `subverselab-api-00010-kop` (and `LS_PRODUCT_SLUGS` back to the old value only if the new products must go too). Before (25 Oct ~22:45 TR): `subverselab-site-00230-cuq` + `subverselab-api-00010-kop`. Rollback then: traffic to `subverselab-site-00228-bir` and `subverselab-api-00008-dih`. Before: (22 Oct ~20:30 TR): `subverselab-site-00228-bir` + `subverselab-api-00008-dih` (see the DEPLOYED 22 Oct entry). Before (20 Oct ~17:55 TR, owner "deploy et"): `subverselab-site-00225-yop` + `subverselab-api-00006-her` (manuals JING FANG / RU-8 / ADALET, expanded rooms, buy-click counter, /account licence sentence, search titles, Merchant Center availability, JING FANG room FACTS text; env unchanged; Firestore rules NOT released). Rollback: traffic to `subverselab-site-00223-jax` and `subverselab-api-00004-rut`. Before that: (19 Oct ~20:40, owner "Deploy et: önce API, sonra site; etiketli sürümü kontrol et, sonra trafiği aç. Firestore kuralları hariç"): `subverselab-site-00223-jax` + `subverselab-api-00004-rut` (JING FANG + SEDA on sale, LS_PRODUCT_SLUGS += 1453169:jingfang,1453230:seda on both; everything listed under DEPLOY READY below shipped; Firestore rules NOT released). 00222-waf was the first site tag (prerender still wrote the old key line on solo rooms), never took traffic. Rollback: traffic to `subverselab-site-00220-faj` and `subverselab-api-00002-kuc`. Before: `subverselab-site-00220-faj` (pages + RU-8 opening, proxies /api; before it 00218-qul) + `subverselab-api-00002-kuc` (every /api route; 18 Oct parked-credit claim; rollback: traffic to `subverselab-api-00001-5xh`). Rollback: traffic to `subverselab-site-00215-pux` (the old single service, serves /api itself). Older revision history follows.
+
+## DEPLOYED 14 Nov 2026 (owner "tamamdır deploy et") — SITE ONLY: `subverselab-site-00278-len` (tag nov14), 100 %; tag nov13c removed. API unchanged (`00032-mev`). Rollback: traffic to `subverselab-site-00275-yir`. NOT committed.
+- Shipped: the three entries below (family room + one price block; MuseHub for RU-8 and ADALET; store card prices + ADALET -50 %).
+- Lemon Squeezy ADALET (1509139) $15 -> $7.49 set by the lead in Chrome on the owner's word ("sen çek"), before traffic moved; the checkout
+  read $7,49 before the switch. Price floor: ADALET had no paid order (LS products list: no sales). 4 Jan 2027: back to $15.
+- Gate (same tree): eslint 0 errors (2 old warnings), build 0 (91 routes + homepage), 24/24 test files, check:responsive 12 routes clean.
+- Tag URL, then live: /, /plugins, /plugins/family, /plugins/kubbe, /plugins/adalet, /plugins/ru8, /sample-packs, /sample-packs/woodpanel,
+  /sitemap.xml and /api/download/manifest 200; /api/purchases/status 401 without a token; www 301; 0 ERROR log lines on 00278 in the first
+  30 min. Live in Chrome: /plugins/family renders (owner account: "You own this — go to your downloads"), ADALET room "$7.49 $15 -50% until
+  4 January 2027" with MuseHub badge to /plugin/adalet.
+- Not verified: 375 px in a real browser (only the headless responsive check), a signed-out Buy on /plugins/family through to the checkout,
+  an upgrade account, a large download end to end.
+
+### (entry as prepared) the family room + one price block everywhere (SITE ONLY)
+Owner 14 Nov: "plugin family'nin aile olarak bir ürün odası yok, indirimlerin görseli hâlâ kötü, karmaşa var"; reference price "79,99".
+Research: `docs/RESEARCH_FAMILY_ROOM_AND_DISCOUNTS_2026-11-14.md`.
+- One price block, `src/components/PriceTag.jsx`, fed by `pluginOffer(slug)` in plugins.js ({ price, regular, pct, label, ends }):
+  new price large (Oswald), regular struck, one "-X%" stamp, the offer's name + "until <date>" on one line under it. Used on the
+  /plugins cards (replaces OfferPrice), in every room (replaces LaunchPrice.jsx, deleted; the price no longer runs into the formats
+  line, `.lh-offer-formats` under it), the family band and sample packs (`packs/PackPrice.jsx`: cards small, pack page large).
+  Stamp colours are tokens `--price-stamp-bg/fg` (in the dark theme the old stamp was gold text on gold). `.box-offer*`, `.price-off` removed.
+- Family reference price is only the $79.99 list price: "Bought one by one: $115" removed from the band; the news line reads
+  "for $39.99 instead of $79.99" (was "instead of $115 one by one").
+- ADALET's -50 % has no "launch price" word (`LAUNCH_LABELS.adalet = ''`; it sold at $15 since 8 Nov): "until 4 January 2027".
+- Family room `/plugins/family` (`FamilyRoom.jsx`): the band on top (h1, Buy / upgrade key, MuseHub badge), "In the family" with each
+  product's box, kind, tagline, own price and room link (store order), "Buying and downloading". Product JSON-LD, prerendered page
+  (`scripts/prerender.js`), sitemap line, App route above `/plugins/:slug`. The /plugins band links to it ("See the family room →");
+  the family news item now opens it. Each family product's room has one line under the keys: "Also in the SubverseLab plugin family:
+  <name> and the others together for $39.99" (hidden for a family owner).
+- Tests: test-listen +1 case (pluginOffer, one reference price, PriceTag in the four places, prerendered room has $39.99/$79.99, no $115);
+  the 28 Oct "no page names the family" list no longer includes PluginRoom.jsx; test-split sitemap 34 → 35 + checks /plugins/family.
+  check-responsive now also covers /plugins/family and /plugins.
+- Checked in Chrome on localhost:5181 (1440x900, dark and light): /plugins band and cards, /plugins/family, AHENK, KUBBE (family line),
+  ADALET rooms, /sample-packs and the Woodpanel page.
+- Gate 14 Nov: `npx eslint .` 0 errors (2 old warnings); `npm run build` exit 0 (91 routes + homepage); `scripts/test-*.js` 24/24
+  (test-listen 76/76); `npm run check:responsive` 12 routes clean at 320/375/414/768/1024/1366 px.
+- Not done (left for a later clean-up): the retired family machinery in the code (`FAMILY_RETIRED`, `FAMILY_OFFER_ENDS_AT`, LAUNCH /
+  LAUNCH2 family texts, HomeIntro counter) still sits there switched off; the room was not checked with a signed-in owner or an
+  upgrade account.
+
+### (entry as prepared) "Download on MuseHub" for RU-8 and ADALET (SITE ONLY)
+- Jeanette Kats approved "the latest two submissions" on 13 Nov 19:03 UTC (labsubverse thread "SubverseLab X MuseHub / Distribution
+  Opportunity"). On 14 Nov the public developer page musehub.com/developer/subverselab lists plugin/ru-8 and plugin/adalet (both 200).
+  SVL 8-Bit Orchestral is not public yet (loops-and-audio/svl-8-bit-orchestral answers 404): add it when it is.
+- `src/data/plugins.js` `MUSEHUB`: `ru8` → plugin/ru-8, `adalet` → plugin/adalet, with the same `MUSEHUB_UTM` as the other products.
+- Checked on localhost:5181 in Chrome: /plugins/ru8 and /plugins/adalet each show the badge twice (same as the other rooms), links go to
+  /plugin/ru-8 and /plugin/adalet with utm_campaign, badge picture present.
+- Gate 14 Nov: `npx eslint .` 0 errors (2 old warnings); `npm run build` exit 0 (90 routes + homepage); `scripts/test-*.js` 24/24.
+  This run includes the 13 Nov card-price / ADALET -50 % change below (still uncommitted in the same tree), so it is also that entry's gate.
+
+### (entry as prepared) store card prices + ADALET -50 % (SITE ONLY)
+- /plugins cards (owner: "bu fiyat yerleşimini çok sevmedim cezbedici durmuyor"): `OfferPrice` in `PluginsPage.jsx`, `.box-offer*` in
+  `index.css`. Every paid card shows its price large (Oswald 1.85rem); with a launch price / offer the regular price is struck beside it,
+  "-X%" sits in a gold-bright stamp, and "LAUNCH PRICE · until <date>" is one line under the price, above Buy (the date used to sit under
+  the button). Checked in the browser, light and dark: AHENK "$29.99 $49 -39%", ELEK "$7 $25 -72%", JING FANG "$60 $150 -60%", plain cards "$15".
+- ADALET -50 % (owner: "yüzde 50 indirim", as set for its MuseHub listing, which is still in review and shows no price yet):
+  `LAUNCH_PRICES.adalet = 7.49`, `LAUNCH_ENDS.adalet = '2027-01-04'` (the end of the MuseHub family / pack discounts; owner to confirm).
+  Card and room read "$15 $7.49 -50% — launch price until 4 January 2027", "Buy ADALET — $7.49". Price floor: $7.49 becomes ADALET's floor.
+  ON DEPLOY DAY: Lemon Squeezy product 1509139 to $7.49 the same hour (the site only displays; the checkout charges the LS price);
+  4 Jan 2027: LS back to $15.
+- Gate (run 14 Nov together with the MuseHub entry above): eslint 0 errors (2 old warnings), build exit 0, `scripts/test-*.js` 24/24.
+
+## DEPLOYED 13 Nov 2026 (~17:40 TR, owner "olur" to build 3 + site deploy + App Store Connect) — SITE ONLY: `subverselab-site-00275-yir` (tag nov13c), 100 %; tag nov13b removed. API unchanged (`00032-mev`). Rollback: traffic to `subverselab-site-00272-fav`. NOT committed.
+- Gate: eslint 0 errors (2 old warnings), build 0, 24/24 test files, check:responsive 10 routes clean. Only change since 00272: legalContent.js (+ regenerated sitemap/robots/llms).
+- Tag URL then live: / 200, /privacy 200 (new paragraph present), /plugins/ahenk 200, /account 200, /api/download/manifest 200, /api/ahenk/pianos/v1/manifest.json 200, /api/purchases/status 401 without a token; www 301; 0 ERROR log lines on 00275. Not checked: light / dark at 1440 / 375 in a browser (text-only change), a large download end to end.
+### (entry as prepared) privacy policy: the iPhone / iPad apps (SITE ONLY)
+Owner 13 Nov: "tek seferde geçmesi için ... hazırlıkları yap" (AHENK App Store submission). Apple 5.1.1(i): the policy must say what the app collects.
+- `src/data/legalContent.js` privacy, "What we collect": new item "Apps for iPhone and iPad, and signing in a plug-in or app on a device": no account
+  needed, sound files downloaded from the site, App Store transaction id / product / date stored with the account after sign-in or an Apple
+  notification, the device name + one-way hash of the device id + time from the code sign-in, no analytics / ads / tracking in the apps. Claims
+  checked against api/appstore.js (apple_purchases) and api/trialGrant.js (device_codes, trials).
+- Checks: `npx eslint .` 0 errors (2 old warnings), `npm run build` 0, every `scripts/test-*.js` 24/24.
+- Deploy BEFORE the AHENK app goes to App Review (the reviewer opens https://subverselab.com/privacy).
+
+## DEPLOYED 13 Nov 2026 (evening, owner "evet deploy et, fiyatları da ayarla") — SITE ONLY: `subverselab-site-00272-fav` (tag nov13b), 100 %; tag nov12e removed. API unchanged (`00032-mev`). Rollback: traffic to `subverselab-site-00269-jef`. NOT committed.
+- Tag checks: 10 URLs 200 (/, /plugins, koro, elek, ahenk, /sample-packs, woodpanel, 8bitorchestral, /api/download/manifest), /nope-404 404;
+  bundle index-pUZL1Xze.js carries the woodpanel + bundle MuseHub links and price-off; tag woodpanel page: "$5 $2.99 -40%", "Buy Woodpanel — $2.99", 1 badge.
+- Live: subverselab.com serves index-pUZL1Xze.js, www 301; same woodpanel reading on subverselab.com; no ERROR log lines on 00272 in the first ~10 min.
+- Prices, same hour: Lemon Squeezy 1498221 (Woodpanel) and 1501277 (8-Bit Orchestral) Lead magnet → Single payment $2.99 (product list reads
+  $2.99 both); panel price 0 → 2.99 both (catalog-cli set, read back). Checkout pages open at $2,99 for both (nothing filled in, no order).
+### (entry as prepared)
+Owner 13 Nov: "musehubda satılan ürünlere websitede musehub ile indir butonu koy ve aynı sample paketlerini de 2.99 indirimle sunalım
+indirimde olan ürünlerin yüzde kaç indirimde bulundurduğunu da gösterelim".
+- `src/data/plugins.js` MUSEHUB: every product public on musehub.com/developer/subverselab on 13 Nov: family bundle, MIHENK, ELEK, KORO, YANKI,
+  KASET, TUTKAL, KUBBE, HAVA, AHENK, and the SVL Woodpanel pack (same UTM as 28 Oct). RU-8, ADALET, 8-Bit Orchestral were still in MuseHub
+  review: add their line when the page is public. Badge (MuseHubButton.jsx) in the plug-in rooms (as before), on the family band
+  (`.family-band-keys`, beside "Get the family") and on a sample pack page beside its Buy key (`.st-buy-keys`).
+- `pctOff()` in plugins.js; `LaunchPrice.jsx` prints "-X%" after the struck price (now: AHENK -39 %, JING FANG -60 %, ELEK -72 %; the
+  family band already showed -50 %). `.price-off` in index.css (colour token only).
+- `PACK_SALES` in samplePackPrices.js: woodpanel and 8bitorchestral $2.99 against $5 (-40 %), 13 Nov 2026 00:00 TR → 4 Jan 2027 00:00 TR;
+  `packOffer()` returns regular / off / saleEnds; `packs/PackPrice.jsx` draws "$5 $2.99 -40%" on the pack page and the /sample-packs cards;
+  the Buy key reads "Buy Woodpanel — $2.99". Same 2.99 as on MuseHub (50 % cap, no 2.49 tier). Price floor: both were free since 6 Nov.
+- Checked in the browser (dev, signed out and signed in, 800 and 1440 px, light and dark): woodpanel page "$5 $2.99 -40%" + MuseHub badge
+  → musehub.com/loops-and-audio/svl-woodpanel; /sample-packs: those two at "$5 $2.99 -40%", the other 17 at $5; /plugins family band
+  badge → bundle page; KORO room 2 badges; -39/-60/-72 % on the shelf; dark theme .price-off rgb(217,185,120) on rgb(3,40,37).
+- Gate 13 Nov ~21:00: eslint 0 errors (2 old warnings), build exit 0 (prerender 90 routes + homepage), 24/24 test files exit 0
+  (test-sample-packs: new PACK_SALES cases, the packOffer shape updated).
+- DEPLOY DAY, by hand, same hour as the deploy (owner's go): Lemon Squeezy products 1498221 (Woodpanel) and 1501277 (8-Bit Orchestral)
+  from free to $2.99; /admin → Catalogue price of both packs 0 → 2.99 (the site server's link-preview offer and JSON-LD read the panel price);
+  then buy check: the checkout opens at $2.99.
+- 4 Jan 2027 (sale ends by itself on the site): LS both back to $5, panel price 2.99 → 5, MuseHub ends by its schedule (back to 4.99).
+  MuseHub Single Audio File Price is still 0 on both packs (owner to decide).
+
+## DEPLOYED 13 Nov 2026 (~00:55 TR, owner "evet api deploy'una çık") — API ONLY: `subverselab-api-00032-mev` (tag nov13), 100 %; tag nov12b removed. Site unchanged (`00269-jef`). Rollback: traffic to `subverselab-api-00030-nat`. NOT committed.
+- Gate 13 Nov: eslint 0 errors (2 old warnings), build exit 0 (sitemap 69 URLs, prerender 90 routes + homepage), 24/24 test files exit 0 (test-download 111/0).
+- The only change against api-00030: the piano route below (`git diff HEAD -- api/`: server.js +28 lines).
+- Tag checks (nov13 address): /api/download/manifest 200; /api/redeem and /api/partner-report 401 without a token; piano manifest 200, application/json,
+  no-cache, 6,758 B; concert-01.zip 63,309,831 B, SHA-256 = manifest; two bad names 404. Logs of the new revision: only those four 404 / 401 test requests.
+- Live (subverselab.com, after traffic): / 200, /api/download/manifest 200, /api/redeem 401, /api/ahenk/ios/entitlement 401 without a token; piano manifest
+  byte-identical to the tag's; the largest part concert-11.zip 63,982,794 B to the end in 5.6 s, chunked (no Content-Length), SHA-256 = manifest; bad name 404.
+- NOT verified: the 429 limit live (tested only in test-download); a download from the app itself (simulator or device) against the live address;
+  a whole piano (all 23 concert parts) in one go.
+
+### (entry as prepared) AHENK iPhone / iPad piano downloads (API ONLY)
+Owner 12 Nov: route b ("b"): the app's pianos come through the site, the bucket stays private.
+- `api/server.js`: `GET /api/ahenk/pianos/v1/manifest.json` and `GET /api/ahenk/pianos/v1/:pack/:file`, public (no sign-in), name check
+  `PIANO_PATH` (manifest or `<pack>/<pack>-NN.zip`, lower-case) before the bucket is touched, streams
+  `gs://subverselab-downloads/ahenk/pianos/v1/<path>`; parts over 30 MiB chunked (no Content-Length, the 14 Oct ELEK rule); manifest
+  `no-cache`, parts `immutable`; 30 requests a minute per address (429). The objects are already in the bucket (owner "paketleri yükle",
+  12 Nov: 42 objects, 2,436,684,555 B). The app (01_AI_Tools/subverselab-fazilsay, PianoPacks.cpp kBaseUrl) reads
+  `https://subverselab.com/api/ahenk/pianos/v1/`.
+- Checks: `npx eslint .` 0 errors (2 old warnings), `npm run build` 0, every `scripts/test-*.js` 24/24 (test-download 111/0, +5 cases:
+  manifest headers, small part with length, 64 MB part chunked, other names 404 without touching the bucket, 429 after 30). Local
+  end to end (`subverselab-api-dev` on 127.0.0.1:8790, real bucket through ADC): manifest 200 6,758 B; upright-04 33,120,949 B chunked,
+  SHA-256 = manifest; a bad name 404; the iPad simulator downloaded core + upright through it, files identical to the Mac store.
+- Cost to watch: every piano download is Cloud Run egress + CPU through `subverselab-api` (upright 224 MB, concert 1.42 GB per user).
+- After the deploy: `curl -sI https://subverselab.com/api/ahenk/pianos/v1/manifest.json` (200, application/json) and one 64 MB part to
+  the end with its SHA-256 (the largest file, not just a small one).
+
+## DEPLOYED 12 Nov 2026 (evening, owner "deploy et", third site deploy of the day) — SITE ONLY: `subverselab-site-00269-jef` (tag nov12e), 100 %; tag nov12d removed. Rollback: traffic to `subverselab-site-00266-lub`. NOT committed.
+- Tag checks: 11 URLs 200, /nope-404 404, bundle index-BTMRYM1a.js has "Gaziantep, Türkiye"; /help still carries the company line.
+  Live: subverselab.com serves index-BTMRYM1a.js, www 301, footer `.footer-contact` reads "Gaziantep, Türkiye / info@subverselab.com"
+  (checked in the browser on /plugins), no ERROR log lines on 00269 in the first minutes.
+### (entry as prepared) footer contact shortened
+- Owner on the live footer (00266-lub): "adres kısalsın, sadece Gaziantep ve e-posta kalsın, şenol şahan tek kişilik işletme ibaresini
+  oradan kaldıralım". Footer now prints two lines: "Gaziantep, Türkiye" (`CONTACT.city`, new) and info@subverselab.com (mailto).
+  The company line and the full registered address stay on /help#contact (box + prerendered page) and the privacy controller line.
+- Files: `src/data/faqContent.js` (`city`), `src/components/Footer.jsx`.
+- Checks: eslint 0 errors (2 old warnings), `npm run build` ok (prerender 90 routes + homepage), 24/24 `scripts/test-*.js` pass.
+  Not checked: the footer in a browser (light/dark, 375 px).
+- Small fix: waits for the next batch deploy unless the owner says otherwise.
+
+## DEPLOYED 12 Nov 2026 (~19:10 TR, owner "deploy et", second go) — SITE ONLY: `subverselab-site-00266-lub` (tag nov12d), 100 %; tag nov12c removed. Rollback: traffic to `subverselab-site-00263-cag`. NOT committed.
+- Owner on the 18:30 footer: "bu kısmı sevmedim ... şirket türü ve tam adres yazalım ... açık adresi kullan, SubverseLab limited şirketi
+  ise onu yaz, vergi numarasına gerek yok". The tax certificate (Muhasebe/03_Resmi_Belgeler, not in git) shows a sole proprietorship with
+  no trade name, so no "limited". `CONTACT` (`src/data/faqContent.js`): "SubverseLab · Şenol Şahan, sole proprietorship" and the registered
+  business address; footer = three small muted lines (company, address, e-mail underlined), /help contact box, prerendered /help, the
+  privacy page's controller line (`legalContent.js`; LEGAL_UPDATED already 12 November 2026). No tax or identity number anywhere (bundle
+  checked: 0 matches). Terms line 156 still reads "Gaziantep, Türkiye" only.
+- Gate: eslint 0 errors (2 old warnings), build exit 0, 24/24 test files exit 0. Tag checks: 12 URLs 200, unknown route 404, the address
+  in /help and /privacy, no ERROR log lines. Live: subverselab.com serves index-BzZcTiyX.js, www 301, footer shows the three lines.
+- Second site deploy of the day, on the owner's explicit go.
+
+## DEPLOYED 12 Nov 2026 (~18:30 TR, owner "deploy et") — SITE ONLY: `subverselab-site-00263-cag` (tag nov12c), 100 %; tag nov12 removed. API unchanged (`00030-nat`). Rollback: traffic to `subverselab-site-00260-vef`. NOT committed.
+- Shipped the entry right below (live edit, contact details, 53 manual pictures).
+- Tag checks before traffic: 20 URLs 200 (pages, six manuals, four new pictures, manifest, catalogue, sitemap), unknown route 404, /help has
+  the contact box, manual figures 21 / 6 / 12 / 5 / 5 / 4, the bundle carries the editor, no ERROR log lines in 10 min.
+- Live after the switch: subverselab.com serves bundle index-CtXfDT0O.js, www 301, footer contact and /help#contact present, no console errors.
+- Live edit verified with the owner's real admin sign-in (in-app browser): the editor opened on /plugins/torna (36 fields, admin catalogue
+  read 200) and Save wrote `catalog_plugins/torna` (edits true, published, updatedAt 2026-11-12T15:33:31Z) with the tagline set to the SAME
+  text the code has, so the page did not change. LEFT IN PLACE: that item now holds TORNA's tagline; a later tagline change in the code
+  will not show until the item's tagline is emptied or the item is deleted in /admin -> Catalogue (my follow-up save to empty it was not
+  allowed in this session). Snapshot pulled after it (catalog-snapshot/plugins/torna.json).
+- Not verified: a picture upload from the editor; adding / removing a section or control against the live API (only locally).
+
+### (entry as prepared) live edit of product rooms, contact details, panel pictures in six web manuals (local, NOT deployed, NOT committed; SITE only, API unchanged)
+Owner 12 Nov: "deploy gerektirmeyen live edit modu açalım ürün odalarını düzenlemek ... artık deploy gerektirmemeli. iletişim bilgileri
+websitede açık olmalı. yeni pluginlerin html kullanma kılavuzları için alt ajanlar eksik panel görselleri için."
+- Live edit (`src/liveEdit/liveEdit.jsx`, `CatalogPluginRoom.jsx`, `PluginRoom.jsx`, `overlayPlugin` in `src/catalog/shapes.js`, CSS `.live-edit-*`):
+  a signed-in admin sees "Edit this room" on every room that is in the code; tagline, formats line, intro, sections, controls, controls
+  note and the showing panel view (name, line, picture) are edited in place and saved as the room's live item through the existing
+  `POST /api/admin/catalog/plugins` (no API change). Guide: `docs/CATALOG.md` "Live edit". Visitors get no bar and no editable field.
+  Checked on the dev server (TORNA, local API, preview owner): the editor opens (36 fields), 4 edits counted, Save sends id torna,
+  edits true, the typed tagline in its own case, 5 sections, 11 controls, 5 views with their keys; the POST was caught in the browser and
+  answered there, so NOTHING was written to the live catalogue. New `scripts/test-live-edit.js` 14/14 (the body passes `cleanDoc`, the
+  overlay draws it). Fixed on the way: text is read with textContent (innerText returned the CSS-uppercased heading); the bar sits under
+  the header (the cookie banner covered it at the foot).
+  NOT verified: a real save against the live API with a Google admin sign-in; a picture upload from the editor; the rooms that open with
+  the listen player show no tagline or panel view to edit (their body text is editable).
+- Contact (`CONTACT` in `src/data/faqContent.js`): the footer of every page prints info@subverselab.com (mailto) and "Şenol Şahan, trading
+  as SubverseLab · Gaziantep, Türkiye" (the privacy page's controller line), the SubverseLab column links Contact -> /help#contact, and
+  /help opens with a Contact box (also in the prerendered page). No phone number or street address: none was given.
+- Web manuals (six Claude sub-agents, one per plug-in; the lead checked every file): 53 panel pictures from each PDF manual's own
+  `docs/manual/images`, as WEBP under `public/plugins/<slug>/` (AHENK 21, JING FANG 12 in the plug-in folder's `manual/`; RU-8 6, SEDA 5,
+  TORNA 5, ELEK 4 under `manual/`), `pic(...)` blocks in `src/data/manuals/{ahenk,ru8,jingfang,seda,torna,elek}.js`; no text rewritten.
+  Lead check: all 53 declared sizes equal the files; tesseract (2x, --psm 11) finds no SUBVERSE-LAB on any of them (SEDA, TORNA and ELEK
+  were cropped clear of the old lockup); contact sheets looked at; dist manual pages carry 21 / 6 / 12 / 5 / 5 / 4 figures; RU-8 manual
+  on the dev server loads all 6, no overflow.
+  Missing, needs the app's own snapshot tool (not run): RU-8 EDIT screen and the user-kit / sample drop view.
+  For the owner: the four ELEK window pictures (as in the PDF manual and the room today) show a commercial song's file name.
+- Gate 12 Nov evening: `npx eslint .` 0 errors (2 old warnings); `npm run build` exit 0 (90 routes + homepage); 24/24 `scripts/test-*.js` exit 0.
 
 ## DEPLOYED 12 Nov 2026 (~12:20 TR, owner "şimdi yap") — API ONLY: `subverselab-api-00030-nat` (tag nov12b), 100 %; tag nov12 removed. Site unchanged (`00260-vef`). Rollback: traffic to `subverselab-api-00027-lig`. NOT committed.
 - Tag checks: manifest 200, /api/redeem and /api/partner-report 401 without a token, no WARNING/ERROR logs. Live: owner's account in Chrome,

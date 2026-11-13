@@ -16,7 +16,10 @@
 // the licence row and "no licence key" sentence (gettingIt()), the support / trademark footer, the chapter table.
 
 import { JINGFANG } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/jingfang/${file}`), w, h, alt, caption });
 
 export const JINGFANG_MANUAL = {
   ...manualBase(JINGFANG, {
@@ -58,6 +61,7 @@ export const JINGFANG_MANUAL = {
       heading: 'Sign in',
       blocks: [
         { p: 'The first time JING FANG opens on a computer, it asks you to sign in. There is no licence key to type.' },
+        pic('manual/signin.webp', 1568, 1024, 'The JING FANG sign-in screen: a code in the middle, CANCEL and OPEN THE PAGE AGAIN under it', 'The sign-in screen while the browser page is open. The code is the one to check on the page.'),
         {
           steps: [
             'Press **SIGN IN WITH SUBVERSELAB**. Your browser opens subverselab.com and the panel shows a short code.',
@@ -97,6 +101,7 @@ export const JINGFANG_MANUAL = {
           ],
         },
         { p: 'With MICRO on, the keys that sit off their usual pitch light on their row while they play, with their offset in cents.' },
+        pic('manual/micro.webp', 1568, 1024, 'The whole JING FANG panel with MICRO on and three note names moved to other rows', 'MICRO on: the keys that sit off their usual pitch light on their row while they play, with their offset in cents.'),
       ],
     },
     {
@@ -120,7 +125,9 @@ export const JINGFANG_MANUAL = {
         { h3: 'The camera' },
         { p: 'For a recording, a stream or a lesson the window can show a part of the device, closer, instead of all of it. **CAMERA** opens a small set of controls that floats over the panel: a map of the device with a gold frame for what the window shows, **WHOLE**, **FOLLOW**, - and + and the zoom.' },
         { p: 'On the map, click a module to go there, drag the frame to move the view, use the wheel to zoom (up to 4 x). **FOLLOW** moves the camera on its own: to the page that is open (PATCH, SEQ, DRUM, LAB, FX RACK), else to the module you touch. The view glides like the knobs. Drag the title of the controls to put them anywhere; x hides them and the view stays where it is. Only the view moves: every control keeps working where it is, and the sound does not change.' },
+        pic('manual/camera.webp', 1400, 392, 'The window zoomed on OSC 1 at 3.9 x, with the camera controls at the top right', 'The camera on OSC 1 at 3.9 x; the controls float at the top right.'),
         { h3: 'The preset synthesizer' },
+        pic('manual/presets.webp', 1400, 262, 'The top bar and the strip of preset slots, one slot for every part of the panel', 'One slot for every part of the panel, under the top bar.'),
         { p: 'Under the top bar is a strip of slots, one for each part of the synth: OSC 1, OSC 2, OSC 3, FILTER, AMP ENV, FLT ENV, PITCH, DRIFT, VOICE, FM, TUNING, FX, SEQ and DRUMS. Loading a whole preset fills every slot with its name. Give one slot another preset and **only that part** takes that preset’s settings: the oscillators from a lead, the envelope from a pad, the filter from a bass. Click the left or right of a slot to step, the middle for the list, or use the mouse wheel. A mixed sound shows as Preset synth / Mix; SAVE keeps it as your own preset, with where each part came from.' },
         { p: 'The factory presets come in families: Bass, Bass - 808, Keys - E-Piano, Piano, Organ, Pad, Strings, Choir, Winds, Brass, Guitar, Pluck, Mallet, Bell, Lead, FX, the Drums families (Kick, Snare, Clap, Hat, Perc), Drum Machine, the Arp families (Classic, Chord, Rhythmic, Wide), the Sequence families (Acid, Bass, Drums, Melodic, Pulse, Micro, Lab), and Init.' },
       ],
@@ -129,6 +136,7 @@ export const JINGFANG_MANUAL = {
       id: 'sound',
       heading: 'The sound',
       blocks: [
+        pic('manual/voices.webp', 1400, 289, 'OSC 1, OSC 2, OSC 3 and the FILTER section side by side', 'The oscillators and the filter: **LEVEL**, **OCT**, **SEMI**, **FINE** and the second row of each oscillator, **CUTOFF**, **RESO** and **DRIVE** in the filter.'),
         {
           table: {
             head: ['Section', 'Controls', 'What they do'],
@@ -158,6 +166,7 @@ export const JINGFANG_MANUAL = {
             ],
           },
         },
+        pic('manual/fx.webp', 1400, 115, 'The DRIVE, ECHO and REVERB sections side by side', 'The three effects on the panel: **DRIVE**, **ECHO** and **REVERB**.'),
         { p: 'The FX slot of the preset synthesizer takes the effects together from one preset.' },
       ],
     },
@@ -178,9 +187,11 @@ export const JINGFANG_MANUAL = {
         },
         { h3: 'The three rows' },
         { p: 'The keyboard has three rows: the high row on top, the usual keys in the middle, the low row at the bottom.' },
+        pic('manual/keys.webp', 1400, 187, 'The three rows of the keyboard with the PLAY mode keys on the left', 'Top: the high row. Middle: the usual keys. Bottom: the low row. Note names above the rows show where each one sits.'),
         { p: 'Rows are set per note name, not per key: moving C moves every C. Click the strip above the keyboard over a note name, or right-click or Alt-click a key, and that note name moves one row (low → usual → high). In MICRO a key that sits off its usual pitch lights on its row while it plays, with its offset in cents. Labels show the note, an arrow and the cents, nothing else.' },
         { p: 'In NORMAL a click on the outer rows sounds one row away; in MICRO a click plays the note where its row puts it.' },
         { h3: 'The TUNING section' },
+        pic('manual/tuning.webp', 932, 208, 'The TUNING section: GRID, A4, HIGH ROW, LOW ROW and KEYSWITCH knobs with the step readout', 'The TUNING section with its readout: the grid step in cents and the offsets of the high and low rows.'),
         {
           table: {
             head: ['Control', 'Range', 'What it does'],
@@ -200,6 +211,7 @@ export const JINGFANG_MANUAL = {
       heading: 'The Tuning Lab',
       blocks: [
         { p: 'Press **LAB**. While the Lab is on it decides every pitch. It holds two tunings on two cards, **A** and **B**, with the morph between them and the intervals you hold.' },
+        pic('manual/lab.webp', 1568, 1024, 'The Tuning Lab: tuning cards A and B, the pitch wheel, the LAB controls and WHAT SOUNDS', 'The Tuning Lab: two cards, A and B, the morph between them and the intervals you hold.'),
         {
           table: {
             head: ['Control', 'What it does'],
@@ -222,6 +234,7 @@ export const JINGFANG_MANUAL = {
       heading: 'PATCH: three LFOs and cables',
       blocks: [
         { p: 'PATCH opens the cable compartment: three LFOs, the sources on the top row and the destinations below. Drag from a source to a destination to lay a cable; every cable has its own amount. Pull a cable out to move it; drop it anywhere else to remove it. Up to 16 cables.' },
+        pic('manual/patch.webp', 1568, 1024, 'The patch bay: three LFOs on the left, sources and destinations with cables, and one amount knob per cable', 'The patch bay: three LFOs, the sources on the top row, the destinations below and one amount knob for every cable.'),
         {
           table: {
             head: ['LFO control', 'Range'],
@@ -249,6 +262,7 @@ export const JINGFANG_MANUAL = {
       id: 'seq',
       heading: 'SEQ: arpeggiator, sequencer and GENERATE',
       blocks: [
+        pic('manual/seq.webp', 1568, 1024, 'The SEQ page: arpeggiator, sequence controls, the GENERATE strip, the piano roll and the selected step column', 'SEQ: the arpeggiator, the SEQUENCE controls, the **GENERATE** strip, the piano roll and the selected step’s column.'),
         { h3: 'Arpeggiator' },
         {
           table: {
@@ -301,6 +315,7 @@ export const JINGFANG_MANUAL = {
       id: 'drum',
       heading: 'DRUM: the drum machine',
       blocks: [
+        pic('manual/drum.webp', 1568, 1024, 'The DRUM page: eight tracks with their sounds and sixteen steps, and the GENERATE line above the step keys', 'DRUM: eight tracks, their sounds and steps, and the **GENERATE** line above the step keys.'),
         { p: 'Eight tracks, each playing a drum sound you pick from the drum presets, with 16 steps. Click a step: on; again: accent; right-click: off. Hold a key to play the beat, or PLAY to run it on its own. RATE as the sequencer. CLEAR wipes the steps.' },
         { p: 'A GENERATE line sits above the step keys: **ROLL** writes a new beat for this kit (never one of your last 16), **< >** steps back and forward through the beats you rolled, **DENSITY** sets how many hits (turning it after a roll adds or removes hits of the same beat), **COMPLEX** adds ghost notes, busier hats and a fill at the end, and **MUTATE** sets how much of the beat the next roll changes. The readout shows the style it wrote (four on the floor, backbeat, breakbeat, half time, three-three-two or sparse) and its seed.' },
         { p: 'On JING FANG’s own clock, start the drums while the sequencer runs (or the other way round) and the second one joins the first one’s grid at its next step. With the host playing, both follow the host’s bar.' },

@@ -3,10 +3,13 @@
 // the site sells 1.0.3 on macOS and 1.0.1 on Windows). subverselab-splitter-desktop/STATUS.md: 1.0.2 and 1.0.3 change only the
 // macOS build (macOS 11 target, universal); stem peaks are equal to 1.0.0 / 1.0.1, so the measured numbers still hold.
 // Left out: the line on what the name means (public copy rule), versioned file names, the "Updates" row (the update and
-// licence sentences come from gettingIt()), the screenshot captions (the page shows no images; their text is kept as prose).
+// licence sentences come from gettingIt()), the PDF cover picture. The four window pictures are the PDF's, cropped above the footer (the old hyphenated lockup sits there).
 
 import { ELEK } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/elek/manual/${file}`), w, h, alt, caption });
 
 export const ELEK_MANUAL = {
   ...manualBase(ELEK, {
@@ -56,6 +59,10 @@ export const ELEK_MANUAL = {
             '**Mixer** — the stems with their waveforms; the tiles on top carry the tempo and key.',
           ],
         },
+        pic('window-empty.webp', 1000, 712, 'ELEK start screen with the drop zone and the earlier separations', '**Start screen.** The drop zone, and under it the earlier separations still on disk, newest first.'),
+        pic('window-ready.webp', 1000, 712, 'ELEK with a file loaded and Stem separation chosen', '**Choose.** The file is loaded and Stem separation is chosen. Nothing has run yet: Run starts it.'),
+        pic('window-keybpm.webp', 1000, 712, 'ELEK showing tempo, key, Camelot code and key confidence', '**Key & BPM.** Tempo, key, Camelot code and key confidence, measured on the whole mix.'),
+        pic('window-done.webp', 1000, 712, 'ELEK mixer with four stems and their waveforms', '**Mixer.** Four stems with their waveforms; the tiles on top carry the tempo and key.'),
         {
           table: {
             head: ['Control', 'Where', 'What it does'],

@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageMeta from './PageMeta';
-import LaunchPrice from './LaunchPrice';
+import PriceTag from './PriceTag';
 import BuyButton from './BuyButton';
 import FamilyBand from './FamilyBand';
 import {
   PLUGINS_INDEX, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, CHECKOUT, PRICES, TRUST_LINE, BOX_IMG,
-  line2AvailableLine, launchPriceActive, launchEndLabel, offerName, BOX_LAYERS, BOX_SHELL, BOX_SHELL_DEFAULT,
+  line2AvailableLine, BOX_LAYERS, BOX_SHELL, BOX_SHELL_DEFAULT, currentPrice, priceWord, pluginOffer,
 } from '../data/plugins';
 import { byLatestRelease } from '../data/productDates';
 import { useCatalog, catalogPlugins } from '../catalog/catalog';
@@ -45,7 +45,7 @@ function bubble(p) {
 function badge({ p, group }) {
   if (group === 'free') return 'Free';
   if (group === 'soon') return line2AvailableLine(p);
-  if (p.launchId === 'solo') return <><LaunchPrice slug={p.slug} note={false} />{offerName(p.slug) ? ` · ${offerName(p.slug)}` : ''}</>;
+  if (p.launchId === 'solo') return priceWord(currentPrice(p.slug));
   return `$${PRICES[p.slug]}`;
 }
 
@@ -125,12 +125,13 @@ export default function PluginsPage() {
               <div className="box-lines">
                 <h2 className="box-name"><Link to={p.path}>{p.displayName}</Link></h2>
                 <span className="box-kind">{p.kind}</span>
-                <span className="box-price">{badge(c)}</span>
+                {c.group === 'solo' && PRICES[p.slug] != null
+                  ? <PriceTag offer={pluginOffer(p.slug)} size="card" />
+                  : <span className="box-price">{badge(c)}</span>}
                 {c.group !== 'soon' && (
                   <span className="box-buy-row">
                     <BuyButton place="showcase" slug={p.slug} className="btn btn-primary box-buy"
                       label={c.group === 'free' ? `Get ${p.displayName} free` : `Buy ${p.displayName}`} />
-                    {p.launchId === 'solo' && launchEndLabel(p.slug) && <span className="box-until">until {launchEndLabel(p.slug)}</span>}
                   </span>
                 )}
               </div>

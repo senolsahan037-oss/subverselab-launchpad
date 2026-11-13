@@ -9,7 +9,10 @@
 // The credits stay: the recordings are CC BY and must be named.
 
 import { AHENK, AHENK_TRIAL_LINE, AHENK_FREE_AFTER_LINE } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/ahenk/${file}`), w, h, alt, caption });
 
 export const AHENK_MANUAL = {
   ...manualBase(AHENK, {
@@ -100,6 +103,7 @@ export const AHENK_MANUAL = {
           },
         },
         { p: 'A project or setup that uses locked settings keeps them: in free mode they are not applied, and they come back as they were once AHENK is unlocked.' },
+        pic('manual/unlock-box.webp', 920, 460, 'The FULL VERSION box with the buttons SIGN IN WITH SUBVERSELAB, BUY AHENK and CLOSE', 'The **FULL VERSION** box in free mode on the Mac.'),
         { h3: 'Sign in with SubverseLab' },
         { p: 'There is no licence key to type. Your purchase belongs to your subverselab.com account:' },
         {
@@ -128,6 +132,7 @@ export const AHENK_MANUAL = {
           ],
         },
         { note: '**Lost?** Press **?** at the top right. Numbered boxes open over the panel, each pointing to its part, with the SCORE / WRITE key map and the credits of the recordings. Click anywhere or press Esc to close it. It never changes the window size.' },
+        pic('manual/panel-help.webp', 1600, 1024, 'The help over the AHENK panel: seven numbered boxes pointing to the hall and setup selector, OUT, the MIC RACK, the settings gear, the piano and keys, SCORE and the WRITE keys', 'The **?** help: seven boxes over the panel, the credits on the band at the bottom.'),
       ],
     },
     {
@@ -135,6 +140,7 @@ export const AHENK_MANUAL = {
       heading: 'The panel',
       blocks: [
         { p: 'One window, 1000 × 640.' },
+        pic('manual/panel-stage.webp', 1600, 1024, 'The AHENK panel: the concert grand on stage with two microphones, the PIANO RACK on the left, the MIC RACK on the right, the keyboard below', 'The concert grand on stage with two microphones, the **PIANO RACK** on the left, the **MIC RACK** on the right, the keyboard below.'),
         {
           table: {
             head: ['Part', 'What it does'],
@@ -162,6 +168,10 @@ export const AHENK_MANUAL = {
       heading: 'The pianos',
       blocks: [
         { p: 'Click a piano in the PIANO RACK to put it on stage. While it loads, the stage reads `LOADING THE PIANO`. The stage setup, the hall and the score stay as they are.' },
+        pic('manual/piano-concert.webp', 800, 268, 'The concert grand on stage', '`CONCERT GRAND`, 274 cm.'),
+        pic('manual/piano-studio.webp', 800, 268, 'The studio grand on stage', '`STUDIO GRAND`, 200 cm.'),
+        pic('manual/piano-upright.webp', 800, 268, 'The upright on stage', '`UPRIGHT`, felt damped.'),
+        pic('manual/piano-baby.webp', 800, 268, 'The baby grand on stage', '`BABY GRAND`, short grand.'),
         {
           table: {
             head: ['Piano', 'What it is', 'Recorded position', 'Data'],
@@ -200,6 +210,7 @@ export const AHENK_MANUAL = {
         { p: '**Recorded and modelled.** On each piano, one or two positions are the real recording: LIP and LID ORTF on the concert grand, LID ORTF on the studio grand and the upright, LIP on the baby grand. The other positions are computed from those recordings (they need the installer’s Microphone models and hall images). Hold the pointer over a microphone to see which it is.' },
         { h3: 'The settings gear' },
         { p: 'Click the gear beside a microphone on the stage. Its settings open over the stage; the cross, Esc or a click elsewhere closes them. Switching the microphone off closes them too.' },
+        pic('manual/mic-settings.webp', 556, 1220, 'The settings of the LID ORTF microphone: ON, LEVEL, ROOM, TYPE, RECORDED or MODELLED, REVERB, DELAY and ECHO', 'The settings of **LID ORTF**: `ON`, `LEVEL`, `ROOM`, `TYPE` and the three sends.'),
         {
           table: {
             head: ['Control', 'What it does'],
@@ -223,6 +234,12 @@ export const AHENK_MANUAL = {
       heading: 'Halls',
       blocks: [
         { p: 'The hall selector at the top changes the room and the picture together. The arrows step through the halls; a click on the name opens the list. The change fades over in about a tenth of a second, so it can be done while playing. Every microphone gets the hall according to its distance from the piano: the close ones a little, the house positions and the binaural head more.' },
+        pic('manual/hall-recorded.webp', 800, 320, 'The Recorded hall with the concert grand and the hall selector', '`Recorded`'),
+        pic('manual/hall-recital.webp', 800, 320, 'The Recital room with the microphone settings open', '`Recital room`'),
+        pic('manual/hall-theatre.webp', 800, 320, 'The Chamber theatre with the microphone settings open', '`Chamber theatre`'),
+        pic('manual/hall-concert.webp', 800, 320, 'The Concert hall with the microphone settings open', '`Concert hall`'),
+        pic('manual/hall-church.webp', 800, 320, 'The Stone church with the microphone settings open', '`Stone church`'),
+        pic('manual/hall-live.webp', 800, 320, 'The Live room with the microphone settings open', '`Live room`'),
         {
           table: {
             head: ['Hall', 'What it is'],
@@ -243,6 +260,7 @@ export const AHENK_MANUAL = {
       heading: 'Stage setups',
       blocks: [
         { p: 'A stage setup is everything on the stage: which microphones are on, their LEVEL, TYPE, ROOM and effect sends, OUT and the hall. A setup can also bring a piano. When it does, loading it puts that piano on stage (if the piano is not installed, the piano you have stays and the rest is applied); when it does not, the piano that is loaded stays. SAVE keeps the piano that is on stage with your setup.' },
+        pic('manual/setup-list.webp', 512, 540, 'The top of the setup list: the factory setups Close, Stage, Hall, Upright Close, Felt Room and more, each marked FACTORY', '`LIST`, the top of it: the factory setups come first, yours follow with an **X**.'),
         {
           table: {
             head: ['Control', 'What it does'],
@@ -278,6 +296,7 @@ export const AHENK_MANUAL = {
       blocks: [
         { h3: 'Note names' },
         { p: 'AHENK uses pianists’ note names: the keys run from **A0** to **C8**, and middle C (MIDI note 60) is **C4**, on the panel and on the SCORE page alike. Some DAWs call middle C “C3”; it is the same key. Notes outside A0 to C8 do not sound.' },
+        pic('manual/keys.webp', 970, 322, 'The lower half of the panel keyboard from A0 to C4', 'The lower half of the keyboard: `A0`, then `C1`, `C2`, `C3` and middle C, `C4`.'),
         { h3: 'Three ways to play' },
         {
           table: {
@@ -328,6 +347,7 @@ export const AHENK_MANUAL = {
       blocks: [
         { h3: 'Opening a score' },
         { p: 'Click **SCORE...** and choose a file, or drop the file anywhere on the panel. AHENK reads MusicXML (`.musicxml`, `.xml`, `.mxl`) and MIDI (`.mid`, `.midi`). The piano that is on stage plays it, through the microphones and the hall you set. Click **SCORE** to see the notes: they are drawn as bars on a piano roll, the pitch from the keys on the left, the bars on the ruler at the top.' },
+        pic('manual/score-play.webp', 1600, 720, 'The SCORE page with a MusicXML song open: the buttons, the LAYERS row, the ruler, the notes, the PED and DYN lanes and the player', 'A MusicXML song open on the **SCORE** page: the buttons and **LAYERS** row, the ruler, the notes, the `PED` and `DYN` lanes, and the player below.'),
         {
           table: {
             head: ['Control', 'What it does'],
@@ -344,6 +364,7 @@ export const AHENK_MANUAL = {
         { p: 'Mouse on the SCORE page: click a note to select it (Shift adds), drag on empty space for a box, the wheel scrolls in time, Cmd (Ctrl on Windows) + wheel zooms.' },
         { h3: 'Layers: hands and voices' },
         { p: 'Under the buttons, the **LAYERS** row shows what the score holds: **RH** and **LH** (right and left hand), the voices of each hand (**RH-1**, **RH-2**, **LH-1** and so on, up to four per hand), **OTHER** for parts that are not the piano, and **PEDAL**. Click one to mute it; its notes go dim and are not played. **Alt-click** plays it solo. Click again to bring it back.' },
+        pic('manual/score-layers.webp', 1600, 600, 'The SCORE page with the left hand muted and COUNT-IN 2 BARS lit', 'The left hand muted (`LH`, `LH-1` and `LH-2` dark, its notes dim) and a two-bar count-in.'),
       ],
     },
     {
@@ -352,6 +373,7 @@ export const AHENK_MANUAL = {
       blocks: [
         { p: '**NEW** starts a blank score: choose the key (C major, A minor or any other major or minor key) and you get 16 empty bars in 4/4, with WRITE on. You can also write into a MusicXML or MIDI file you opened. A few files can be played but not changed; AHENK then says `THIS FILE CAN BE PLAYED BUT NOT EDITED`.' },
         { p: '**WRITE** (or the key N) switches writing on; N or Esc switches it off. While it is on, the computer keys write notes instead of playing them. A cream line, the caret, shows where the next note goes, with a tab naming the layer (RH-1 and so on); the header shows the note length, the layer, the bar (M) and the beat (B). On Windows, Ctrl works wherever Cmd is written.' },
+        pic('manual/score-write.webp', 1600, 600, 'The SCORE page with WRITE on, the caret at bar 11 and a loop range shaded from bar 7 to bar 10', '`WRITE` on: the caret at bar 11 in `RH-1`, the next note a quarter; a loop range from bar 7 to bar 10 shaded gold.'),
         { h3: 'The keys in WRITE' },
         {
           table: {
@@ -397,6 +419,7 @@ export const AHENK_MANUAL = {
             'The panel keyboard writes the same way when you click its keys in WRITE.',
           ],
         },
+        pic('manual/score-new.webp', 1600, 920, 'A new score in F major with a few notes written and the caret in bar 3', 'A new score in F major: quarters, a half with a chord note, eighths, and the caret in bar 3.'),
         { h3: 'Saving and export' },
         {
           table: {
@@ -410,6 +433,7 @@ export const AHENK_MANUAL = {
         { p: 'Before NEW, SCORE... or a dropped file replaces a score with unsaved edits, AHENK asks once: do the same again within four seconds to throw the edits away, or SAVE AS first.' },
         { h3: 'Drag into your DAW' },
         { p: 'Beside **MIDI** and beside **SAVE AS** sits a small grip of six dots. Press it and drag: the grip beside MIDI carries the score as a MIDI file, the one beside SAVE AS as MusicXML. Drop it on a track in your DAW, on the desktop or in a Finder or Explorer window. The file is the same as MIDI or SAVE AS would write; it is named after the score’s title, and the score you are working on stays as it is. A click on a grip without dragging tells you what it does.' },
+        pic('manual/score-drag.webp', 828, 64, 'The buttons NEW, SAVE AS with its drag grip, MIDI with its drag grip, UNDO, REDO and WRITE', 'The grips beside `SAVE AS` and `MIDI`.'),
       ],
     },
     {

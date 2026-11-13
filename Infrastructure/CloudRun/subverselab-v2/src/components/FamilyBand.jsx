@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import BuyButton from './BuyButton';
+import MuseHubButton from './MuseHubButton';
+import PriceTag from './PriceTag';
 import {
-  FAMILY_BUNDLE_ON, FAMILY_DISCOUNT_PCT, FAMILY_LIST_PRICE, FAMILY_PLUGINS, FAMILY_PRICE, FAMILY_SINGLES_TOTAL, FAMILY_STACK_IMG, UPDATES_LINE, familyUpgrade, pluginBySlug,
+  FAMILY_BUNDLE_ON, FAMILY_PLUGINS, FAMILY_PRICE, FAMILY_STACK_IMG, UPDATES_LINE, familyUpgrade, pluginBySlug, pluginOffer,
 } from '../data/plugins';
 import usePurchaseStatus from '../hooks/usePurchaseStatus';
 import { byLatestRelease } from '../data/productDates';
@@ -21,7 +23,8 @@ function followLight(e) {
   e.currentTarget.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`);
 }
 
-export default function FamilyBand({ buyer = {} }) {
+// `room`: drawn as the top of /plugins/family (FamilyRoom.jsx): no link to itself, the heading is the page's h1.
+export default function FamilyBand({ buyer = {}, room = false }) {
   const status = usePurchaseStatus();
   if (!FAMILY_BUNDLE_ON) return null;
   const upgrade = status.loaded ? familyUpgrade(status.purchased, status.owns('family')) : null;
@@ -37,27 +40,29 @@ export default function FamilyBand({ buyer = {} }) {
       </div>
       <div className="family-band-text">
         <p className="family-band-kicker">Back by popular demand</p>
-        <h2 id="family-title">The SubverseLab family is back: {listWords(names)}, in one purchase.</h2>
-        <p className="family-band-price">
-          <s aria-label={`list price $${FAMILY_LIST_PRICE}`}>${FAMILY_LIST_PRICE}</s>
-          <strong>${FAMILY_PRICE}</strong>
-          <em>-{FAMILY_DISCOUNT_PCT}%</em>
-          <span>Bought one by one: ${FAMILY_SINGLES_TOTAL}</span>
-        </p>
+        {room
+          ? <h1 id="family-title">The SubverseLab family: {listWords(names)}, in one purchase.</h1>
+          : <h2 id="family-title">The SubverseLab family is back: {listWords(names)}, in one purchase.</h2>}
+        {/* One reference price, the $79.99 list price (owner 14 Nov 2026); the singles total is no longer shown beside it. */}
+        <p className="family-band-price"><PriceTag offer={pluginOffer('family')} size="band" /></p>
         <p className="family-band-line">
           One checkout, and every one of them opens on your account for macOS and Windows. {UPDATES_LINE}
         </p>
         <ul className="family-band-names" aria-label="In the family">
           {members.map((p) => <li key={p.slug}><Link to={p.path}>{p.displayName}</Link></li>)}
         </ul>
+        {!room && <p className="family-band-more"><Link to="/plugins/family">See the family room →</Link></p>}
         {upgrade && (
           <p className="family-band-upgrade">
             You bought {pluginBySlug(upgrade.slug)?.displayName} before the family came back, so what you paid counts: the whole
             family is ${upgrade.price} for you.
           </p>
         )}
-        <BuyButton place="offer" slug="family" email={buyer.email} uid={buyer.uid} discount={upgrade?.code}
+        <div className="family-band-keys">
+        <BuyButton place={room ? 'room' : 'offer'} slug="family" email={buyer.email} uid={buyer.uid} discount={upgrade?.code}
                    label={upgrade ? `Upgrade to the family — $${upgrade.price}` : `Get the family — $${FAMILY_PRICE}`} />
+        <MuseHubButton slug="family" />
+        </div>
       </div>
     </section>
   );

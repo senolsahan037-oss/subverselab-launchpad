@@ -92,6 +92,11 @@ export function overlayPlugin(p, d) {
   if (Array.isArray(d.imageSize) && d.imageSize.length === 2) out.imageSize = d.imageSize;
   if (Array.isArray(d.sections) && d.sections.length) out.sections = d.sections;
   if (Array.isArray(d.controls) && d.controls.length) out.controls = d.controls;
+  // Panel views of an edit (live edit, 12 Nov 2026): view by view in the room's own order, so the room keeps its keys
+  // (defaultMode, the tour) and a view the edit does not name stays as written.
+  if (Array.isArray(d.modes) && d.modes.length && Array.isArray(p.modes) && p.modes.length) {
+    out.modes = p.modes.map((m, i) => { const e = d.modes[i]; return e && e.name && e.image ? { ...m, name: e.name, image: e.image, text: e.text ?? m.text } : m; });
+  }
   if (set(d.musehub)) out.musehub = d.musehub;
   if (set(d.publisher)) out.publisher = d.publisher;
   const live = videosToDemos(d.videos);

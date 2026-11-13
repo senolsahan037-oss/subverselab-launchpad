@@ -101,3 +101,19 @@ problems; the rules below and `docs/PACK_DELIVERY.md` are the agent's to keep. N
 `node scripts/catalog-pull.js` writes the live items and their media to `catalog-snapshot/` (never built, never deployed); `--check`
 only reports. Run it after a panel change so the tree and git hold what the panel holds. To put an item back:
 `node scripts/catalog-cli.js save <kind> catalog-snapshot/<kind>/<id>.json` (media: `catalog-cli.js media …`).
+
+## Live edit: changing a product room where it stands (12 Nov 2026; on the site after the next site deploy)
+Signed in as an admin, every room that is in the site code (`/plugins/<slug>`) shows a bar under the header: **Edit this room**.
+While it is on, every outlined text can be typed into in place: tagline, formats line, intro, each section's heading and text,
+each control's name and description, the controls note, and the name and line of the panel view that is showing. Sections and
+controls can be added and removed; **Replace picture** on the panel uploads a new picture for the view that is showing.
+**Save, no deploy** writes the room's live item (`catalog_plugins/<slug>`, `edits: true`) through `POST /api/admin/catalog/plugins`,
+the same route the Catalogue panel uses: visitors see it within a minute. **Discard** drops the unsaved changes, **Done** closes
+the editor. Code: `src/liveEdit/liveEdit.jsx`, wired in `CatalogPluginRoom.jsx` (`LivePluginRoom`) and `PluginRoom.jsx`; panel
+views of an edit item are laid over the room's own views in order (`overlayPlugin` in `src/catalog/shapes.js`).
+- A field nobody edited keeps the code's value. Emptying a field does not remove it (the code's text comes back); to take an
+  edit away, turn the item's *Published* off in /admin → Catalogue, or delete the item.
+- Not editable in place yet: the rooms that open with the listen player (its button texts and audio are `src/data/listen.js`),
+  the panel tour, prices (panel: price fields), the web manuals. Rooms added from the panel are edited in the panel.
+- Run `node scripts/catalog-pull.js` after a session of edits, so the tree and git hold what the site shows.
+- The prerendered HTML (what a crawler reads before the script runs) keeps the code's text until the next build.

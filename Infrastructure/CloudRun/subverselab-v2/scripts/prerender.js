@@ -37,11 +37,11 @@
 import { writeFileSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { fetchContent, ROOT, SITE_URL } from './lib/fetchContent.js';
-import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ } from '../src/data/faqContent.js';
+import { GENERAL_FAQ, TOOL_FAQ, LOOM_FAQ, CONTACT_FAQ, ALL_FAQ, CONTACT } from '../src/data/faqContent.js';
 import { stripToolPrefix } from '../src/utils/toolName.js';
 import {
   PLUGINS_INDEX, PLUGINS, LAUNCH, LAUNCH2, TESTERS, SAMPLE_PACKS, PRESET_PACKS, LAUNCH2_PLUGINS, FAMILY_ONLY_PLUGINS, FAMILY_PLUGINS, FREE_PLUGINS, LINE2_PLUGINS, SOLO_PLUGINS, line2AvailableLine, PRICES, FORMATS, CHECKOUT,
-  FAMILY_NAME, FAMILY_PRICE, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, isFamilyOfferOver, LAUNCH2_NAME,
+  FAMILY_NAME, FAMILY_PRICE, FAMILY_LIST_PRICE, FAMILY_STACK_IMG, FAMILY_OFFER_TERMS, FAMILY_IMAGE, UPDATES_LINE, isFamilyOfferOver, LAUNCH2_NAME,
   ALL_PLUGINS, FAMILY_REGULAR_PRICE, familyOfferEndLabel, SHOWCASE_SLUGS, SHOWCASE_FREE_SLUGS, SHOWCASE_SOON_SLUGS, SHOWCASE_SOLO_SLUGS, SHOWCASE_NEW_SLUGS,
   priceText, currentPrice, priceWord, launchPriceActive, launchNote, ACTIVATION_SHORT, ACTIVATION_NO_KEY,
   ACTIVATION_LINE, ACTIVATION_LINE_FREE, TRUST_LINE, TRUST_LINE_FREE, trustLineFor, RU8_ON_SALE, JINGFANG_ON_SALE, AHENK_ON_SALE, STORE_PLUGINS, DOWNLOAD_ROOM_PLUGINS,
@@ -463,6 +463,7 @@ function buildHelpPageBody() {
       <h1>Help and FAQ</h1>
       <p>Questions before you buy, or stuck after? Here is how accounts, buying, downloads and credits work, and how each tool works.</p>
       ${siteNav()}
+      <section id="contact"><h2>Contact</h2><p><a href="mailto:${CONTACT.email}">${CONTACT.email}</a></p><p>${escapeHtml(CONTACT.who)}<br>${escapeHtml(CONTACT.where)}</p>${CONTACT.lines.map((l) => `<p>${escapeHtml(l)}</p>`).join('')}</section>
       ${renderFaqSection('General', GENERAL_FAQ)}
       ${renderFaqSection('Tools', TOOL_FAQ)}
       ${renderFaqSection('Loom', LOOM_FAQ)}
@@ -680,6 +681,40 @@ async function main() {
       <p>${escapeHtml(pl.description)}</p>`)).join('\n      ')}
       <p>${escapeHtml(TRUST_LINE)}</p>
       <nav><a href="/">Tools</a> &middot; <a href="/loom">Loom</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+
+  // The family room (owner 14 Nov 2026), /plugins/family: FamilyRoom.jsx. Names and order from the data, one reference price ($79.99 list).
+  {
+    const fam = byLatestRelease(FAMILY_PLUGINS.filter(Boolean), (pl) => pl.slug);
+    const names = fam.map((pl) => pl.displayName).join(', ');
+    const famImg = /^https?:/.test(FAMILY_STACK_IMG[0]) ? FAMILY_STACK_IMG[0] : `${SITE_URL}${FAMILY_STACK_IMG[0]}`;
+    const famDesc = `The SubverseLab plugin family: ${names} for macOS and Windows in one checkout, $${FAMILY_PRICE} (list price $${FAMILY_LIST_PRICE}).`;
+    writePage('plugins/family', buildHead({
+      title: `${names} in one purchase | SubverseLab plugin family`,
+      description: famDesc,
+      canonical: `${SITE_URL}/plugins/family`,
+      image: famImg,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: 'SubverseLab plugin family',
+          description: famDesc,
+          image: famImg,
+          url: `${SITE_URL}/plugins/family`,
+          brand: { '@type': 'Brand', name: 'SubverseLab' },
+          offers: { '@type': 'Offer', price: String(FAMILY_PRICE), priceCurrency: 'USD', availability: 'https://schema.org/InStock' },
+        },
+        breadcrumbSchema([homeCrumb, pluginsCrumb, { name: 'SubverseLab plugin family', url: `${SITE_URL}/plugins/family` }]),
+      ],
+    }), `<h1>The SubverseLab family: ${escapeHtml(names)}, in one purchase</h1>
+      <p>$${FAMILY_PRICE} (list price $${FAMILY_LIST_PRICE}). One checkout, and every one of them opens on your account for macOS and Windows. ${escapeHtml(UPDATES_LINE)}</p>
+      <h2>In the family</h2>
+      ${fam.map((pl) => `<h3><a href="${pl.path}">${escapeHtml(pl.displayName)}</a> &mdash; ${escapeHtml(pl.kind)}, $${PRICES[pl.slug]} on its own</h3>
+      <p>${escapeHtml(pl.tagline)}</p>`).join('\n      ')}
+      <h2>Buying and downloading</h2>
+      <p>${BUY_SENTENCE} ${escapeHtml(ACTIVATION_LINE)}</p>
+      <nav><a href="/plugins">Plugins</a> &middot; <a href="/help">Help and FAQ</a></nav>`);
+  }
 
   for (const pl of PLUGINS) {
     writePage(pl.path.slice(1), buildHead({

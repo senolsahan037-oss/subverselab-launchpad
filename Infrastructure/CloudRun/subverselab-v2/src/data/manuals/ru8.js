@@ -7,7 +7,10 @@
 // when the manual was written.
 
 import { RU8 } from '../plugins.js';
+import { media } from '../../utils/endpoints.js';
 import { installation, gettingIt, manualBase } from './common.js';
+
+const pic = (file, w, h, alt, caption) => ({ img: media(`/plugins/ru8/manual/${file}`), w, h, alt, caption });
 
 export const RU8_MANUAL = {
   ...manualBase(RU8, {
@@ -67,7 +70,9 @@ export const RU8_MANUAL = {
       heading: 'The panel',
       blocks: [
         { p: 'One panel, no hidden pages: the readout on top, the pad bed in the middle, the channel and master strips on the left, SPACE and ECHO on the right.' },
+        pic('panel.webp', 1600, 1116, 'The RU-8 front panel on the ANALOG kit: readout on top, sixteen pads in the middle, channel and master strips on the left, SPACE and ECHO on the right', 'The whole front panel: **readout**, **pads**, **CHANNEL** and **MASTER** on the left, **SPACE** and **ECHO** on the right.'),
         { h3: 'The readout' },
+        pic('readout.webp', 910, 175, 'The readout showing kit ANALOG, set HOUSE 124, the A, B, fill and AUTO keys and the bar position', 'The readout: kit on top, set, section keys and bar position below, tempo at the right.'),
         {
           table: {
             head: ['Part', 'What it does'],
@@ -99,6 +104,7 @@ export const RU8_MANUAL = {
       heading: 'Pads and steps',
       blocks: [
         { p: 'Play first, program later. Sixteen pads, laid out like hardware: pad 1 is bottom left. Click a pad to play it. In the standalone app the computer keys match the layout: Z X C V on the bottom row, then A S D F, Q W E R and 1 2 3 4 on top; Shift plays soft. In a DAW the computer keys stay the host’s; play the pads with MIDI notes. The bottom two rows are the core kit (kick, snare, clap, rim, closed and open hat, low and high tom); the top two rows change with the kit.' },
+        pic('pads.webp', 920, 830, 'The pad bed: sixteen pads with their computer keys, and the row of pattern and MIDI keys above them', 'The pad bed: pad 1 is bottom left; the keys above hold the MIDI drag, the set arrows and the copy keys.'),
         { h3: 'Steps' },
         { p: 'Point at a pad to open its 16 steps; each row of four is one beat. Click a step: off → on (ink) → accent (gold) → ghost (dot). While playing, the current step has a gold ring. Every pad holds its own steps, so the kick, the snare and the hats are written separately and layered on the grid. Notes from your DAW or a controller play the pads on top of the sequencer, with velocity.' },
         { h3: 'Kits' },
@@ -163,6 +169,8 @@ export const RU8_MANUAL = {
           },
         },
         { p: 'Every pad has its own send to SPACE and ECHO, so the snare can sit in the room while the kick stays dry. On a synth kit, tune, decay and level reshape the drum itself rather than stretch a recording.' },
+        pic('strips.webp', 330, 840, 'The CHANNEL strip with six knobs and mute, solo and reset keys, and the MASTER strip with its meter and four knobs', 'The **CHANNEL** strip for the pad played last, and the **MASTER** strip below it.'),
+        pic('fx.webp', 310, 720, 'The SPACE section with ROOM, PLATE and HALL keys and four knobs, and the ECHO section with four time keys and three knobs', '**SPACE** (ROOM, PLATE, HALL) and **ECHO** (time keys, feedback, tone, return).'),
         { h3: 'Human: the groove' },
         { p: 'HUMAN plays the steps the way a drummer would, not at random. At 100 %:' },
         {
@@ -253,6 +261,7 @@ export const RU8_MANUAL = {
       heading: 'Rear panel',
       blocks: [
         { p: 'Turn the machine round with the flip key at the base (B in the standalone).' },
+        pic('rear.webp', 1180, 823, 'The RU-8 rear panel: COLOR knobs, the MIDI note map and the stereo output', 'The rear panel: **COLOR**, the **MIDI** note map and the **OUT** section.'),
         {
           table: {
             head: ['Part', 'What it does'],

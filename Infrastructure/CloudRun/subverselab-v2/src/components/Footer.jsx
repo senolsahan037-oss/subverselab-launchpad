@@ -4,6 +4,7 @@ import { openConsentSettings } from '../consent';
 import FooterStrips, { FooterStores } from './FooterStrips';
 import { media } from '../utils/endpoints';
 import { sendSocialClick } from '../hooks/useHitCounter';
+import { CONTACT } from '../data/faqContent';
 
 const SOCIAL = [
   { name: 'YouTube', ch: 'youtube', href: 'https://www.youtube.com/@SubverseLab', icon: media('/social/youtube.svg') },
@@ -28,7 +29,7 @@ const FOOTER_COLUMNS = [
     { label: 'Download Room', to: '/launch2' }, { label: 'Your account', to: '/account' }, { label: 'Redeem a code', to: '/redeem' }, { label: 'Testers', to: '/testers' }, { label: 'Forum', to: '/forum' },
   ] },
   { title: 'SubverseLab', links: [
-    { label: 'Loom', to: '/loom' }, { label: 'Help', to: '/help' }, { label: 'Privacy', to: '/privacy' }, { label: 'Terms', to: '/terms' }, { label: 'Refunds', to: '/refunds' },
+    { label: 'Loom', to: '/loom' }, { label: 'Help', to: '/help' }, { label: 'Contact', to: '/help#contact' }, { label: 'Privacy', to: '/privacy' }, { label: 'Terms', to: '/terms' }, { label: 'Refunds', to: '/refunds' },
     { label: 'Cookie settings', onClick: openConsentSettings },
   ] },
 ];
@@ -69,6 +70,11 @@ export default function Footer() {
           <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)', maxWidth: '360px', lineHeight: '1.6', margin: '0 0 24px' }}>
             Plugins for macOS and Windows, sample packs, Ableton Live racks and browser tools, made by SubverseLab for producers who want to finish the track.
           </p>
+          {/* Contact on every page: city and e-mail only (owner 12 Nov 2026); full address is on /help#contact. */}
+          <address className="footer-contact">
+            <span>{CONTACT.city}</span>
+            <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+          </address>
           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
             © {new Date().getFullYear()} SubverseLab. All rights reserved.
           </div>
